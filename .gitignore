@@ -52,3 +52,31 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Azure Functions local settings (contains secrets).
+local.settings.json
+
+# Visual Studio.
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# JetBrains Rider.
+.idea/
+*.sln.iml
+
+# Node.
+node_modules/
+
+# OS.
+.DS_Store
+Thumbs.db
+
+# Blazor WASM publish output.
+wwwroot/_framework/
+
+# Test results.
+*.trx
+coverage/

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Happie.Api/Happie.Api.csproj" />
+  <Project Path="Happie.Shared/Happie.Shared.csproj" />
+  <Project Path="Happie.Tests/Happie.Tests.csproj" />
+  <Project Path="Happie.Web/Happie.Web.csproj" />
+</Solution>
