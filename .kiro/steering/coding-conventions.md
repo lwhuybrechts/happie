@@ -36,10 +36,10 @@ public class ExampleEntity : MyTableEntity
 |---|---|---|
 | `HouseholdEntity` | `"households"` | `{HouseholdId}` |
 | `HousemateEntity` | `{HouseholdId}` | `{HousemateId}` |
-| `AttendanceRecordEntity` | `{HouseholdId}` | `{YYYY-MM-DD}#{HousemateId}` |
+| `AttendanceRecordEntity` | `{HouseholdId}` | `{YYYY-MM-DD}_{HousemateId}` |
 | `DishRecordEntity` | `{HouseholdId}` | `{YYYY-MM-DD}` |
-| `CommentEntity` | `{HouseholdId}` | `{YYYY-MM-DD}#{HousemateId}` |
-| `DayHistoryEntity` | `{HouseholdId}` | `{YYYY-MM-DD}#{InvertedTimestamp}` |
+| `CommentEntity` | `{HouseholdId}` | `{YYYY-MM-DD}_{HousemateId}` |
+| `DayHistoryEntity` | `{HouseholdId}` | `{YYYY-MM-DD}_{InvertedTimestamp}` |
 | `PushSubscriptionEntity` | `{HouseholdId}` | `{HousemateId}` |
 
 ## Repository Pattern Conventions (MUST follow)
@@ -300,6 +300,32 @@ public class MyRepositoryTests
 }
 ```
 
+### Property-based tests (FsCheck)
+
+- Use **FsCheck 3.1+** which supports `async` property callbacks natively — **never use `GetAwaiter().GetResult()`**
+- Property test methods return `Task<Property>`; the lambda passed to `Prop.ForAll` is `async`; call `.ToProperty()` on the result
+- Mid-iteration cleanup (`DeleteAsync` etc.) is sometimes necessary even when tables are truncated at construction time, because FsCheck runs all iterations within a single test invocation — data written in iteration N persists into iteration N+1
+
+```csharp
+[Property(MaxTest = 100)]
+public Task<Property> MyRepository_SomeProperty()
+{
+    return Prop.ForAll(
+        MyArb(),
+        async input =>
+        {
+            await _repository.UpsertAsync(input);
+            var result = await _repository.GetAsync(input.Id);
+
+            // Clean up if leftover data could affect subsequent iterations.
+            await _repository.DeleteAsync(input.Id);
+
+            return (result != null)
+                .Label($"Expected to find {input.Id} after upsert");
+        }).ToProperty();
+}
+```
+
 ---
 
 ## Code Conventions (MUST follow)
@@ -328,6 +354,13 @@ public class MyRepositoryTests
 - Enabled project-wide
 - Use `?` for all nullable references
 - Initialize non-nullable properties with default values or in constructor
+
+### LINQ Style
+
+- **Always use method syntax** (`.Where(...)`, `.Select(...)`, `.All(...)`, etc.)
+- **Never use query syntax** (`from x in ...`, `where`, `select` keywords)
+- ❌ BAD: `from a in gen from b in gen where a != b select (a, b)`
+- ✅ GOOD: `gen.SelectMany(a => gen.Where(b => b != a).Select(b => (a, b)))`
 
 ### Implicit Usings
 

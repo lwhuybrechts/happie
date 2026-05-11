@@ -44,7 +44,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - Register all repositories in `Program.cs` as singletons
     - _Requirements: 2.2_
 
-  - [ ]* 3.3 Write property test for data isolation between households
+  - [x]* 3.3 Write property test for data isolation between households
     - **Property 6: Data isolation between households**
     - **Validates: Requirements 1.8, 2.2, 2.3**
 

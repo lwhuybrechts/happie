@@ -21,14 +21,14 @@ public class CommentRepository : BaseRepository<CommentEntity>, ICommentReposito
     /// <inheritdoc/>
     public async Task<IReadOnlyList<Comment>> GetByDateAsync(Guid householdId, DateOnly date, CancellationToken ct = default)
     {
-        var entities = await QueryByRowKeyPrefixAsync(householdId.ToString(), $"{date:yyyy-MM-dd}#", ct);
+        var entities = await QueryByRowKeyPrefixAsync(householdId.ToString(), $"{date:yyyy-MM-dd}_", ct);
         return entities.Select(e => _mapper.ToModel(householdId, e)).ToList();
     }
 
     /// <inheritdoc/>
     public async Task<Comment?> GetAsync(Guid householdId, DateOnly date, Guid housemateId, CancellationToken ct = default)
     {
-        var entity = await GetAsync(householdId.ToString(), $"{date:yyyy-MM-dd}#{housemateId}", ct);
+        var entity = await GetAsync(householdId.ToString(), $"{date:yyyy-MM-dd}_{housemateId}", ct);
         return entity is null ? null : _mapper.ToModel(householdId, entity);
     }
 
@@ -38,7 +38,7 @@ public class CommentRepository : BaseRepository<CommentEntity>, ICommentReposito
 
     /// <inheritdoc/>
     public Task DeleteAsync(Guid householdId, DateOnly date, Guid housemateId, CancellationToken ct = default)
-        => DeleteAsync(householdId.ToString(), $"{date:yyyy-MM-dd}#{housemateId}", ct);
+        => DeleteAsync(householdId.ToString(), $"{date:yyyy-MM-dd}_{housemateId}", ct);
 
     /// <inheritdoc/>
     public async Task<IReadOnlyList<Comment>> GetAllByHouseholdAsync(Guid householdId, CancellationToken ct = default)

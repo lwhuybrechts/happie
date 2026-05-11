@@ -17,7 +17,7 @@ public class DayHistoryEntity : MyTableEntity
     {
         PartitionKey = householdId.ToString();
         var invertedTicks = DateTimeOffset.MaxValue.Ticks - changedAt.Ticks;
-        RowKey = $"{date:yyyy-MM-dd}#{invertedTicks}";
+        RowKey = $"{date:yyyy-MM-dd}_{invertedTicks}";
     }
 
     /// <summary>The timestamp when this change was made.</summary>

@@ -13,7 +13,7 @@ public class AttendanceRecordEntity : MyTableEntity
     public AttendanceRecordEntity(Guid householdId, DateOnly date, Guid housemateId)
     {
         PartitionKey = householdId.ToString();
-        RowKey = $"{date:yyyy-MM-dd}#{housemateId}";
+        RowKey = $"{date:yyyy-MM-dd}_{housemateId}";
     }
 
     /// <summary>The ID of the housemate this record belongs to.</summary>

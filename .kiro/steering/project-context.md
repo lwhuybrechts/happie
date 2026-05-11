@@ -85,10 +85,10 @@ PartitionKey is always `HouseholdId` (string) so all records for a household are
 |---|---|---|
 | `Households` | `"households"` | `{HouseholdId}` |
 | `Housemates` | `{HouseholdId}` | `{HousemateId}` |
-| `AttendanceRecords` | `{HouseholdId}` | `{YYYY-MM-DD}#{HousemateId}` |
+| `AttendanceRecords` | `{HouseholdId}` | `{YYYY-MM-DD}_{HousemateId}` |
 | `DishRecords` | `{HouseholdId}` | `{YYYY-MM-DD}` |
-| `Comments` | `{HouseholdId}` | `{YYYY-MM-DD}#{HousemateId}` |
-| `DayHistory` | `{HouseholdId}` | `{YYYY-MM-DD}#{InvertedTimestamp}` |
+| `Comments` | `{HouseholdId}` | `{YYYY-MM-DD}_{HousemateId}` |
+| `DayHistory` | `{HouseholdId}` | `{YYYY-MM-DD}_{InvertedTimestamp}` |
 | `PushSubscriptions` | `{HouseholdId}` | `{HousemateId}` |
 
 `DayHistory` uses an inverted timestamp (`DateTimeOffset.MaxValue.Ticks - entry.ChangedAt.Ticks`) so entries are returned in reverse-chronological order by default.

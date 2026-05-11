@@ -9,7 +9,7 @@ public class AttendanceRecordMapper : IAttendanceRecordMapper
     /// <inheritdoc/>
     public AttendanceRecord ToModel(Guid householdId, AttendanceRecordEntity entity)
     {
-        // Row key format: "YYYY-MM-DD#HousemateId".
+        // Row key format: "YYYY-MM-DD_HousemateId".
         var date = DateOnly.Parse(entity.RowKey[..10]);
         return new AttendanceRecord(householdId, entity.HousemateId, date, entity.Status);
     }

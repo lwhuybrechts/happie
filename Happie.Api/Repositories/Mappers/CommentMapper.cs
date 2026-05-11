@@ -9,7 +9,7 @@ public class CommentMapper : ICommentMapper
     /// <inheritdoc/>
     public Comment ToModel(Guid householdId, CommentEntity entity)
     {
-        // Row key format: "YYYY-MM-DD#HousemateId".
+        // Row key format: "YYYY-MM-DD_HousemateId".
         var date = DateOnly.Parse(entity.RowKey[..10]);
         return new Comment(householdId, entity.HousemateId, date, entity.Text);
     }

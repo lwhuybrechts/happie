@@ -12,7 +12,7 @@ public class CommentEntity : MyTableEntity
     public CommentEntity(Guid householdId, DateOnly date, Guid housemateId)
     {
         PartitionKey = householdId.ToString();
-        RowKey = $"{date:yyyy-MM-dd}#{housemateId}";
+        RowKey = $"{date:yyyy-MM-dd}_{housemateId}";
     }
 
     /// <summary>The comment text, max 200 characters.</summary>
