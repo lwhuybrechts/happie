@@ -14,7 +14,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
   - Add `Sentry.Extensions.Logging` NuGet package to the Functions project for Sentry integration
   - _Requirements: 2.2_
 
-- [ ] 2. Azure Key Vault — secrets management
+- [x] 2. Azure Key Vault — secrets management
   - Provision an Azure Key Vault and store the following secrets: `JwtSigningKey`, `TableStorageConnectionString`, `VapidPublicKey`, `VapidPrivateKey`, `SentryDsn`
   - Configure the Azure Functions app to use `DefaultAzureCredential` (Managed Identity in Azure, local dev via `az login`) to access Key Vault at startup via `Azure.Extensions.AspNetCore.Configuration.Secrets`
   - Add a `local.settings.json` entry pointing to the Key Vault URI for local development; never commit actual secret values
@@ -23,19 +23,34 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
   - Register Sentry as an `ILogger` provider in the Functions startup using the DSN from `SentryOptions`; all `ILogger.Log*` calls and unhandled exceptions will flow to Sentry automatically
   - _Requirements: 2.2_
 
-- [ ] 3. Azure Table Storage infrastructure
-  - [ ] 3.1 Implement `TableStorageClient` wrapper
+- [x] 3. Azure Table Storage infrastructure
+  - [x] 3.1 Implement `TableStorageClient` wrapper
     - Create a typed wrapper around `TableServiceClient` that exposes helpers for upsert, get, delete, and prefix-range queries
     - Wire connection string from Key Vault secret `TableStorageConnectionString`
     - _Requirements: 2.2_
 
-  - [ ]* 3.2 Write property test for data isolation between households
+  - [x] 3.2 Implement `BaseRepository<TEntity>` and concrete repositories
+    - Create abstract class `BaseRepository<TEntity>` in `Happie.Api/Repositories/` where `TEntity : MyTableEntity`
+    - Constructor takes `ITableStorageClient` and binds a `private const string TableName` defined by each subclass
+    - Expose `protected` async methods: `UpsertAsync`, `GetAsync`, `DeleteAsync`, `QueryByPartitionAsync`, `QueryByRowKeyPrefixAsync` — all delegating to `ITableStorageClient` with the bound table name
+    - Create concrete repositories with their interfaces in `Happie.Api/Repositories/`:
+      - `IHouseholdRepository` / `HouseholdRepository` — table `Households`
+      - `IHousemateRepository` / `HousemateRepository` — table `Housemates`
+      - `IAttendanceRepository` / `AttendanceRepository` — table `AttendanceRecords`
+      - `IDishRepository` / `DishRepository` — table `DishRecords`
+      - `ICommentRepository` / `CommentRepository` — table `Comments`
+      - `IDayHistoryRepository` / `DayHistoryRepository` — table `DayHistory`
+      - `IPushSubscriptionRepository` / `PushSubscriptionRepository` — table `PushSubscriptions`
+    - Register all repositories in `Program.cs` as singletons
+    - _Requirements: 2.2_
+
+  - [ ]* 3.3 Write property test for data isolation between households
     - **Property 6: Data isolation between households**
     - **Validates: Requirements 1.8, 2.2, 2.3**
 
 - [ ] 4. Authentication — backend
   - [ ] 4.1 Implement `POST /api/auth/login`
-    - Look up `Households` table by password hash (bcrypt verify); return signed JWT (signed with `JwtSigningKey` from Key Vault) scoped to `HouseholdId` + list of active housemates
+    - Look up household via `IHouseholdRepository`; verify password hash (bcrypt); return signed JWT (signed with `JwtSigningKey` from Key Vault) scoped to `HouseholdId` + list of active housemates fetched via `IHousemateRepository`
     - Return 401 with `UNAUTHORIZED` code on mismatch
     - _Requirements: 1.1, 1.2, 1.6_
 
@@ -56,7 +71,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Property 5: Logout invalidates session**
     - **Validates: Requirements 1.7**
 
-  - [ ] 4.6 Write unit tests for authentication
+  - [~] 4.6 Write unit tests for authentication
     - Login with correct password returns expected household
     - Login with incorrect password returns 401
     - Logout clears session token
@@ -64,7 +79,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
 
 - [ ] 5. Housemate management — backend
   - [ ] 5.1 Implement `GET /api/housemates`
-    - Return all active (non-deleted) housemates for the household
+    - Return all active (non-deleted) housemates for the household via `IHousemateRepository`
     - _Requirements: 12.1, 12.8_
 
   - [ ]* 5.2 Write property test: active housemate list contains no deleted housemates
@@ -72,7 +87,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Validates: Requirements 12.1, 12.8**
 
   - [ ] 5.3 Implement `POST /api/housemates`
-    - Validate name (1–50 chars, trimmed, not empty); auto-assign first unused palette color
+    - Validate name (1–50 chars, trimmed, not empty); fetch existing housemates via `IHousemateRepository` to auto-assign first unused palette color; persist via `IHousemateRepository`
     - Return 422 `VALIDATION_ERROR` on invalid name
     - _Requirements: 12.3, 12.4, 12.10_
 
@@ -85,7 +100,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Validates: Requirements 12.4**
 
   - [ ] 5.6 Implement `PATCH /api/housemates/{housemateId}` (rename + color change)
-    - Validate name rules; reject color already in use with 409 `COLOR_CONFLICT`
+    - Validate name rules; check color uniqueness via `IHousemateRepository`; reject color already in use with 409 `COLOR_CONFLICT`; persist via `IHousemateRepository`
     - _Requirements: 12.11, 12.12, 12.13, 12.14_
 
   - [ ]* 5.7 Write property test: color uniqueness invariant within a household
@@ -97,18 +112,18 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Validates: Requirements 12.14**
 
   - [ ] 5.9 Implement `DELETE /api/housemates/{housemateId}`
-    - Check for linked attendance records or comments; hard delete if none, soft delete (`IsDeleted = true`) otherwise
+    - Check for linked records via `IAttendanceRepository` and `ICommentRepository`; hard delete via `IHousemateRepository` if none, soft delete (`IsDeleted = true`) via `IHousemateRepository` otherwise
     - _Requirements: 12.5, 12.6, 12.7_
 
   - [ ]* 5.10 Write property test: hard delete removes housemate with no history
     - **Property 24: Hard delete removes housemate with no history**
     - **Validates: Requirements 12.5**
 
-  - [ ]* 5.11 Write property test: soft delete preserves history but removes from active list
+  - [~]* 5.11 Write property test: soft delete preserves history but removes from active list
     - **Property 25: Soft delete preserves history but removes from active list**
     - **Validates: Requirements 12.6**
 
-  - [ ]* 5.12 Write property test: deleted housemate name formatted as "Name (deleted)"
+  - [~]* 5.12 Write property test: deleted housemate name formatted as "Name (deleted)"
     - **Property 26: Deleted housemate name formatted as "Name (deleted)"**
     - **Validates: Requirements 12.7**
 
@@ -124,7 +139,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
 
 - [ ] 7. Day plan — backend
   - [ ] 7.1 Implement `GET /api/days/{date}`
-    - Return attendance for all active housemates (default `Unknown` if no record), dish, comments, and history entries for the date
+    - Fetch active housemates via `IHousemateRepository` (default `Unknown` attendance if no record), attendance via `IAttendanceRepository`, dish via `IDishRepository`, comments via `ICommentRepository`, and history entries via `IDayHistoryRepository`
     - Format soft-deleted housemate names as `"Name (deleted)"` in historical data
     - _Requirements: 3.4, 3.5, 3.6, 12.7_
 
@@ -133,7 +148,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Validates: Requirements 3.4**
 
   - [ ] 7.3 Implement `PUT /api/days/{date}/attendance/{housemateId}`
-    - Upsert `AttendanceRecords`; write `DayHistory` entry attributing the change to `X-Housemate-Id`
+    - Upsert via `IAttendanceRepository`; write history entry via `IDayHistoryRepository` attributing the change to `X-Housemate-Id`
     - _Requirements: 4.1, 4.3, 4.4, 1.5_
 
   - [ ]* 7.4 Write property test: attendance round-trip with overwrite semantics
@@ -145,7 +160,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Validates: Requirements 1.5**
 
   - [ ] 7.6 Implement `PUT /api/days/{date}/dish`
-    - Validate max 100 chars (trimmed); upsert `DishRecords`; write `DayHistory` entry
+    - Validate max 100 chars (trimmed); upsert via `IDishRepository`; write history entry via `IDayHistoryRepository`
     - Return 422 `VALIDATION_ERROR` on length violation
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
@@ -158,8 +173,8 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Validates: Requirements 5.4**
 
   - [ ] 7.9 Implement `PUT /api/days/{date}/comments/{housemateId}` and `DELETE`
-    - PUT: validate max 200 chars (trimmed); upsert `Comments`; write `DayHistory` entry
-    - DELETE: remove comment row; write `DayHistory` entry
+    - PUT: validate max 200 chars (trimmed); upsert via `ICommentRepository`; write history entry via `IDayHistoryRepository`
+    - DELETE: remove comment via `ICommentRepository`; write history entry via `IDayHistoryRepository`
     - Return 422 on length violation
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
@@ -176,7 +191,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Validates: Requirements 6.5**
 
   - [ ] 7.13 Implement `GET /api/days?from={date}&to={date}`
-    - Return attendance summaries (housemate color + status) for the date range; used by CalendarPage
+    - Fetch attendance summaries (housemate color + status) for the date range via `IAttendanceRepository` and `IHousemateRepository`; used by CalendarPage
     - _Requirements: 13.1, 13.2, 13.4_
 
   - [ ]* 7.14 Write property test: calendar color indicators match eating-in housemates
@@ -194,12 +209,12 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
 
 - [ ] 9. Push notifications — backend
   - [ ] 9.1 Implement `POST /api/push/subscribe`
-    - Upsert `PushSubscriptions` for the active housemate; store locale from request body
+    - Upsert push subscription for the active housemate via `IPushSubscriptionRepository`; store locale from request body
     - _Requirements: 8.2, 8.4_
 
   - [ ] 9.2 Implement `POST /api/days/{date}/nudge`
-    - Validate recipients are all `Unknown` status; validate `predefinedMessageKey` XOR `message` (max 20 chars, trimmed)
-    - Resolve predefined message keys in each recipient's stored locale; dispatch VAPID push per recipient using `VapidPublicKey` and `VapidPrivateKey` from Key Vault
+    - Validate recipients are all `Unknown` status via `IAttendanceRepository`; validate `predefinedMessageKey` XOR `message` (max 20 chars, trimmed)
+    - Fetch recipient subscriptions via `IPushSubscriptionRepository`; resolve predefined message keys in each recipient's stored locale; dispatch VAPID push per recipient using `VapidPublicKey` and `VapidPrivateKey` from Key Vault
     - Collect per-recipient failures; log each failure via `ILogger.LogWarning` (flows to Sentry automatically) and return them in the response without aborting delivery to others
     - _Requirements: 7.1, 7.2, 7.4, 7.5_
 
@@ -212,7 +227,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Validates: Requirements 7.4**
 
   - [ ] 9.5 Implement automatic push notifications on day plan changes
-    - After any successful attendance/dish/comment save for today or tomorrow, dispatch push to all active housemates except the actor
+    - After any successful attendance/dish/comment save for today or tomorrow, fetch all active housemate subscriptions via `IPushSubscriptionRepository` and dispatch push to all except the actor
     - Log push failures server-side via `ILogger.LogWarning` / `ILogger.LogError` (flows to Sentry automatically); do not roll back the save
     - _Requirements: 10.1, 10.2, 10.3, 10.5_
 
@@ -228,7 +243,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Property 19: Push failure does not interrupt save**
     - **Validates: Requirements 10.5**
 
-  - [ ] 9.9 Write unit tests for push notifications
+  - [~] 9.9 Write unit tests for push notifications
     - Nudge message validation rejects strings > 20 chars (boundary: 20, 21)
     - Auto-notification is not sent to the housemate who made the change
     - Push failure does not cause save to fail (mock push service throws, save succeeds)
@@ -260,7 +275,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
   - [ ] 11.5 Write unit test: default locale is "nl" when no locale is set
     - _Requirements: 11.4_
 
-- [ ] 12. Blazor WASM — LoginPage and session management
+- [~] 12. Blazor WASM — LoginPage and session management
   - [ ] 12.1 Implement `LoginPage` (`/`)
     - Password entry form; on success store JWT in `localStorage`, display housemate selection list
     - On housemate selection store `ActiveHousemateId` in `localStorage`; redirect to `/day/{today}`
@@ -271,7 +286,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Property 2: Active housemate selection round-trip**
     - **Validates: Requirements 1.3, 1.4**
 
-  - [ ] 12.3 Implement session restore on app startup
+  - [~] 12.3 Implement session restore on app startup
     - On load, read JWT + `ActiveHousemateId` from `localStorage`; if valid JWT skip login screen
     - _Requirements: 1.4, 1.5_
 
@@ -291,7 +306,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - Call `PUT /api/days/{date}/dish`; show toast on error
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ] 13.3 Implement `CommentEditor` component
+  - [~] 13.3 Implement `CommentEditor` component
     - Inline editable field per housemate, max 200 chars (client-side validation); upsert on save, DELETE on clear
     - Optimistic save with rollback; show toast on error
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
@@ -313,7 +328,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - _Requirements: 3.1, 3.2, 3.3, 3.7, 3.8_
 
 - [ ] 14. Blazor WASM — CalendarPage
-  - [ ] 14.1 Implement `CalendarGrid` component
+  - [~] 14.1 Implement `CalendarGrid` component
     - Month grid; each cell shows color dots for housemates with `EatingIn` status; empty cell if none
     - Tap a day to navigate to `/day/{date}`
     - _Requirements: 13.1, 13.2, 13.3, 13.4_
@@ -323,12 +338,12 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - CalendarPage is read-only; tapping a day navigates to `/day/{date}`
     - _Requirements: 13.1, 13.2, 13.3, 13.4_
 
-- [ ] 15. Blazor WASM — HousematesPage
+- [~] 15. Blazor WASM — HousematesPage
   - [ ] 15.1 Implement `HousemateColorPicker` component
     - Display the 30-color predefined palette; highlight current color; disable colors in use by other housemates
     - _Requirements: 12.11, 12.12_
 
-  - [ ] 15.2 Implement `HousematesPage` (`/housemates`)
+  - [~] 15.2 Implement `HousematesPage` (`/housemates`)
     - List active housemates; add / rename / remove / color-change actions
     - Active housemate switch without re-entering password
     - Show error toast on any save failure; leave list unchanged on failure
@@ -338,7 +353,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 17. Push notification permission and subscription — frontend
-  - [ ] 17.1 Implement push permission request flow
+  - [~] 17.1 Implement push permission request flow
     - On first PWA launch, request notification permission; on grant call `POST /api/push/subscribe` with VAPID public key, subscription object, and current locale
     - Show informational message if permission is denied
     - _Requirements: 8.1, 8.2, 8.3_
