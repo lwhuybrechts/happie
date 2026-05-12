@@ -7,11 +7,11 @@ using Happie.Api.Models;
 using Happie.Api.Options;
 using Happie.Api.Infrastructure.Repositories;
 using Happie.Shared.Domain;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
+using MsOptions = Microsoft.Extensions.Options;
 
-namespace Happie.Tests;
+namespace Happie.Api.Tests.Handlers;
 
 /// <summary>Unit tests for <see cref="LoginHandler"/>.</summary>
 public class LoginHandlerTests
@@ -25,7 +25,7 @@ public class LoginHandlerTests
     /// <summary>Initializes a new instance of <see cref="LoginHandlerTests"/> with mocked dependencies.</summary>
     public LoginHandlerTests()
     {
-        var jwtOptions = Options.Create(new JwtOptions { SigningKey = TestSigningKey });
+        var jwtOptions = MsOptions.Options.Create(new JwtOptions { SigningKey = TestSigningKey });
 
         _sut = new LoginHandler(
             _householdRepositoryMock.Object,

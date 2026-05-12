@@ -54,11 +54,11 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - Return 401 with `UNAUTHORIZED` code on mismatch
     - _Requirements: 1.1, 1.2, 1.6_
 
-  - [ ]* 4.2 Write property test: correct password returns correct household
+  - [x]* 4.2 Write property test: correct password returns correct household
     - **Property 1: Correct password returns correct household**
     - **Validates: Requirements 1.2**
 
-  - [ ]* 4.3 Write property test: wrong password is denied
+  - [x]* 4.3 Write property test: wrong password is denied
     - **Property 4: Wrong password is denied**
     - **Validates: Requirements 1.6**
 
@@ -67,7 +67,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - Reject with 401 `UNAUTHORIZED` or 403 `FORBIDDEN` as appropriate
     - _Requirements: 1.7, 1.8_
 
-  - [ ]* 4.5 Write property test: logout invalidates session
+  - [x]* 4.5 Write property test: logout invalidates session
     - **Property 5: Logout invalidates session**
     - **Validates: Requirements 1.7**
 

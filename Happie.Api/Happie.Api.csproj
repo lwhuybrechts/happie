@@ -30,7 +30,10 @@
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>Happie.Tests</_Parameter1>
+      <_Parameter1>Happie.Api.Tests</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Happie.Api.IntegrationTests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
 

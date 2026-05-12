@@ -1,6 +1,6 @@
 using Azure.Data.Tables;
 
-namespace Happie.Tests;
+namespace Happie.Api.IntegrationTests.Infrastructure;
 
 /// <summary>Helper for truncating Azure Table Storage tables before tests.</summary>
 public static class TableHelper

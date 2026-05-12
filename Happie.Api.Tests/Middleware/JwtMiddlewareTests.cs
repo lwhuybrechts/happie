@@ -4,10 +4,10 @@ using System.Text;
 using ExpectedObjects;
 using Happie.Api.Middleware;
 using Happie.Api.Options;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using MsOptions = Microsoft.Extensions.Options;
 
-namespace Happie.Tests;
+namespace Happie.Api.Tests.Middleware;
 
 /// <summary>Unit tests for <see cref="JwtMiddleware"/>.</summary>
 public class JwtMiddlewareTests
@@ -20,7 +20,7 @@ public class JwtMiddlewareTests
     /// <summary>Initializes a new instance of <see cref="JwtMiddlewareTests"/>.</summary>
     public JwtMiddlewareTests()
     {
-        _sut = new JwtMiddleware(Options.Create(new JwtOptions { SigningKey = TestSigningKey }));
+        _sut = new JwtMiddleware(MsOptions.Options.Create(new JwtOptions { SigningKey = TestSigningKey }));
     }
 
     /// <summary>Valid token with correct signing key is accepted and yields the householdId.</summary>
@@ -29,7 +29,7 @@ public class JwtMiddlewareTests
     {
         // Arrange.
         var householdId = Guid.NewGuid();
-        var token = CreateToken(householdId, TestSigningKey, DateTime.UtcNow.AddDays(30));
+        var token = JwtTokenFactory.Create(householdId, TestSigningKey, DateTime.UtcNow.AddDays(30));
 
         // Act.
         var accepted = _sut.TryValidateToken(token, out var extractedId);
@@ -45,7 +45,7 @@ public class JwtMiddlewareTests
     public void TryValidateToken_WrongSigningKey_ReturnsFalse()
     {
         // Arrange.
-        var token = CreateToken(Guid.NewGuid(), DifferentSigningKey, DateTime.UtcNow.AddDays(30));
+        var token = JwtTokenFactory.Create(Guid.NewGuid(), DifferentSigningKey, DateTime.UtcNow.AddDays(30));
 
         // Act.
         var accepted = _sut.TryValidateToken(token, out _);
@@ -59,7 +59,7 @@ public class JwtMiddlewareTests
     public void TryValidateToken_ExpiredToken_ReturnsFalse()
     {
         // Arrange.
-        var token = CreateToken(Guid.NewGuid(), TestSigningKey, DateTime.UtcNow.AddSeconds(-1));
+        var token = JwtTokenFactory.Create(Guid.NewGuid(), TestSigningKey, DateTime.UtcNow.AddSeconds(-1));
 
         // Act.
         var accepted = _sut.TryValidateToken(token, out _);
@@ -213,25 +213,6 @@ public class JwtMiddlewareTests
     }
 
     // Create methods.
-
-    private static string CreateToken(Guid householdId, string signingKey, DateTime expires)
-    {
-        var keyBytes = Encoding.UTF8.GetBytes(signingKey);
-        var securityKey = new SymmetricSecurityKey(keyBytes);
-        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
-        {
-            new Claim("householdId", householdId.ToString()),
-        };
-
-        var tokenDescriptor = new JwtSecurityToken(
-            claims: claims,
-            expires: expires,
-            signingCredentials: credentials);
-
-        return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
-    }
 
     private static string CreateTokenWithoutHouseholdClaim(string signingKey, DateTime expires)
     {

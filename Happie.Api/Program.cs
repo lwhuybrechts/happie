@@ -16,7 +16,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using HappieSentryOptions = Happie.Api.Options.SentryOptions;
-using Happie.Api.Infrastructure.Mappers;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 

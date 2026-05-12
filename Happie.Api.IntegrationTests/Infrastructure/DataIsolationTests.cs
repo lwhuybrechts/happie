@@ -7,7 +7,7 @@ using Happie.Api.Infrastructure.Mappers;
 using Happie.Api.Infrastructure.Repositories;
 using Happie.Shared.Domain;
 
-namespace Happie.Tests;
+namespace Happie.Api.IntegrationTests.Infrastructure;
 
 /// <summary>Property-based tests verifying data isolation between households.</summary>
 public class DataIsolationTests
@@ -62,13 +62,14 @@ public class DataIsolationTests
                 var (householdA, householdB) = pair;
                 var housemateId = Guid.NewGuid();
 
-                // Write a housemate under household A.
+                // Arrange.
                 var housemate = new Housemate(housemateId, householdA, "Alice", HousemateColors.Palette[0], false);
                 await _housemateRepository.UpsertAsync(housemate);
 
-                // Query from household B — must return no results belonging to household A.
+                // Act.
                 var resultsB = await _housemateRepository.GetAllAsync(householdB);
 
+                // Assert.
                 // Clean up to avoid cross-iteration interference when household GUIDs collide.
                 await _housemateRepository.DeleteAsync(householdA, housemateId);
 
@@ -92,13 +93,14 @@ public class DataIsolationTests
             {
                 var (householdA, householdB, housemateId, date) = args;
 
-                // Write an attendance record under household A.
+                // Arrange.
                 var record = new AttendanceRecord(householdA, housemateId, date, AttendanceStatus.EatingIn);
                 await _attendanceRepository.UpsertAsync(record);
 
-                // Query from household B on the same date — must return no results belonging to household A.
+                // Act.
                 var resultsB = await _attendanceRepository.GetByDateAsync(householdB, date);
 
+                // Assert.
                 return resultsB.All(x => x.HouseholdId != householdA)
                     .Label($"Attendance written to household A ({householdA}) must not appear in household B ({householdB})");
             });
@@ -119,13 +121,14 @@ public class DataIsolationTests
             {
                 var (householdA, householdB, housemateId, date) = args;
 
-                // Write a dish record under household A.
+                // Arrange.
                 var dish = new DishRecord(householdA, date, "Pasta");
                 await _dishRepository.UpsertAsync(dish, housemateId);
 
-                // Query from household B on the same date — must return null (no dish for household B).
+                // Act.
                 var resultB = await _dishRepository.GetAsync(householdB, date);
 
+                // Assert.
                 return (resultB == null || resultB.HouseholdId != householdA)
                     .Label($"Dish written to household A ({householdA}) must not appear in household B ({householdB})");
             });
@@ -146,13 +149,14 @@ public class DataIsolationTests
             {
                 var (householdA, householdB, housemateId, date) = args;
 
-                // Write a comment under household A.
+                // Arrange.
                 var comment = new Comment(householdA, housemateId, date, "Home late");
                 await _commentRepository.UpsertAsync(comment);
 
-                // Query from household B on the same date — must return no results belonging to household A.
+                // Act.
                 var resultsB = await _commentRepository.GetByDateAsync(householdB, date);
 
+                // Assert.
                 // Clean up to avoid cross-iteration interference when household GUIDs collide.
                 await _commentRepository.DeleteAsync(householdA, date, housemateId);
 
@@ -177,7 +181,7 @@ public class DataIsolationTests
                 var (householdA, householdB) = pair;
                 var housemateId = Guid.NewGuid();
 
-                // Write a push subscription under household A.
+                // Arrange.
                 var subscription = new PushSubscription(
                     housemateId,
                     householdA,
@@ -187,9 +191,10 @@ public class DataIsolationTests
                     Locale.En);
                 await _pushSubscriptionRepository.UpsertAsync(subscription);
 
-                // Query from household B — must return no results belonging to household A.
+                // Act.
                 var resultsB = await _pushSubscriptionRepository.GetAllAsync(householdB);
 
+                // Assert.
                 // Clean up to avoid cross-iteration interference when household GUIDs collide.
                 await _pushSubscriptionRepository.DeleteAsync(householdA, housemateId);
 
@@ -213,7 +218,7 @@ public class DataIsolationTests
             {
                 var (householdA, householdB, housemateId, date) = args;
 
-                // Write a day history entry under household A.
+                // Arrange.
                 var entry = new DayHistoryEntry(
                     householdA,
                     date,
@@ -223,9 +228,10 @@ public class DataIsolationTests
                     "Set attendance to EatingIn");
                 await _dayHistoryRepository.AddAsync(entry);
 
-                // Query from household B on the same date — must return no results belonging to household A.
+                // Act.
                 var resultsB = await _dayHistoryRepository.GetByDateAsync(householdB, date);
 
+                // Assert.
                 return resultsB.All(x => x.HouseholdId != householdA)
                     .Label($"Day history written to household A ({householdA}) must not appear in household B ({householdB})");
             });

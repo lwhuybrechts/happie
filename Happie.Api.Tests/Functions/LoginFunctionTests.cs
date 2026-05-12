@@ -9,7 +9,7 @@ using Moq;
 using System.Text;
 using System.Text.Json;
 
-namespace Happie.Tests;
+namespace Happie.Api.Tests.Functions;
 
 /// <summary>Unit tests for <see cref="LoginFunction"/>.</summary>
 public class LoginFunctionTests
@@ -42,7 +42,7 @@ public class LoginFunctionTests
         // Assert.
         var response = Assert.IsType<LoginResponse>(Assert.IsType<OkObjectResult>(result).Value);
         Assert.Equal(token, response.Token);
-        
+
         new HousemateDto(housemateId, "Alice", HousemateColors.Palette[0])
             .ToExpectedObject()
             .ShouldEqual(Assert.Single(response.Housemates));
