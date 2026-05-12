@@ -65,9 +65,9 @@ public class LoginFunctionTests
         Assert.Contains("UNAUTHORIZED", json);
     }
 
-    /// <summary>Empty password body returns HTTP 400.</summary>
+    /// <summary>Empty password body returns HTTP 422 with VALIDATION_ERROR code.</summary>
     [Fact]
-    public async Task Run_EmptyPassword_ReturnsBadRequest()
+    public async Task Run_EmptyPassword_ReturnsUnprocessableEntity()
     {
         // Arrange.
         var request = HttpRequestFactory.Create(new { Password = "" });
@@ -76,7 +76,8 @@ public class LoginFunctionTests
         var result = await _sut.Run(request, CancellationToken.None);
 
         // Assert.
-        Assert.IsType<BadRequestObjectResult>(result);
+        var json = JsonSerializer.Serialize(Assert.IsType<UnprocessableEntityObjectResult>(result).Value);
+        Assert.Contains("VALIDATION_ERROR", json);
     }
 
     /// <summary>Null body returns HTTP 400.</summary>

@@ -8,12 +8,14 @@
 |---|---|---|
 | `Happie.Shared/Domain/` | `Happie.Shared.Domain` | Shared enums and constants used by both client and server: `AttendanceStatus`, `ChangeType`, `NudgeMessageKey`, `Locale`, `HousemateColors` |
 | `Happie.Shared/Contracts/` | `Happie.Shared.Contracts` | HTTP wire format types shared between client and server: request bodies, response envelopes, DTOs |
+| `Happie.Shared/Validation/` | `Happie.Shared.Validation` | Shared DataAnnotations validation attributes: `ValidEnumAttribute` |
 | `Happie.Api/Domain/` | `Happie.Api.Domain` | Server-only business objects used by handlers and repositories: `Housemate`, `Household`, `AttendanceRecord`, `DishRecord`, `Comment`, `DayHistoryEntry`, `PushSubscription`, `NudgeRequest` |
 | `Happie.Api/Results/` | `Happie.Api.Results` | Internal handler return types: `LoginResult`, `UpdateHousemateResult`, `DeleteHousemateOutcome`, `UpdateHousemateOutcome` |
 | `Happie.Api/Infrastructure/Entities/` | `Happie.Api.Infrastructure.Entities` | Table Storage entity classes |
 | `Happie.Api/Infrastructure/Mappers/` | `Happie.Api.Infrastructure.Mappers` | Mapper interfaces and implementations |
 | `Happie.Api/Infrastructure/Repositories/` | `Happie.Api.Infrastructure.Repositories` | Repository interfaces and implementations |
 | `Happie.Api/Handlers/` | `Happie.Api.Handlers` | Business logic handlers |
+| `Happie.Api/Http/` | `Happie.Api.Http` | HTTP infrastructure helpers: `ReadResult<T>`, `RequestValidator`, `RouteParser` |
 | `Happie.Api/Functions/` | `Happie.Api.Functions` | Thin HTTP controller functions |
 
 ### Naming conventions for contract types
@@ -28,14 +30,15 @@ Types in `Happie.Shared/Contracts/` follow these naming rules:
 
 ```
 Functions → Handlers → Domain ← Infrastructure
-                     ↑
-                  Contracts (shared with client)
+    ↓                    ↑
+   Http              Contracts (shared with client)
 ```
 
 - `Domain` does NOT depend on `Infrastructure`
 - `Infrastructure` depends on `Domain` (maps entities to/from domain types)
 - `Handlers` depend on `Domain` and `Infrastructure` (via repository interfaces)
-- `Functions` depend on `Handlers` and `Contracts`
+- `Http` contains HTTP infrastructure helpers used by `Functions` only
+- `Functions` depend on `Handlers`, `Contracts`, and `Http`
 - `Happie.Shared.Domain` (enums/constants) is a dependency of both `Happie.Api.Domain` and `Happie.Shared.Contracts`
 
 ---
@@ -251,16 +254,72 @@ public class HousemateMapper : IHousemateMapper
 - Stateless request processing
 - Configuration via `local.settings.json` for local development — **never commit this file**
 
+### Request body reading and validation
+
+All functions that accept a request body MUST use `RequestValidator.ReadAndValidateAsync<T>` from `Happie.Api.Http`. This centralises deserialisation, null-checking, and DataAnnotations validation into a single call.
+
+```csharp
+// ✅ GOOD: single call handles deserialisation, null check, and validation.
+var readResult = await RequestValidator.ReadAndValidateAsync<MyRequest>(request, cancellationToken);
+if (!readResult.IsSuccess)
+    return readResult.Error;
+
+// readResult.Body is guaranteed non-null here.
+await _handler.HandleAsync(readResult.Body.SomeProperty, cancellationToken);
+```
+
+- `ReadResult<T>` uses `[MemberNotNullWhen]` so the compiler knows `Body` is non-null when `IsSuccess` is true and `Error` is non-null when `IsSuccess` is false — no null-forgiving operators needed
+- NEVER use `req.ReadFromJsonAsync` directly in a function — always go through `RequestValidator`
+
+### Route parameter parsing
+
+All route and query parameter parsing MUST use `RouteParser` from `Happie.Api.Http`:
+
+```csharp
+if (!RouteParser.TryParseDate(date, out var parsedDate, out var error))
+    return error;
+
+if (!RouteParser.TryParseGuid(housemateId, out var parsedHousemateId, out var guidError))
+    return guidError;
+```
+
+When the generic error message from `RouteParser` is not appropriate (e.g. query parameters with custom messages), discard the `out` error with `_`:
+
+```csharp
+if (!RouteParser.TryParseDate(fromString, out var from, out _))
+    return new BadRequestObjectResult(new ApiErrorResponse("Query parameter 'from' must be in yyyy-MM-dd format.", ApiErrorCodes.BadRequest));
+```
+
+### DataAnnotations on request contracts
+
+Request contracts in `Happie.Shared/Contracts/` MUST declare their validation rules using DataAnnotations attributes. These are enforced automatically by `RequestValidator.ReadAndValidateAsync`.
+
+- Use `[Required]` for mandatory string fields
+- Use `[MaxLength(n)]` for length-limited fields — validates the raw (pre-trim) value
+- Use `[MinLength(n)]` for minimum-length collections
+- Use `[ValidEnum]` from `Happie.Shared.Validation` for enum properties
+
+```csharp
+public record UpdateDishRequest(
+    [property: JsonPropertyName("description")]
+    [property: MaxLength(100, ErrorMessage = "Dish description must be at most 100 characters.")]
+    string Description);
+
+public record UpdateAttendanceRequest(
+    [property: JsonPropertyName("status")]
+    [property: ValidEnum(ErrorMessage = "Invalid attendance status.")]
+    AttendanceStatus Status);
+```
+
 ### Functions as Thin Controllers
 
 Function classes act as thin controllers only. Business logic MUST be delegated to handler/service classes.
 
 **Function responsibilities:**
-- Parse and validate HTTP requests
-- Deserialize request payloads
+- Parse and validate route/query parameters via `RouteParser`
+- Read and validate request bodies via `RequestValidator.ReadAndValidateAsync`
 - Delegate to handler/service classes for business logic
 - Handle HTTP-specific concerns (status codes, headers, responses)
-- Log HTTP-level errors
 - Return appropriate HTTP responses
 
 **Handler/service responsibilities:**
@@ -270,33 +329,30 @@ Function classes act as thin controllers only. Business logic MUST be delegated 
 - Error handling for business logic
 
 ```csharp
-// ❌ BAD: Business logic in Function class
-public class MyFunction
+// ❌ BAD: manual deserialisation and validation in the function.
+public async Task<IActionResult> Run(HttpRequest request, CancellationToken cancellationToken)
 {
-    [Function("MyEndpoint")]
-    public async Task<IActionResult> Run(HttpRequest req)
-    {
-        var data = await req.ReadFromJsonAsync<MyData>();
-        // ❌ Don't do complex processing here
-        var result = await _repository.GetAsync(data.Id);
-        var processed = ProcessComplexLogic(result);
-        return new OkObjectResult(processed);
-    }
+    MyRequest? body;
+    try { body = await request.ReadFromJsonAsync<MyRequest>(cancellationToken); }
+    catch { return new BadRequestObjectResult(...); }
+    if (body is null) return new BadRequestObjectResult(...);
+    if (string.IsNullOrWhiteSpace(body.Name)) return new UnprocessableEntityObjectResult(...);
+    ...
 }
 
-// ✅ GOOD: Delegate to handler
-public class MyFunction
+// ✅ GOOD: use RequestValidator and RouteParser, delegate to handler.
+public async Task<IActionResult> Run(
+    HttpRequest request, string date, CancellationToken cancellationToken)
 {
-    private readonly IMyHandler _handler;
+    if (!RouteParser.TryParseDate(date, out var parsedDate, out var routeError))
+        return routeError;
 
-    [Function("MyEndpoint")]
-    public async Task<IActionResult> Run(HttpRequest req)
-    {
-        var data = await req.ReadFromJsonAsync<MyData>();
-        if (data == null) return new BadRequestResult();
-        var result = await _handler.HandleAsync(data);
-        return new OkObjectResult(result);
-    }
+    var readResult = await RequestValidator.ReadAndValidateAsync<MyRequest>(request, cancellationToken);
+    if (!readResult.IsSuccess)
+        return readResult.Error;
+
+    var result = await _handler.HandleAsync(parsedDate, readResult.Body.Name, cancellationToken);
+    return new OkObjectResult(result);
 }
 ```
 
@@ -671,6 +727,13 @@ Every class, record, interface, and enum MUST live in its own `.cs` file. Never 
 
 - Common namespaces are auto-imported (`System`, `System.Collections.Generic`, etc.)
 - Do not add redundant using statements for implicit namespaces
+
+### Variable naming
+
+- **Never use abbreviations in variable names** — use full, descriptive names
+- ❌ BAD: `ct`, `req`, `fromStr`, `toStr`, `read`
+- ✅ GOOD: `cancellationToken`, `request`, `fromString`, `toString`, `readResult`
+- Exception: loop variables and LINQ lambda parameters follow the existing LINQ style rule (`x` for single non-nested lambdas)
 
 ### Configuration — Options Pattern (MUST follow)
 

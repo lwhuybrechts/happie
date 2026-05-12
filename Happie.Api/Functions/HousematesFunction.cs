@@ -1,5 +1,6 @@
 using Happie.Api.Constants;
 using Happie.Api.Handlers;
+using Happie.Api.Http;
 using Happie.Api.Results;
 using Happie.Shared.Contracts;
 using Microsoft.AspNetCore.Http;
@@ -22,13 +23,13 @@ public class HousematesFunction
     /// <summary>Returns all active (non-deleted) housemates for the authenticated household.</summary>
     [Function("GetHousemates")]
     public async Task<IActionResult> GetAsync(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "housemates")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "housemates")] HttpRequest request,
         FunctionContext context,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
 
-        var housemates = await _housemateHandler.GetActiveHousematesAsync(householdId, ct);
+        var housemates = await _housemateHandler.GetActiveHousematesAsync(householdId, cancellationToken);
 
         return new OkObjectResult(housemates);
     }
@@ -36,85 +37,67 @@ public class HousematesFunction
     /// <summary>Adds a new housemate to the authenticated household.</summary>
     [Function("AddHousemate")]
     public async Task<IActionResult> PostAsync(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "housemates")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "housemates")] HttpRequest request,
         FunctionContext context,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
 
-        AddHousemateRequest? body;
-        try
-        {
-            body = await req.ReadFromJsonAsync<AddHousemateRequest>(ct);
-        }
-        catch
-        {
-            return new BadRequestObjectResult(new ApiErrorResponse("Invalid request body.", ApiErrorCodes.BadRequest));
-        }
+        var readResult = await RequestValidator.ReadAndValidateAsync<AddHousemateRequest>(request, cancellationToken);
+        if (!readResult.IsSuccess)
+            return readResult.Error;
 
-        if (body is null || body.Name is null)
-            return new UnprocessableEntityObjectResult(new ApiErrorResponse("Name is required.", ApiErrorCodes.ValidationError));
+        var housemate = await _housemateHandler.AddHousemateAsync(householdId, readResult.Body.Name!, cancellationToken);
 
-        var result = await _housemateHandler.AddHousemateAsync(householdId, body.Name, ct);
-
-        if (result is null)
+        if (housemate is null)
             return new UnprocessableEntityObjectResult(new ApiErrorResponse("Name must be between 1 and 50 characters.", ApiErrorCodes.ValidationError));
 
-        return new ObjectResult(result) { StatusCode = StatusCodes.Status201Created };
+        return new ObjectResult(housemate) { StatusCode = StatusCodes.Status201Created };
     }
 
     /// <summary>Updates the name and/or color of an existing housemate.</summary>
     [Function("UpdateHousemate")]
     public async Task<IActionResult> PatchAsync(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "housemates/{housemateId}")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "housemates/{housemateId}")] HttpRequest request,
         string housemateId,
         FunctionContext context,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
 
-        if (!Guid.TryParse(housemateId, out var parsedHousemateId))
-            return new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound));
+        if (!RouteParser.TryParseGuid(housemateId, out var parsedHousemateId, out var error))
+            return error;
 
-        UpdateHousemateRequest? body;
-        try
+        var readResult = await RequestValidator.ReadAndValidateAsync<UpdateHousemateRequest>(request, cancellationToken);
+        if (!readResult.IsSuccess)
+            return readResult.Error;
+
+        var updateResult = await _housemateHandler.UpdateHousemateAsync(householdId, parsedHousemateId, readResult.Body.Name, readResult.Body.Color, cancellationToken);
+
+        return updateResult.Outcome switch
         {
-            body = await req.ReadFromJsonAsync<UpdateHousemateRequest>(ct);
-        }
-        catch
-        {
-            return new BadRequestObjectResult(new ApiErrorResponse("Invalid request body.", ApiErrorCodes.BadRequest));
-        }
-
-        if (body is null)
-            return new UnprocessableEntityObjectResult(new ApiErrorResponse("Request body is required.", ApiErrorCodes.ValidationError));
-
-        var result = await _housemateHandler.UpdateHousemateAsync(householdId, parsedHousemateId, body.Name, body.Color, ct);
-
-        return result.Outcome switch
-        {
-            UpdateHousemateOutcome.Success => new OkObjectResult(result.Housemate),
+            UpdateHousemateOutcome.Success => new OkObjectResult(updateResult.Housemate),
             UpdateHousemateOutcome.NotFound => new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound)),
-            UpdateHousemateOutcome.ValidationError => new UnprocessableEntityObjectResult(new ApiErrorResponse(result.ErrorMessage!, ApiErrorCodes.ValidationError)),
-            UpdateHousemateOutcome.ColorConflict => new ConflictObjectResult(new ApiErrorResponse(result.ErrorMessage!, ApiErrorCodes.ColorConflict)),
-            _ => throw new InvalidOperationException($"Unhandled {nameof(UpdateHousemateOutcome)}: {result.Outcome}"),
+            UpdateHousemateOutcome.ValidationError => new UnprocessableEntityObjectResult(new ApiErrorResponse(updateResult.ErrorMessage!, ApiErrorCodes.ValidationError)),
+            UpdateHousemateOutcome.ColorConflict => new ConflictObjectResult(new ApiErrorResponse(updateResult.ErrorMessage!, ApiErrorCodes.ColorConflict)),
+            _ => throw new InvalidOperationException($"Unhandled {nameof(UpdateHousemateOutcome)}: {updateResult.Outcome}"),
         };
     }
 
     /// <summary>Deletes a housemate from the authenticated household.</summary>
     [Function("DeleteHousemate")]
     public async Task<IActionResult> DeleteAsync(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "housemates/{housemateId}")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "housemates/{housemateId}")] HttpRequest request,
         string housemateId,
         FunctionContext context,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
 
-        if (!Guid.TryParse(housemateId, out var parsedHousemateId))
-            return new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound));
+        if (!RouteParser.TryParseGuid(housemateId, out var parsedHousemateId, out var error))
+            return error;
 
-        var outcome = await _housemateHandler.DeleteHousemateAsync(householdId, parsedHousemateId, ct);
+        var outcome = await _housemateHandler.DeleteHousemateAsync(householdId, parsedHousemateId, cancellationToken);
 
         return outcome switch
         {

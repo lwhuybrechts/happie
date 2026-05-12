@@ -1,5 +1,6 @@
 using Happie.Api.Constants;
 using Happie.Api.Handlers;
+using Happie.Api.Http;
 using Happie.Shared.Contracts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,17 +22,17 @@ public class DaysFunction
     /// <summary>Returns the full day plan for the given date.</summary>
     [Function("GetDayPlan")]
     public async Task<IActionResult> GetAsync(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "days/{date}")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "days/{date}")] HttpRequest request,
         string date,
         FunctionContext context,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
 
-        if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", out var parsedDate))
-            return new BadRequestObjectResult(new ApiErrorResponse("Date must be in yyyy-MM-dd format.", ApiErrorCodes.BadRequest));
+        if (!RouteParser.TryParseDate(date, out var parsedDate, out var error))
+            return error;
 
-        var dayPlan = await _dayHandler.GetDayPlanAsync(householdId, parsedDate, ct);
+        var dayPlan = await _dayHandler.GetDayPlanAsync(householdId, parsedDate, cancellationToken);
 
         return new OkObjectResult(dayPlan);
     }
@@ -39,25 +40,25 @@ public class DaysFunction
     /// <summary>Returns attendance summaries for a date range, used by the calendar view.</summary>
     [Function("GetCalendar")]
     public async Task<IActionResult> GetCalendarAsync(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "days")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "days")] HttpRequest request,
         FunctionContext context,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
 
-        var fromStr = req.Query["from"].FirstOrDefault();
-        var toStr = req.Query["to"].FirstOrDefault();
+        var fromString = request.Query["from"].FirstOrDefault() ?? string.Empty;
+        var toString = request.Query["to"].FirstOrDefault() ?? string.Empty;
 
-        if (fromStr is null || !DateOnly.TryParseExact(fromStr, "yyyy-MM-dd", out var from))
+        if (!RouteParser.TryParseDate(fromString, out var from, out _))
             return new BadRequestObjectResult(new ApiErrorResponse("Query parameter 'from' must be in yyyy-MM-dd format.", ApiErrorCodes.BadRequest));
 
-        if (toStr is null || !DateOnly.TryParseExact(toStr, "yyyy-MM-dd", out var to))
+        if (!RouteParser.TryParseDate(toString, out var to, out _))
             return new BadRequestObjectResult(new ApiErrorResponse("Query parameter 'to' must be in yyyy-MM-dd format.", ApiErrorCodes.BadRequest));
 
         if (to < from)
             return new BadRequestObjectResult(new ApiErrorResponse("'to' must be on or after 'from'.", ApiErrorCodes.BadRequest));
 
-        var calendar = await _dayHandler.GetCalendarAsync(householdId, from, to, ct);
+        var calendar = await _dayHandler.GetCalendarAsync(householdId, from, to, cancellationToken);
 
         return new OkObjectResult(calendar);
     }
@@ -65,38 +66,26 @@ public class DaysFunction
     /// <summary>Upserts the attendance status for a housemate on the given date.</summary>
     [Function("PutAttendance")]
     public async Task<IActionResult> PutAttendanceAsync(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "days/{date}/attendance/{housemateId}")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "days/{date}/attendance/{housemateId}")] HttpRequest request,
         string date,
         string housemateId,
         FunctionContext context,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
         var actingHousemateId = (Guid)context.Items[FunctionContextKeys.HousemateId];
 
-        if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", out var parsedDate))
-            return new BadRequestObjectResult(new ApiErrorResponse("Date must be in yyyy-MM-dd format.", ApiErrorCodes.BadRequest));
+        if (!RouteParser.TryParseDate(date, out var parsedDate, out var dateError))
+            return dateError;
 
-        if (!Guid.TryParse(housemateId, out var parsedHousemateId))
-            return new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound));
+        if (!RouteParser.TryParseGuid(housemateId, out var parsedHousemateId, out var guidError))
+            return guidError;
 
-        UpdateAttendanceRequest? body;
-        try
-        {
-            body = await req.ReadFromJsonAsync<UpdateAttendanceRequest>(ct);
-        }
-        catch
-        {
-            return new BadRequestObjectResult(new ApiErrorResponse("Invalid request body.", ApiErrorCodes.BadRequest));
-        }
+        var readResult = await RequestValidator.ReadAndValidateAsync<UpdateAttendanceRequest>(request, cancellationToken);
+        if (!readResult.IsSuccess)
+            return readResult.Error;
 
-        if (body is null)
-            return new BadRequestObjectResult(new ApiErrorResponse("Request body is required.", ApiErrorCodes.BadRequest));
-
-        if (!Enum.IsDefined(body.Status))
-            return new UnprocessableEntityObjectResult(new ApiErrorResponse("Invalid attendance status.", ApiErrorCodes.ValidationError));
-
-        var found = await _dayHandler.UpsertAttendanceAsync(householdId, parsedDate, parsedHousemateId, body.Status, actingHousemateId, ct);
+        var found = await _dayHandler.UpsertAttendanceAsync(householdId, parsedDate, parsedHousemateId, readResult.Body.Status, actingHousemateId, cancellationToken);
 
         if (!found)
             return new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound));
@@ -107,36 +96,22 @@ public class DaysFunction
     /// <summary>Upserts the dish description for the given date.</summary>
     [Function("PutDish")]
     public async Task<IActionResult> PutDishAsync(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "days/{date}/dish")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "days/{date}/dish")] HttpRequest request,
         string date,
         FunctionContext context,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
         var actingHousemateId = (Guid)context.Items[FunctionContextKeys.HousemateId];
 
-        if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", out var parsedDate))
-            return new BadRequestObjectResult(new ApiErrorResponse("Date must be in yyyy-MM-dd format.", ApiErrorCodes.BadRequest));
+        if (!RouteParser.TryParseDate(date, out var parsedDate, out var error))
+            return error;
 
-        UpdateDishRequest? body;
-        try
-        {
-            body = await req.ReadFromJsonAsync<UpdateDishRequest>(ct);
-        }
-        catch
-        {
-            return new BadRequestObjectResult(new ApiErrorResponse("Invalid request body.", ApiErrorCodes.BadRequest));
-        }
+        var readResult = await RequestValidator.ReadAndValidateAsync<UpdateDishRequest>(request, cancellationToken);
+        if (!readResult.IsSuccess)
+            return readResult.Error;
 
-        if (body is null)
-            return new BadRequestObjectResult(new ApiErrorResponse("Request body is required.", ApiErrorCodes.BadRequest));
-
-        var trimmed = body.Description.Trim();
-
-        if (trimmed.Length > 100)
-            return new UnprocessableEntityObjectResult(new ApiErrorResponse("Dish description must be at most 100 characters.", ApiErrorCodes.ValidationError));
-
-        await _dayHandler.UpsertDishAsync(householdId, parsedDate, trimmed, actingHousemateId, ct);
+        await _dayHandler.UpsertDishAsync(householdId, parsedDate, readResult.Body.Description.Trim(), actingHousemateId, cancellationToken);
 
         return new NoContentResult();
     }
@@ -144,40 +119,26 @@ public class DaysFunction
     /// <summary>Upserts the comment for a housemate on the given date.</summary>
     [Function("PutComment")]
     public async Task<IActionResult> PutCommentAsync(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "days/{date}/comments/{housemateId}")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "days/{date}/comments/{housemateId}")] HttpRequest request,
         string date,
         string housemateId,
         FunctionContext context,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
         var actingHousemateId = (Guid)context.Items[FunctionContextKeys.HousemateId];
 
-        if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", out var parsedDate))
-            return new BadRequestObjectResult(new ApiErrorResponse("Date must be in yyyy-MM-dd format.", ApiErrorCodes.BadRequest));
+        if (!RouteParser.TryParseDate(date, out var parsedDate, out var dateError))
+            return dateError;
 
-        if (!Guid.TryParse(housemateId, out var parsedHousemateId))
-            return new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound));
+        if (!RouteParser.TryParseGuid(housemateId, out var parsedHousemateId, out var guidError))
+            return guidError;
 
-        UpdateCommentRequest? body;
-        try
-        {
-            body = await req.ReadFromJsonAsync<UpdateCommentRequest>(ct);
-        }
-        catch
-        {
-            return new BadRequestObjectResult(new ApiErrorResponse("Invalid request body.", ApiErrorCodes.BadRequest));
-        }
+        var readResult = await RequestValidator.ReadAndValidateAsync<UpdateCommentRequest>(request, cancellationToken);
+        if (!readResult.IsSuccess)
+            return readResult.Error;
 
-        if (body is null)
-            return new BadRequestObjectResult(new ApiErrorResponse("Request body is required.", ApiErrorCodes.BadRequest));
-
-        var trimmed = body.Text.Trim();
-
-        if (trimmed.Length > 200)
-            return new UnprocessableEntityObjectResult(new ApiErrorResponse("Comment must be at most 200 characters.", ApiErrorCodes.ValidationError));
-
-        var found = await _dayHandler.UpsertCommentAsync(householdId, parsedDate, parsedHousemateId, trimmed, actingHousemateId, ct);
+        var found = await _dayHandler.UpsertCommentAsync(householdId, parsedDate, parsedHousemateId, readResult.Body.Text.Trim(), actingHousemateId, cancellationToken);
 
         if (!found)
             return new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound));
@@ -188,22 +149,22 @@ public class DaysFunction
     /// <summary>Deletes the comment for a housemate on the given date.</summary>
     [Function("DeleteComment")]
     public async Task<IActionResult> DeleteCommentAsync(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "days/{date}/comments/{housemateId}")] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "days/{date}/comments/{housemateId}")] HttpRequest request,
         string date,
         string housemateId,
         FunctionContext context,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
         var actingHousemateId = (Guid)context.Items[FunctionContextKeys.HousemateId];
 
-        if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", out var parsedDate))
-            return new BadRequestObjectResult(new ApiErrorResponse("Date must be in yyyy-MM-dd format.", ApiErrorCodes.BadRequest));
+        if (!RouteParser.TryParseDate(date, out var parsedDate, out var dateError))
+            return dateError;
 
-        if (!Guid.TryParse(housemateId, out var parsedHousemateId))
-            return new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound));
+        if (!RouteParser.TryParseGuid(housemateId, out var parsedHousemateId, out var guidError))
+            return guidError;
 
-        var found = await _dayHandler.DeleteCommentAsync(householdId, parsedDate, parsedHousemateId, actingHousemateId, ct);
+        var found = await _dayHandler.DeleteCommentAsync(householdId, parsedDate, parsedHousemateId, actingHousemateId, cancellationToken);
 
         if (!found)
             return new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound));

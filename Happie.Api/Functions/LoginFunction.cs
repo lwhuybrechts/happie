@@ -1,5 +1,6 @@
 using Happie.Api.Constants;
 using Happie.Api.Handlers;
+using Happie.Api.Http;
 using Happie.Api.Results;
 using Happie.Shared.Contracts;
 using Microsoft.AspNetCore.Http;
@@ -22,31 +23,22 @@ public class LoginFunction
     /// <summary>Validates the household password and returns a signed JWT with the active housemate list.</summary>
     [Function("Login")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "auth/login")] HttpRequest req,
-        CancellationToken ct)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "auth/login")] HttpRequest request,
+        CancellationToken cancellationToken)
     {
-        LoginRequest? body;
-        try
-        {
-            body = await req.ReadFromJsonAsync<LoginRequest>(ct);
-        }
-        catch
-        {
-            return new BadRequestObjectResult(new ApiErrorResponse("Invalid request body.", ApiErrorCodes.BadRequest));
-        }
+        var readResult = await RequestValidator.ReadAndValidateAsync<LoginRequest>(request, cancellationToken);
+        if (!readResult.IsSuccess)
+            return readResult.Error;
 
-        if (body is null || string.IsNullOrWhiteSpace(body.Password))
-            return new BadRequestObjectResult(new ApiErrorResponse("Password is required.", ApiErrorCodes.BadRequest));
+        var loginResult = await _loginHandler.HandleAsync(readResult.Body.Password, cancellationToken);
 
-        var result = await _loginHandler.HandleAsync(body.Password, ct);
-
-        if (result is null)
+        if (loginResult is null)
             return new UnauthorizedObjectResult(new ApiErrorResponse("Invalid password.", ApiErrorCodes.Unauthorized));
 
-        var housemates = result.Housemates
-            .Select(h => new HousemateDto(h.Id, h.Name, h.Color))
+        var housemates = loginResult.Housemates
+            .Select(x => new HousemateDto(x.Id, x.Name, x.Color))
             .ToList();
 
-        return new OkObjectResult(new LoginResponse(result.Token, housemates));
+        return new OkObjectResult(new LoginResponse(loginResult.Token, housemates));
     }
 }
