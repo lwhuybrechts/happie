@@ -294,34 +294,34 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - Clear JWT and `ActiveHousemateId` from `localStorage`; redirect to `/`
     - _Requirements: 1.7_
 
-- [ ] 13. Blazor WASM — DayPlanPage and components
-  - [ ] 13.1 Implement `AttendanceToggle` component
+- [x] 13. Blazor WASM — DayPlanPage and components
+  - [x] 13.1 Implement `AttendanceToggle` component
     - Three-state toggle (EatingIn / NotEatingIn / Unknown) styled with the housemate's color
     - Optimistic UI: apply change immediately, roll back on API failure; show toast on error
     - Call `PUT /api/days/{date}/attendance/{housemateId}`
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [ ] 13.2 Implement `DishEditor` component
+  - [x] 13.2 Implement `DishEditor` component
     - Inline editable field, max 100 chars (client-side validation); optimistic save with rollback
     - Call `PUT /api/days/{date}/dish`; show toast on error
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [~] 13.3 Implement `CommentEditor` component
+  - [x] 13.3 Implement `CommentEditor` component
     - Inline editable field per housemate, max 200 chars (client-side validation); upsert on save, DELETE on clear
     - Optimistic save with rollback; show toast on error
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
 
-  - [ ] 13.4 Implement `DayHistoryLog` component
+  - [x] 13.4 Implement `DayHistoryLog` component
     - Fetch and display history entries for the day in reverse-chronological order
     - _Requirements: 3.6_
 
-  - [ ] 13.5 Implement `NudgeDialog` component
+  - [x] 13.5 Implement `NudgeDialog` component
     - Modal pre-populated with housemates whose status is `Unknown`; allow deselection
     - `predefinedMessageKey` / custom message (max 20 chars) toggle; call `POST /api/days/{date}/nudge`
     - Show per-recipient failure list on partial failure
     - _Requirements: 7.1, 7.2, 7.4, 7.5_
 
-  - [ ] 13.6 Implement `DayPlanPage` (`/day/{date}`)
+  - [x] 13.6 Implement `DayPlanPage` (`/day/{date}`)
     - Compose `AttendanceToggle`, `DishEditor`, `CommentEditor`, `DayHistoryLog`, `NudgeDialog`
     - Swipe-left / swipe-right navigation to next/previous day
     - Default to today on initial load

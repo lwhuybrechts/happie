@@ -1,0 +1,151 @@
+@using Happie.Shared.Contracts
+@inject HttpClient Http
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="dish-editor">
+    @if (_isEditing)
+    {
+        <div class="dish-editor__input-row">
+            <input class="dish-editor__input"
+                   type="text"
+                   maxlength="100"
+                   @bind="_editValue"
+                   @bind:event="oninput"
+                   @onkeydown="HandleKeyDownAsync"
+                   disabled="@_isSaving"
+                   aria-label="@Localizer["DishEditor_AriaLabel"]"
+                   aria-invalid="@(_validationError is not null ? "true" : "false")" />
+            <button class="dish-editor__save-btn"
+                    @onclick="SaveAsync"
+                    disabled="@(_isSaving || _validationError is not null)"
+                    aria-label="@Localizer["DishEditor_SaveButton"]">
+                ✓
+            </button>
+            <button class="dish-editor__cancel-btn"
+                    @onclick="CancelEdit"
+                    disabled="@_isSaving"
+                    aria-label="@Localizer["DishEditor_CancelButton"]">
+                ✗
+            </button>
+        </div>
+        @if (_validationError is not null)
+        {
+            <p class="dish-editor__validation-error" role="alert">@_validationError</p>
+        }
+    }
+    else
+    {
+        <button class="dish-editor__display"
+                @onclick="StartEdit"
+                aria-label="@Localizer["DishEditor_EditAriaLabel"]">
+            @if (string.IsNullOrWhiteSpace(_committedValue))
+            {
+                <span class="dish-editor__placeholder">@Localizer["DayPlan_NoDish"]</span>
+            }
+            else
+            {
+                <span>@_committedValue</span>
+            }
+        </button>
+    }
+
+    @if (_showError)
+    {
+        <div class="toast toast--error" role="alert">
+            @Localizer["DishEditor_SaveError"]
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The current dish description, or null when no dish has been set.</summary>
+    [Parameter]
+    public string? Description { get; set; }
+
+    /// <summary>The date for which the dish is being set, in yyyy-MM-dd format.</summary>
+    [Parameter, EditorRequired]
+    public string Date { get; set; } = string.Empty;
+
+    /// <summary>Callback invoked after a successful save, passing the new description.</summary>
+    [Parameter]
+    public EventCallback<string> OnDescriptionChanged { get; set; }
+
+    private string _committedValue = string.Empty;
+    private string _editValue = string.Empty;
+    private string? _validationError;
+    private bool _isEditing;
+    private bool _isSaving;
+    private bool _showError;
+
+    protected override void OnParametersSet()
+    {
+        _committedValue = Description ?? string.Empty;
+    }
+
+    private void StartEdit()
+    {
+        _editValue = _committedValue;
+        _validationError = null;
+        _showError = false;
+        _isEditing = true;
+    }
+
+    private void CancelEdit()
+    {
+        _isEditing = false;
+        _validationError = null;
+    }
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+            await SaveAsync();
+        else if (args.Key == "Escape")
+            CancelEdit();
+    }
+
+    private async Task SaveAsync()
+    {
+        var trimmed = _editValue.Trim();
+
+        // Client-side validation: max 100 characters after trimming.
+        if (trimmed.Length > 100)
+        {
+            _validationError = Localizer["DishEditor_TooLong"];
+            return;
+        }
+
+        _validationError = null;
+
+        // No change — just close the editor.
+        if (trimmed == _committedValue)
+        {
+            _isEditing = false;
+            return;
+        }
+
+        // Optimistic update: commit the new value immediately.
+        var previousValue = _committedValue;
+        _committedValue = trimmed;
+        _showError = false;
+        _isSaving = true;
+
+        var response = await Http.PutAsJsonAsync(
+            $"days/{Date}/dish",
+            new UpdateDishRequest(trimmed));
+
+        _isSaving = false;
+
+        if (!response.IsSuccessStatusCode)
+        {
+            // Roll back to the previous value on failure.
+            _committedValue = previousValue;
+            _showError = true;
+        }
+        else
+        {
+            _isEditing = false;
+            await OnDescriptionChanged.InvokeAsync(trimmed);
+        }
+    }
+}

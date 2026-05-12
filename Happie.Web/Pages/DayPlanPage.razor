@@ -1,10 +1,240 @@
 @page "/day/{date}"
+@using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+@inject IStringLocalizer<AppStrings> Localizer
+@implements IAsyncDisposable
 
-<PageTitle>Day Plan</PageTitle>
+<PageTitle>@Localizer["DayPlan_Title"] — @_parsedDate.ToString("d")</PageTitle>
 
-<h1>Day Plan — @Date</h1>
+<div class="day-plan-page"
+     @ref="_pageElement">
+
+    <div class="day-plan-page__nav">
+        <button class="day-plan-page__nav-btn"
+                @onclick="GoToPreviousDayAsync"
+                aria-label="@Localizer["DayPlan_PreviousDay"]">
+            ‹
+        </button>
+        <h1 class="day-plan-page__date">@_parsedDate.ToString("dddd d MMMM")</h1>
+        <button class="day-plan-page__nav-btn"
+                @onclick="GoToNextDayAsync"
+                aria-label="@Localizer["DayPlan_NextDay"]">
+            ›
+        </button>
+    </div>
+
+    @if (_isLoading)
+    {
+        <p>@Localizer["DayPlan_Loading"]</p>
+    }
+    else if (_loadError)
+    {
+        <p role="alert">@Localizer["DayPlan_LoadError"]</p>
+    }
+    else if (_dayPlan is not null)
+    {
+        <section class="day-plan-page__dish" aria-label="@Localizer["DayPlan_DishSection"]">
+            <h2>@Localizer["DayPlan_DishHeading"]</h2>
+            <DishEditor Date="@Date"
+                        Description="@_dayPlan.Dish?.Description"
+                        OnDescriptionChanged="OnDishChangedAsync" />
+        </section>
+
+        <section class="day-plan-page__attendance" aria-label="@Localizer["DayPlan_AttendanceSection"]">
+            <h2>@Localizer["DayPlan_AttendanceHeading"]</h2>
+            @foreach (var attendance in _dayPlan.Attendance)
+            {
+                <div class="day-plan-page__attendance-row">
+                    <span class="day-plan-page__housemate-name"
+                          style="color: @attendance.Color">
+                        @attendance.HousemateName
+                    </span>
+                    <AttendanceToggle HousemateId="@attendance.HousemateId"
+                                      HousemateName="@attendance.HousemateName"
+                                      Color="@attendance.Color"
+                                      Status="@attendance.Status"
+                                      Date="@Date"
+                                      OnStatusChanged="@(newStatus => OnAttendanceChangedAsync(attendance.HousemateId, newStatus))" />
+                </div>
+            }
+        </section>
+
+        <section class="day-plan-page__comments" aria-label="@Localizer["DayPlan_CommentsSection"]">
+            <h2>@Localizer["DayPlan_CommentsHeading"]</h2>
+            @foreach (var attendance in _dayPlan.Attendance)
+            {
+                var comment = _dayPlan.Comments.FirstOrDefault(x => x.HousemateId == attendance.HousemateId);
+                <div class="day-plan-page__comment-row">
+                    <span class="day-plan-page__housemate-name"
+                          style="color: @attendance.Color">
+                        @attendance.HousemateName
+                    </span>
+                    <CommentEditor HousemateId="@attendance.HousemateId"
+                                   HousemateName="@attendance.HousemateName"
+                                   Text="@comment?.Text"
+                                   Date="@Date"
+                                   OnTextChanged="@(newText => OnCommentChangedAsync(attendance.HousemateId, newText))" />
+                </div>
+            }
+        </section>
+
+        <section class="day-plan-page__nudge" aria-label="@Localizer["DayPlan_NudgeSection"]">
+            <button class="day-plan-page__nudge-btn"
+                    @onclick="OpenNudgeDialog"
+                    aria-label="@Localizer["DayPlan_NudgeButton"]">
+                @Localizer["DayPlan_NudgeButton"]
+            </button>
+            <NudgeDialog @ref="_nudgeDialog"
+                         Attendance="@_dayPlan.Attendance"
+                         Date="@Date" />
+        </section>
+
+        <DayHistoryLog History="@_dayPlan.History" />
+    }
+</div>
 
 @code {
     [Parameter]
     public string Date { get; set; } = string.Empty;
+
+    private DayPlanResponse? _dayPlan;
+    private DateOnly _parsedDate;
+    private bool _isLoading;
+    private bool _loadError;
+    private ElementReference _pageElement;
+    private DotNetObjectReference<DayPlanPage>? _dotNetRef;
+    private NudgeDialog? _nudgeDialog;
+
+    protected override Task OnInitializedAsync()
+    {
+        _dotNetRef = DotNetObjectReference.Create(this);
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!DateOnly.TryParseExact(Date, "yyyy-MM-dd", out _parsedDate))
+        {
+            // Fall back to today if the route parameter is malformed.
+            _parsedDate = DateOnly.FromDateTime(DateTime.Today);
+        }
+
+        await LoadDayPlanAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await JsRuntime.InvokeVoidAsync("happie.registerSwipe", _pageElement, _dotNetRef);
+    }
+
+    [JSInvokable]
+    public Task SwipeLeftAsync() => GoToNextDayAsync();
+
+    [JSInvokable]
+    public Task SwipeRightAsync() => GoToPreviousDayAsync();
+
+    private Task GoToNextDayAsync()
+    {
+        var next = _parsedDate.AddDays(1).ToString("yyyy-MM-dd");
+        NavigationManager.NavigateTo($"/day/{next}");
+        return Task.CompletedTask;
+    }
+
+    private Task GoToPreviousDayAsync()
+    {
+        var previous = _parsedDate.AddDays(-1).ToString("yyyy-MM-dd");
+        NavigationManager.NavigateTo($"/day/{previous}");
+        return Task.CompletedTask;
+    }
+
+    private async Task LoadDayPlanAsync()
+    {
+        _isLoading = true;
+        _loadError = false;
+        _dayPlan = null;
+
+        var response = await Http.GetAsync($"days/{Date}");
+
+        if (response.IsSuccessStatusCode)
+            _dayPlan = await response.Content.ReadFromJsonAsync<DayPlanResponse>();
+        else
+            _loadError = true;
+
+        _isLoading = false;
+    }
+
+    private void OpenNudgeDialog()
+    {
+        _nudgeDialog?.Open();
+    }
+
+    private Task OnDishChangedAsync(string newDescription)
+    {
+        if (_dayPlan is null)
+            return Task.CompletedTask;
+
+        _dayPlan = _dayPlan with { Dish = new DishDto(newDescription) };
+        return Task.CompletedTask;
+    }
+
+    private Task OnAttendanceChangedAsync(Guid housemateId, AttendanceStatus newStatus)
+    {
+        if (_dayPlan is null)
+            return Task.CompletedTask;
+
+        var updated = _dayPlan.Attendance
+            .Select(x => x.HousemateId == housemateId ? x with { Status = newStatus } : x)
+            .ToList();
+
+        _dayPlan = _dayPlan with { Attendance = updated };
+        return Task.CompletedTask;
+    }
+
+    private Task OnCommentChangedAsync(Guid housemateId, string? newText)
+    {
+        if (_dayPlan is null)
+            return Task.CompletedTask;
+
+        List<CommentDto> updated;
+
+        if (newText is null)
+        {
+            // Comment was deleted.
+            updated = _dayPlan.Comments.Where(x => x.HousemateId != housemateId).ToList();
+        }
+        else
+        {
+            var existing = _dayPlan.Comments.FirstOrDefault(x => x.HousemateId == housemateId);
+            if (existing is not null)
+            {
+                updated = _dayPlan.Comments
+                    .Select(x => x.HousemateId == housemateId ? x with { Text = newText } : x)
+                    .ToList();
+            }
+            else
+            {
+                // New comment — find the housemate's name and color from attendance.
+                var attendance = _dayPlan.Attendance.FirstOrDefault(x => x.HousemateId == housemateId);
+                var newComment = new CommentDto(
+                    housemateId,
+                    attendance?.HousemateName ?? string.Empty,
+                    attendance?.Color ?? string.Empty,
+                    newText);
+                updated = _dayPlan.Comments.Append(newComment).ToList();
+            }
+        }
+
+        _dayPlan = _dayPlan with { Comments = updated };
+        return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("happie.unregisterSwipe", _pageElement);
+        _dotNetRef?.Dispose();
+    }
 }

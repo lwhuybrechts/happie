@@ -85,6 +85,108 @@
   <data name="DayPlan_NoDish" xml:space="preserve">
     <value>No dish planned</value>
   </data>
+  <data name="DayPlan_Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="DayPlan_LoadError" xml:space="preserve">
+    <value>Failed to load the day plan. Please try again.</value>
+  </data>
+  <data name="DayPlan_PreviousDay" xml:space="preserve">
+    <value>Previous day</value>
+  </data>
+  <data name="DayPlan_NextDay" xml:space="preserve">
+    <value>Next day</value>
+  </data>
+  <data name="DayPlan_DishSection" xml:space="preserve">
+    <value>Dish</value>
+  </data>
+  <data name="DayPlan_DishHeading" xml:space="preserve">
+    <value>Dish</value>
+  </data>
+  <data name="DayPlan_AttendanceSection" xml:space="preserve">
+    <value>Attendance</value>
+  </data>
+  <data name="DayPlan_AttendanceHeading" xml:space="preserve">
+    <value>Attendance</value>
+  </data>
+  <data name="DayPlan_CommentsSection" xml:space="preserve">
+    <value>Comments</value>
+  </data>
+  <data name="DayPlan_CommentsHeading" xml:space="preserve">
+    <value>Comments</value>
+  </data>
+  <data name="DayPlan_NudgeSection" xml:space="preserve">
+    <value>Nudge</value>
+  </data>
+  <data name="DayPlan_NudgeButton" xml:space="preserve">
+    <value>Send nudge</value>
+  </data>
+  <data name="DayHistory_AriaLabel" xml:space="preserve">
+    <value>Change history</value>
+  </data>
+  <data name="DayHistory_Heading" xml:space="preserve">
+    <value>History</value>
+  </data>
+  <data name="DayHistory_Empty" xml:space="preserve">
+    <value>No changes recorded yet.</value>
+  </data>
+  <data name="NudgeDialog_Title" xml:space="preserve">
+    <value>Send nudge</value>
+  </data>
+  <data name="NudgeDialog_NoRecipients" xml:space="preserve">
+    <value>Everyone has already filled in their attendance.</value>
+  </data>
+  <data name="NudgeDialog_RecipientsLabel" xml:space="preserve">
+    <value>Recipients</value>
+  </data>
+  <data name="NudgeDialog_MessageLabel" xml:space="preserve">
+    <value>Message</value>
+  </data>
+  <data name="NudgeDialog_PredefinedMessage" xml:space="preserve">
+    <value>Predefined message</value>
+  </data>
+  <data name="NudgeDialog_PredefinedMessageAriaLabel" xml:space="preserve">
+    <value>Select predefined message</value>
+  </data>
+  <data name="NudgeDialog_CustomMessage" xml:space="preserve">
+    <value>Custom message</value>
+  </data>
+  <data name="NudgeDialog_CustomMessagePlaceholder" xml:space="preserve">
+    <value>Max 20 characters</value>
+  </data>
+  <data name="NudgeDialog_CustomMessageAriaLabel" xml:space="preserve">
+    <value>Custom nudge message</value>
+  </data>
+  <data name="NudgeDialog_CustomMessageRequired" xml:space="preserve">
+    <value>Please enter a message.</value>
+  </data>
+  <data name="NudgeDialog_CustomMessageTooLong" xml:space="preserve">
+    <value>Message must be at most 20 characters.</value>
+  </data>
+  <data name="NudgeDialog_PartialFailure" xml:space="preserve">
+    <value>Could not deliver to some recipients:</value>
+  </data>
+  <data name="NudgeDialog_SendError" xml:space="preserve">
+    <value>Failed to send nudge. Please try again.</value>
+  </data>
+  <data name="NudgeDialog_SendButton" xml:space="preserve">
+    <value>Send</value>
+  </data>
+  <data name="NudgeDialog_CancelButton" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="NudgeDialog_CloseButton" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="NudgeMessageKey_PleaseAddAttendance" xml:space="preserve">
+    <value>Please add your attendance</value>
+  </data>
+  <data name="NudgeMessageKey_WhatWouldYouLikeToEat" xml:space="preserve">
+    <value>What would you like to eat tonight?</value>
+  </data>
+  <data name="NudgeMessageKey_DinnerSoonWhatsYourPlan" xml:space="preserve">
+    <value>Dinner is coming up — are you joining?</value>
+  </data>
   <data name="Calendar_Title" xml:space="preserve">
     <value>Calendar</value>
   </data>
@@ -111,5 +213,59 @@
   </data>
   <data name="Logout" xml:space="preserve">
     <value>Log out</value>
+  </data>
+  <data name="AttendanceToggle_EatingIn" xml:space="preserve">
+    <value>Eating in</value>
+  </data>
+  <data name="AttendanceToggle_NotEatingIn" xml:space="preserve">
+    <value>Not eating in</value>
+  </data>
+  <data name="AttendanceToggle_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="AttendanceToggle_AriaLabel" xml:space="preserve">
+    <value>Attendance for {0}</value>
+  </data>
+  <data name="AttendanceToggle_SaveError" xml:space="preserve">
+    <value>Failed to save attendance. Please try again.</value>
+  </data>
+  <data name="DishEditor_AriaLabel" xml:space="preserve">
+    <value>Dish description</value>
+  </data>
+  <data name="DishEditor_EditAriaLabel" xml:space="preserve">
+    <value>Edit dish</value>
+  </data>
+  <data name="DishEditor_SaveButton" xml:space="preserve">
+    <value>Save dish</value>
+  </data>
+  <data name="DishEditor_CancelButton" xml:space="preserve">
+    <value>Cancel editing dish</value>
+  </data>
+  <data name="DishEditor_TooLong" xml:space="preserve">
+    <value>Dish description must be at most 100 characters.</value>
+  </data>
+  <data name="DishEditor_SaveError" xml:space="preserve">
+    <value>Failed to save dish. Please try again.</value>
+  </data>
+  <data name="CommentEditor_AriaLabel" xml:space="preserve">
+    <value>Comment for {0}</value>
+  </data>
+  <data name="CommentEditor_EditAriaLabel" xml:space="preserve">
+    <value>Edit comment for {0}</value>
+  </data>
+  <data name="CommentEditor_SaveButton" xml:space="preserve">
+    <value>Save comment</value>
+  </data>
+  <data name="CommentEditor_CancelButton" xml:space="preserve">
+    <value>Cancel editing comment</value>
+  </data>
+  <data name="CommentEditor_Placeholder" xml:space="preserve">
+    <value>Add a comment…</value>
+  </data>
+  <data name="CommentEditor_TooLong" xml:space="preserve">
+    <value>Comment must be at most 200 characters.</value>
+  </data>
+  <data name="CommentEditor_SaveError" xml:space="preserve">
+    <value>Failed to save comment. Please try again.</value>
   </data>
 </root>

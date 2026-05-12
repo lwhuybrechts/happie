@@ -1,0 +1,46 @@
+@using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@inject IStringLocalizer<AppStrings> Localizer
+
+<section class="day-history-log" aria-label="@Localizer["DayHistory_AriaLabel"]">
+    <h2>@Localizer["DayHistory_Heading"]</h2>
+
+    @if (!History.Any())
+    {
+        <p class="day-history-log__empty">@Localizer["DayHistory_Empty"]</p>
+    }
+    else
+    {
+        <ol class="day-history-log__list" reversed>
+            @foreach (var entry in History)
+            {
+                <li class="day-history-log__entry">
+                    <span class="day-history-log__time"
+                          title="@entry.ChangedAt.ToString("f")">
+                        @FormatTime(entry.ChangedAt)
+                    </span>
+                    <span class="day-history-log__actor">@entry.ChangedByHousemateName</span>
+                    <span class="day-history-log__description">@entry.Description</span>
+                </li>
+            }
+        </ol>
+    }
+</section>
+
+@code {
+    /// <summary>History entries for the day, expected in reverse-chronological order from the API.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<HistoryEntryDto> History { get; set; } = [];
+
+    private string FormatTime(DateTimeOffset changedAt)
+    {
+        var local = changedAt.ToLocalTime();
+        var today = DateTimeOffset.Now.Date;
+
+        // Show only the time when the entry is from today; include the date otherwise.
+        if (local.Date == today)
+            return local.ToString("HH:mm");
+
+        return local.ToString("d MMM HH:mm");
+    }
+}

@@ -1,0 +1,102 @@
+@using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@inject HttpClient Http
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="attendance-toggle" aria-label="@Localizer["AttendanceToggle_AriaLabel", HousemateName]">
+    <button class="attendance-btn attendance-btn--eating-in @(_currentStatus == AttendanceStatus.EatingIn ? "attendance-btn--active" : "")"
+            style="@(_currentStatus == AttendanceStatus.EatingIn ? $"background-color: {Color}; border-color: {Color};" : "")"
+            @onclick="() => SetStatusAsync(AttendanceStatus.EatingIn)"
+            disabled="@_isSaving"
+            aria-pressed="@(_currentStatus == AttendanceStatus.EatingIn ? "true" : "false")"
+            aria-label="@Localizer["AttendanceToggle_EatingIn"]">
+        ✓
+    </button>
+    <button class="attendance-btn attendance-btn--unknown @(_currentStatus == AttendanceStatus.Unknown ? "attendance-btn--active" : "")"
+            style="@(_currentStatus == AttendanceStatus.Unknown ? $"background-color: {Color}; border-color: {Color}; opacity: 0.5;" : "")"
+            @onclick="() => SetStatusAsync(AttendanceStatus.Unknown)"
+            disabled="@_isSaving"
+            aria-pressed="@(_currentStatus == AttendanceStatus.Unknown ? "true" : "false")"
+            aria-label="@Localizer["AttendanceToggle_Unknown"]">
+        ?
+    </button>
+    <button class="attendance-btn attendance-btn--not-eating-in @(_currentStatus == AttendanceStatus.NotEatingIn ? "attendance-btn--active" : "")"
+            style="@(_currentStatus == AttendanceStatus.NotEatingIn ? $"background-color: {Color}; border-color: {Color};" : "")"
+            @onclick="() => SetStatusAsync(AttendanceStatus.NotEatingIn)"
+            disabled="@_isSaving"
+            aria-pressed="@(_currentStatus == AttendanceStatus.NotEatingIn ? "true" : "false")"
+            aria-label="@Localizer["AttendanceToggle_NotEatingIn"]">
+        ✗
+    </button>
+</div>
+
+@if (_showError)
+{
+    <div class="toast toast--error" role="alert">
+        @Localizer["AttendanceToggle_SaveError"]
+    </div>
+}
+
+@code {
+    /// <summary>The ID of the housemate whose attendance is being toggled.</summary>
+    [Parameter, EditorRequired]
+    public Guid HousemateId { get; set; }
+
+    /// <summary>The display name of the housemate, used for accessibility labels.</summary>
+    [Parameter, EditorRequired]
+    public string HousemateName { get; set; } = string.Empty;
+
+    /// <summary>The hex color of the housemate, used to style the active state.</summary>
+    [Parameter, EditorRequired]
+    public string Color { get; set; } = string.Empty;
+
+    /// <summary>The current attendance status, used as the initial value.</summary>
+    [Parameter, EditorRequired]
+    public AttendanceStatus Status { get; set; }
+
+    /// <summary>The date for which attendance is being set, in yyyy-MM-dd format.</summary>
+    [Parameter, EditorRequired]
+    public string Date { get; set; } = string.Empty;
+
+    /// <summary>Callback invoked after a successful status change, passing the new status.</summary>
+    [Parameter]
+    public EventCallback<AttendanceStatus> OnStatusChanged { get; set; }
+
+    private AttendanceStatus _currentStatus;
+    private bool _isSaving;
+    private bool _showError;
+
+    protected override void OnParametersSet()
+    {
+        _currentStatus = Status;
+    }
+
+    private async Task SetStatusAsync(AttendanceStatus newStatus)
+    {
+        if (newStatus == _currentStatus || _isSaving)
+            return;
+
+        // Optimistic update: apply the change immediately.
+        var previousStatus = _currentStatus;
+        _currentStatus = newStatus;
+        _showError = false;
+        _isSaving = true;
+
+        var response = await Http.PutAsJsonAsync(
+            $"days/{Date}/attendance/{HousemateId}",
+            new UpdateAttendanceRequest(newStatus));
+
+        _isSaving = false;
+
+        if (!response.IsSuccessStatusCode)
+        {
+            // Roll back to the previous status on failure.
+            _currentStatus = previousStatus;
+            _showError = true;
+        }
+        else
+        {
+            await OnStatusChanged.InvokeAsync(newStatus);
+        }
+    }
+}

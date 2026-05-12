@@ -1,0 +1,236 @@
+@using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@inject HttpClient Http
+@inject IStringLocalizer<AppStrings> Localizer
+
+@if (_isOpen)
+{
+    <div class="nudge-dialog__backdrop" @onclick="Close" aria-hidden="true"></div>
+
+    <div class="nudge-dialog"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="nudge-dialog-title">
+
+        <h2 id="nudge-dialog-title" class="nudge-dialog__title">@Localizer["NudgeDialog_Title"]</h2>
+
+        @if (_unknownAttendees.Count == 0)
+        {
+            <p>@Localizer["NudgeDialog_NoRecipients"]</p>
+        }
+        else
+        {
+            <fieldset class="nudge-dialog__recipients">
+                <legend>@Localizer["NudgeDialog_RecipientsLabel"]</legend>
+                @foreach (var attendee in _unknownAttendees)
+                {
+                    <label class="nudge-dialog__recipient-label">
+                        <input type="checkbox"
+                               checked="@_selectedIds.Contains(attendee.HousemateId)"
+                               @onchange="@(e => ToggleRecipient(attendee.HousemateId, (bool)e.Value!))" />
+                        <span style="color: @attendee.Color">@attendee.HousemateName</span>
+                    </label>
+                }
+            </fieldset>
+
+            <fieldset class="nudge-dialog__message">
+                <legend>@Localizer["NudgeDialog_MessageLabel"]</legend>
+
+                <label class="nudge-dialog__message-option">
+                    <input type="radio"
+                           name="nudge-message-type"
+                           checked="@(_useCustomMessage == false)"
+                           @onchange="@(() => _useCustomMessage = false)" />
+                    @Localizer["NudgeDialog_PredefinedMessage"]
+                </label>
+
+                @if (!_useCustomMessage)
+                {
+                    <select class="nudge-dialog__predefined-select"
+                            @bind="_selectedMessageKey"
+                            aria-label="@Localizer["NudgeDialog_PredefinedMessageAriaLabel"]">
+                        <option value="@NudgeMessageKey.PleaseAddAttendance">
+                            @Localizer["NudgeMessageKey_PleaseAddAttendance"]
+                        </option>
+                        <option value="@NudgeMessageKey.WhatWouldYouLikeToEat">
+                            @Localizer["NudgeMessageKey_WhatWouldYouLikeToEat"]
+                        </option>
+                        <option value="@NudgeMessageKey.DinnerSoonWhatsYourPlan">
+                            @Localizer["NudgeMessageKey_DinnerSoonWhatsYourPlan"]
+                        </option>
+                    </select>
+                }
+
+                <label class="nudge-dialog__message-option">
+                    <input type="radio"
+                           name="nudge-message-type"
+                           checked="@(_useCustomMessage == true)"
+                           @onchange="@(() => _useCustomMessage = true)" />
+                    @Localizer["NudgeDialog_CustomMessage"]
+                </label>
+
+                @if (_useCustomMessage)
+                {
+                    <input class="nudge-dialog__custom-input"
+                           type="text"
+                           maxlength="20"
+                           @bind="_customMessage"
+                           @bind:event="oninput"
+                           placeholder="@Localizer["NudgeDialog_CustomMessagePlaceholder"]"
+                           aria-label="@Localizer["NudgeDialog_CustomMessageAriaLabel"]"
+                           aria-invalid="@(_customMessageError is not null ? "true" : "false")" />
+                    @if (_customMessageError is not null)
+                    {
+                        <p class="nudge-dialog__validation-error" role="alert">@_customMessageError</p>
+                    }
+                }
+            </fieldset>
+
+            @if (_failures.Count > 0)
+            {
+                <div class="nudge-dialog__failures" role="alert">
+                    <p>@Localizer["NudgeDialog_PartialFailure"]</p>
+                    <ul>
+                        @foreach (var failure in _failures)
+                        {
+                            var name = _unknownAttendees
+                                .FirstOrDefault(x => x.HousemateId == failure.RecipientHousemateId)
+                                ?.HousemateName ?? failure.RecipientHousemateId.ToString();
+                            <li>@name: @failure.Reason</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            @if (_sendError)
+            {
+                <div class="toast toast--error" role="alert">@Localizer["NudgeDialog_SendError"]</div>
+            }
+
+            <div class="nudge-dialog__actions">
+                <button class="nudge-dialog__send-btn"
+                        @onclick="SendAsync"
+                        disabled="@(_isSending || _selectedIds.Count == 0)"
+                        aria-label="@Localizer["NudgeDialog_SendButton"]">
+                    @Localizer["NudgeDialog_SendButton"]
+                </button>
+                <button class="nudge-dialog__cancel-btn"
+                        @onclick="Close"
+                        disabled="@_isSending"
+                        aria-label="@Localizer["NudgeDialog_CancelButton"]">
+                    @Localizer["NudgeDialog_CancelButton"]
+                </button>
+            </div>
+        }
+
+        @if (_unknownAttendees.Count == 0)
+        {
+            <div class="nudge-dialog__actions">
+                <button class="nudge-dialog__cancel-btn"
+                        @onclick="Close"
+                        aria-label="@Localizer["NudgeDialog_CloseButton"]">
+                    @Localizer["NudgeDialog_CloseButton"]
+                </button>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>All attendance entries for the day; the dialog filters to Unknown status.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<AttendanceDto> Attendance { get; set; } = [];
+
+    /// <summary>The date for which the nudge is sent, in yyyy-MM-dd format.</summary>
+    [Parameter, EditorRequired]
+    public string Date { get; set; } = string.Empty;
+
+    private bool _isOpen;
+    private bool _isSending;
+    private bool _sendError;
+    private bool _useCustomMessage;
+    private string _customMessage = string.Empty;
+    private string? _customMessageError;
+    private NudgeMessageKey _selectedMessageKey = NudgeMessageKey.PleaseAddAttendance;
+    private List<AttendanceDto> _unknownAttendees = [];
+    private HashSet<Guid> _selectedIds = [];
+    private List<NudgeFailureDto> _failures = [];
+
+    /// <summary>Opens the dialog, pre-populating recipients with housemates whose status is Unknown.</summary>
+    public void Open()
+    {
+        _unknownAttendees = Attendance.Where(x => x.Status == AttendanceStatus.Unknown).ToList();
+        _selectedIds = _unknownAttendees.Select(x => x.HousemateId).ToHashSet();
+        _useCustomMessage = false;
+        _customMessage = string.Empty;
+        _customMessageError = null;
+        _selectedMessageKey = NudgeMessageKey.PleaseAddAttendance;
+        _failures = [];
+        _sendError = false;
+        _isOpen = true;
+    }
+
+    private void Close()
+    {
+        _isOpen = false;
+    }
+
+    private void ToggleRecipient(Guid housemateId, bool isChecked)
+    {
+        if (isChecked)
+            _selectedIds.Add(housemateId);
+        else
+            _selectedIds.Remove(housemateId);
+    }
+
+    private async Task SendAsync()
+    {
+        // Client-side validation for custom message.
+        if (_useCustomMessage)
+        {
+            var trimmed = _customMessage.Trim();
+            if (trimmed.Length == 0)
+            {
+                _customMessageError = Localizer["NudgeDialog_CustomMessageRequired"];
+                return;
+            }
+            if (trimmed.Length > 20)
+            {
+                _customMessageError = Localizer["NudgeDialog_CustomMessageTooLong"];
+                return;
+            }
+            _customMessageError = null;
+        }
+
+        _isSending = true;
+        _sendError = false;
+        _failures = [];
+
+        var request = _useCustomMessage
+            ? new NudgeRequest(_selectedIds.ToList(), null, _customMessage.Trim())
+            : new NudgeRequest(_selectedIds.ToList(), _selectedMessageKey, null);
+
+        var response = await Http.PostAsJsonAsync($"days/{Date}/nudge", request);
+
+        _isSending = false;
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _sendError = true;
+            return;
+        }
+
+        var nudgeResponse = await response.Content.ReadFromJsonAsync<NudgeResponse>();
+
+        if (nudgeResponse?.Failures is { Count: > 0 })
+        {
+            // Partial failure — stay open and show which recipients failed.
+            _failures = nudgeResponse.Failures.ToList();
+        }
+        else
+        {
+            // All delivered — close the dialog.
+            Close();
+        }
+    }
+}

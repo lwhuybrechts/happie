@@ -33,6 +33,54 @@
     </div>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
+    <script>
+        window.happie = window.happie || {};
+
+        // Minimum horizontal distance (px) to count as a swipe.
+        const SWIPE_THRESHOLD = 50;
+
+        // Map from element to its registered swipe state.
+        const _swipeRegistry = new Map();
+
+        happie.registerSwipe = function (element, dotNetRef) {
+            if (!element) return;
+
+            const state = { startX: 0, startY: 0 };
+
+            const onTouchStart = (e) => {
+                state.startX = e.touches[0].clientX;
+                state.startY = e.touches[0].clientY;
+            };
+
+            const onTouchEnd = (e) => {
+                const deltaX = e.changedTouches[0].clientX - state.startX;
+                const deltaY = e.changedTouches[0].clientY - state.startY;
+
+                // Ignore if the gesture is more vertical than horizontal.
+                if (Math.abs(deltaX) < Math.abs(deltaY)) return;
+                if (Math.abs(deltaX) < SWIPE_THRESHOLD) return;
+
+                if (deltaX < 0)
+                    dotNetRef.invokeMethodAsync('SwipeLeftAsync');
+                else
+                    dotNetRef.invokeMethodAsync('SwipeRightAsync');
+            };
+
+            element.addEventListener('touchstart', onTouchStart, { passive: true });
+            element.addEventListener('touchend', onTouchEnd, { passive: true });
+
+            _swipeRegistry.set(element, { onTouchStart, onTouchEnd, dotNetRef });
+        };
+
+        happie.unregisterSwipe = function (element) {
+            if (!element) return;
+            const entry = _swipeRegistry.get(element);
+            if (!entry) return;
+            element.removeEventListener('touchstart', entry.onTouchStart);
+            element.removeEventListener('touchend', entry.onTouchEnd);
+            _swipeRegistry.delete(element);
+        };
+    </script>
 </body>
 
 </html>

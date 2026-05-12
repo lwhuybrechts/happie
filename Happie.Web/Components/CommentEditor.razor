@@ -1,0 +1,192 @@
+@using Happie.Shared.Contracts
+@inject HttpClient Http
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="comment-editor">
+    @if (_isEditing)
+    {
+        <div class="comment-editor__input-row">
+            <input class="comment-editor__input"
+                   type="text"
+                   maxlength="200"
+                   @bind="_editValue"
+                   @bind:event="oninput"
+                   @onkeydown="HandleKeyDownAsync"
+                   disabled="@_isSaving"
+                   aria-label="@string.Format(Localizer["CommentEditor_AriaLabel"], HousemateName)"
+                   aria-invalid="@(_validationError is not null ? "true" : "false")" />
+            <button class="comment-editor__save-btn"
+                    @onclick="SaveAsync"
+                    disabled="@(_isSaving || _validationError is not null)"
+                    aria-label="@Localizer["CommentEditor_SaveButton"]">
+                ✓
+            </button>
+            <button class="comment-editor__cancel-btn"
+                    @onclick="CancelEdit"
+                    disabled="@_isSaving"
+                    aria-label="@Localizer["CommentEditor_CancelButton"]">
+                ✗
+            </button>
+        </div>
+        @if (_validationError is not null)
+        {
+            <p class="comment-editor__validation-error" role="alert">@_validationError</p>
+        }
+    }
+    else
+    {
+        <button class="comment-editor__display"
+                @onclick="StartEdit"
+                aria-label="@string.Format(Localizer["CommentEditor_EditAriaLabel"], HousemateName)">
+            @if (string.IsNullOrWhiteSpace(_committedValue))
+            {
+                <span class="comment-editor__placeholder">@Localizer["CommentEditor_Placeholder"]</span>
+            }
+            else
+            {
+                <span>@_committedValue</span>
+            }
+        </button>
+    }
+
+    @if (_showError)
+    {
+        <div class="toast toast--error" role="alert">
+            @Localizer["CommentEditor_SaveError"]
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The ID of the housemate whose comment slot is being edited.</summary>
+    [Parameter, EditorRequired]
+    public Guid HousemateId { get; set; }
+
+    /// <summary>The display name of the housemate, used for accessibility labels.</summary>
+    [Parameter, EditorRequired]
+    public string HousemateName { get; set; } = string.Empty;
+
+    /// <summary>The current comment text, or null when no comment has been set.</summary>
+    [Parameter]
+    public string? Text { get; set; }
+
+    /// <summary>The date for which the comment is being set, in yyyy-MM-dd format.</summary>
+    [Parameter, EditorRequired]
+    public string Date { get; set; } = string.Empty;
+
+    /// <summary>Callback invoked after a successful save or delete, passing the new text (null on delete).</summary>
+    [Parameter]
+    public EventCallback<string?> OnTextChanged { get; set; }
+
+    private string _committedValue = string.Empty;
+    private string _editValue = string.Empty;
+    private string? _validationError;
+    private bool _isEditing;
+    private bool _isSaving;
+    private bool _showError;
+
+    protected override void OnParametersSet()
+    {
+        _committedValue = Text ?? string.Empty;
+    }
+
+    private void StartEdit()
+    {
+        _editValue = _committedValue;
+        _validationError = null;
+        _showError = false;
+        _isEditing = true;
+    }
+
+    private void CancelEdit()
+    {
+        _isEditing = false;
+        _validationError = null;
+    }
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+            await SaveAsync();
+        else if (args.Key == "Escape")
+            CancelEdit();
+    }
+
+    private async Task SaveAsync()
+    {
+        var trimmed = _editValue.Trim();
+
+        // Client-side validation: max 200 characters after trimming.
+        if (trimmed.Length > 200)
+        {
+            _validationError = Localizer["CommentEditor_TooLong"];
+            return;
+        }
+
+        _validationError = null;
+
+        // No change — just close the editor.
+        if (trimmed == _committedValue)
+        {
+            _isEditing = false;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(trimmed))
+            await DeleteAsync();
+        else
+            await UpsertAsync(trimmed);
+    }
+
+    private async Task UpsertAsync(string text)
+    {
+        // Optimistic update: commit the new value immediately.
+        var previousValue = _committedValue;
+        _committedValue = text;
+        _showError = false;
+        _isSaving = true;
+
+        var response = await Http.PutAsJsonAsync(
+            $"days/{Date}/comments/{HousemateId}",
+            new UpdateCommentRequest(text));
+
+        _isSaving = false;
+
+        if (!response.IsSuccessStatusCode)
+        {
+            // Roll back to the previous value on failure.
+            _committedValue = previousValue;
+            _showError = true;
+        }
+        else
+        {
+            _isEditing = false;
+            await OnTextChanged.InvokeAsync(text);
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        // Optimistic update: clear the value immediately.
+        var previousValue = _committedValue;
+        _committedValue = string.Empty;
+        _showError = false;
+        _isSaving = true;
+
+        var response = await Http.DeleteAsync($"days/{Date}/comments/{HousemateId}");
+
+        _isSaving = false;
+
+        if (!response.IsSuccessStatusCode)
+        {
+            // Roll back to the previous value on failure.
+            _committedValue = previousValue;
+            _showError = true;
+        }
+        else
+        {
+            _isEditing = false;
+            await OnTextChanged.InvokeAsync(null);
+        }
+    }
+}
