@@ -1,4 +1,4 @@
-namespace Happie.Shared.Domain;
+namespace Happie.Api.Domain;
 
 /// <summary>An authorized user of Happie within a household.</summary>
 public record Housemate(

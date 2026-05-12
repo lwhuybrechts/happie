@@ -1,4 +1,5 @@
 using Happie.Api.Infrastructure.Entities;
+using Happie.Api.Domain;
 using Happie.Shared.Domain;
 
 namespace Happie.Api.Infrastructure.Mappers;

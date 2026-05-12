@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using Happie.Shared.Domain;
 
-namespace Happie.Api.Models;
+namespace Happie.Shared.Contracts;
 
 /// <summary>The attendance status of a housemate for a specific day, as returned in the day plan response.</summary>
 public record AttendanceDto(

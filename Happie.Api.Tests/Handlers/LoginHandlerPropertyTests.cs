@@ -4,6 +4,7 @@ using FsCheck.Xunit;
 using Happie.Api.Handlers;
 using Happie.Api.Options;
 using Happie.Api.Infrastructure.Repositories;
+using Happie.Api.Domain;
 using Happie.Shared.Domain;
 using Moq;
 using MsOptions = Microsoft.Extensions.Options;

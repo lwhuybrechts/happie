@@ -1,4 +1,5 @@
-using Happie.Api.Models;
+using Happie.Shared.Contracts;
+using Happie.Api.Domain;
 using Happie.Shared.Domain;
 
 namespace Happie.Api.Handlers;

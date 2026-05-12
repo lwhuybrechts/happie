@@ -1,4 +1,4 @@
-namespace Happie.Api.Models;
+namespace Happie.Api.Results;
 
 /// <summary>Outcome of an update housemate operation.</summary>
 public enum UpdateHousemateOutcome

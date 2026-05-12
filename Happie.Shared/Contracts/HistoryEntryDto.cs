@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using Happie.Shared.Domain;
 
-namespace Happie.Api.Models;
+namespace Happie.Shared.Contracts;
 
 /// <summary>An audit log entry for a day plan change, as returned in the day plan response.</summary>
 public record HistoryEntryDto(

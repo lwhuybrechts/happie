@@ -1,5 +1,7 @@
 using Happie.Api.Infrastructure.Repositories;
-using Happie.Api.Models;
+using Happie.Api.Results;
+using Happie.Shared.Contracts;
+using Happie.Api.Domain;
 using Happie.Shared.Domain;
 
 namespace Happie.Api.Handlers;

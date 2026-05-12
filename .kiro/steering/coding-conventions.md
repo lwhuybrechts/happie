@@ -1,18 +1,58 @@
 # Happie — Coding Conventions
 
+## Project Structure Conventions (MUST follow)
+
+### Namespace layout
+
+| Location | Namespace | Contents |
+|---|---|---|
+| `Happie.Shared/Domain/` | `Happie.Shared.Domain` | Shared enums and constants used by both client and server: `AttendanceStatus`, `ChangeType`, `NudgeMessageKey`, `Locale`, `HousemateColors` |
+| `Happie.Shared/Contracts/` | `Happie.Shared.Contracts` | HTTP wire format types shared between client and server: request bodies, response envelopes, DTOs |
+| `Happie.Api/Domain/` | `Happie.Api.Domain` | Server-only business objects used by handlers and repositories: `Housemate`, `Household`, `AttendanceRecord`, `DishRecord`, `Comment`, `DayHistoryEntry`, `PushSubscription`, `NudgeRequest` |
+| `Happie.Api/Results/` | `Happie.Api.Results` | Internal handler return types: `LoginResult`, `UpdateHousemateResult`, `DeleteHousemateOutcome`, `UpdateHousemateOutcome` |
+| `Happie.Api/Infrastructure/Entities/` | `Happie.Api.Infrastructure.Entities` | Table Storage entity classes |
+| `Happie.Api/Infrastructure/Mappers/` | `Happie.Api.Infrastructure.Mappers` | Mapper interfaces and implementations |
+| `Happie.Api/Infrastructure/Repositories/` | `Happie.Api.Infrastructure.Repositories` | Repository interfaces and implementations |
+| `Happie.Api/Handlers/` | `Happie.Api.Handlers` | Business logic handlers |
+| `Happie.Api/Functions/` | `Happie.Api.Functions` | Thin HTTP controller functions |
+
+### Naming conventions for contract types
+
+Types in `Happie.Shared/Contracts/` follow these naming rules:
+
+- **Top-level response envelopes** use the `Response` suffix: `DayPlanResponse`, `CalendarResponse`, `LoginResponse`
+- **Nested pieces of a response** (embedded in a top-level response) use the `Dto` suffix: `AttendanceDto`, `CommentDto`, `DishDto`, `HistoryEntryDto`, `HousemateDto`, `CalendarDayDto`
+- **Request bodies** use the `Request` suffix: `LoginRequest`, `AddHousemateRequest`, `UpdateHousemateRequest`, `UpdateAttendanceRequest`, `UpdateDishRequest`, `UpdateCommentRequest`
+
+### Dependency direction
+
+```
+Functions → Handlers → Domain ← Infrastructure
+                     ↑
+                  Contracts (shared with client)
+```
+
+- `Domain` does NOT depend on `Infrastructure`
+- `Infrastructure` depends on `Domain` (maps entities to/from domain types)
+- `Handlers` depend on `Domain` and `Infrastructure` (via repository interfaces)
+- `Functions` depend on `Handlers` and `Contracts`
+- `Happie.Shared.Domain` (enums/constants) is a dependency of both `Happie.Api.Domain` and `Happie.Shared.Contracts`
+
+---
+
 ## Azure Table Storage Entity Conventions (MUST follow)
 
 All Table Storage entity classes MUST adhere to the following rules:
 
 - Inherit from `MyTableEntity` base class
-- Live in `Happie.Api/Repositories/Entities/` — namespace `Happie.Api.Repositories.Entities`
+- Live in `Happie.Api/Infrastructure/Entities/` — namespace `Happie.Api.Infrastructure.Entities`
 - File naming: `{Domain}Entity.cs` (e.g., `HousemateEntity.cs`, `AttendanceRecordEntity.cs`)
 - Include a parameterless constructor for Azure Table Storage deserialization
 - Include a parameterized constructor that sets `PartitionKey` and `RowKey`
 - Set partition/row keys in the parameterized constructor for optimal Table Storage queries
 - Use nullable reference types (`?`) for optional properties
 - Use `= string.Empty` as default for required string properties
-- Entity classes are internal to the repository layer — NEVER reference them outside `Happie.Api/Repositories/`
+- Entity classes are internal to the repository layer — NEVER reference them outside `Happie.Api/Infrastructure/`
 
 ```csharp
 public class ExampleEntity : MyTableEntity
@@ -48,11 +88,11 @@ All data access MUST go through repository classes. Handlers and services MUST N
 
 ### Structure
 
-- Abstract base class: `BaseRepository<TEntity>` in `Happie.Api/Repositories/` where `TEntity : MyTableEntity`
-- Each concrete repository lives in `Happie.Api/Repositories/` and has a matching interface
+- Abstract base class: `BaseRepository<TEntity>` in `Happie.Api/Infrastructure/Repositories/` where `TEntity : MyTableEntity`
+- Each concrete repository lives in `Happie.Api/Infrastructure/Repositories/` and has a matching interface
 - File naming: `{Domain}Repository.cs` and `I{Domain}Repository.cs` (e.g., `HousemateRepository.cs`, `IHousemateRepository.cs`)
 - Table name is defined as `private const string TableName` in each concrete repository
-- Repository interfaces and implementations work exclusively with **domain types** from `Happie.Shared.Domain` — entity types MUST NOT appear in any interface or public method signature
+- Repository interfaces and implementations work exclusively with **domain types** from `Happie.Api.Domain` — entity types MUST NOT appear in any interface or public method signature
 - Each repository injects a mapper interface to handle entity ↔ domain type conversion
 
 ### Concrete repositories
@@ -157,7 +197,7 @@ Each repository has a dedicated mapper class responsible for converting between 
 
 ### Structure
 
-- Mapper interfaces and implementations live in `Happie.Api/Repositories/Mappers/` — namespace `Happie.Api.Repositories.Mappers`
+- Mapper interfaces and implementations live in `Happie.Api/Infrastructure/Mappers/` — namespace `Happie.Api.Infrastructure.Mappers`
 - File naming: `{Domain}Mapper.cs` and `I{Domain}Mapper.cs` (e.g., `HousemateMapper.cs`, `IHousemateMapper.cs`)
 - Each mapper exposes exactly two methods: `ToModel(...)` and `ToEntity(...)`
 - Mappers are stateless and registered as singletons
@@ -272,7 +312,7 @@ return new NotFoundObjectResult(new { error = "Not found.", code = "NOT_FOUND" }
 return new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound));
 ```
 
-- `ApiErrorResponse` is a record in `Happie.Api/Models/` with `[JsonPropertyName]` attributes for lowercase wire format
+- `ApiErrorResponse` is a record in `Happie.Shared/Contracts/` — namespace `Happie.Shared.Contracts` — with `[JsonPropertyName]` attributes for lowercase wire format
 - `ApiErrorCodes` is a static class in `Happie.Api/Constants/` with `const string` values
 - Exhaustive enum switches that reach an unhandled arm MUST throw `InvalidOperationException`, not return a 500 response:
 

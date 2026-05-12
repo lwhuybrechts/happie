@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Happie.Api.Models;
+namespace Happie.Shared.Contracts;
 
 /// <summary>The full day plan for a specific date, as returned by GET /api/days/{date}.</summary>
 public record DayPlanResponse(

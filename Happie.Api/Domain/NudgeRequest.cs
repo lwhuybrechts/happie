@@ -1,4 +1,6 @@
-namespace Happie.Shared.Domain;
+using Happie.Shared.Domain;
+
+namespace Happie.Api.Domain;
 
 /// <summary>
 /// A request to send a push notification reminder to selected housemates.

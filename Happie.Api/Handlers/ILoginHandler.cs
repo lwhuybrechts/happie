@@ -1,4 +1,4 @@
-using Happie.Api.Models;
+using Happie.Api.Results;
 
 namespace Happie.Api.Handlers;
 

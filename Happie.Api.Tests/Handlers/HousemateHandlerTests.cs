@@ -1,6 +1,7 @@
 using Happie.Api.Handlers;
 using Happie.Api.Infrastructure.Repositories;
-using Happie.Api.Models;
+using Happie.Api.Results;
+using Happie.Api.Domain;
 using Happie.Shared.Domain;
 using Moq;
 

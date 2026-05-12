@@ -5,6 +5,7 @@ using FsCheck.Xunit;
 using Happie.Api.Infrastructure;
 using Happie.Api.Infrastructure.Mappers;
 using Happie.Api.Infrastructure.Repositories;
+using Happie.Api.Domain;
 using Happie.Shared.Domain;
 
 namespace Happie.Api.IntegrationTests.Infrastructure;

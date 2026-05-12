@@ -1,4 +1,6 @@
-namespace Happie.Shared.Domain;
+using Happie.Shared.Domain;
+
+namespace Happie.Api.Domain;
 
 /// <summary>The attendance status of a housemate for a specific day.</summary>
 public record AttendanceRecord(

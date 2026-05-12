@@ -1,7 +1,8 @@
 using ExpectedObjects;
 using Happie.Api.Handlers;
 using Happie.Api.Infrastructure.Repositories;
-using Happie.Api.Models;
+using Happie.Shared.Contracts;
+using Happie.Api.Domain;
 using Happie.Shared.Domain;
 using Moq;
 

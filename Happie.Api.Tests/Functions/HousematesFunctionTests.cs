@@ -1,7 +1,8 @@
 using Happie.Api.Constants;
 using Happie.Api.Functions;
 using Happie.Api.Handlers;
-using Happie.Api.Models;
+using Happie.Api.Results;
+using Happie.Shared.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Moq;

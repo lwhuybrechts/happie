@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Happie.Api.Models;
+namespace Happie.Shared.Contracts;
 
 /// <summary>Attendance summary for a single day in the calendar view.</summary>
 public record CalendarDayDto(

@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Happie.Api.Constants;
-using Happie.Api.Models;
+using Happie.Shared.Contracts;
 using Happie.Api.Options;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;

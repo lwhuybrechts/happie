@@ -1,5 +1,6 @@
 using Happie.Api.Infrastructure.Repositories;
-using Happie.Api.Models;
+using Happie.Shared.Contracts;
+using Happie.Api.Domain;
 using Happie.Shared.Domain;
 
 namespace Happie.Api.Handlers;
@@ -64,7 +65,7 @@ public class DayHandler : IDayHandler
             .ToList();
 
         // Build dish DTO.
-        var dishDto = dish is null ? null : new DishDto(dish.Description);
+        var DishDto = dish is null ? null : new DishDto(dish.Description);
 
         // Build comment DTOs — include only housemates who have a comment.
         // Soft-deleted housemates are included if they have a comment; their name is formatted as "Name (deleted)".
@@ -86,7 +87,7 @@ public class DayHandler : IDayHandler
             })
             .ToList();
 
-        return new DayPlanResponse(date, dishDto, attendance, commentDtos, historyDtos);
+        return new DayPlanResponse(date, DishDto, attendance, commentDtos, historyDtos);
     }
 
     /// <inheritdoc/>

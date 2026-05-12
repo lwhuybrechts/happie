@@ -1,9 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Happie.Api.Models;
+using Happie.Api.Results;
 using Happie.Api.Options;
 using Happie.Api.Infrastructure.Repositories;
+using Happie.Api.Domain;
 using Happie.Shared.Domain;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;

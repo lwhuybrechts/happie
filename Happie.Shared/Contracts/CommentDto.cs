@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Happie.Api.Models;
+namespace Happie.Shared.Contracts;
 
 /// <summary>A housemate's comment for a specific day, as returned in the day plan response.</summary>
 public record CommentDto(

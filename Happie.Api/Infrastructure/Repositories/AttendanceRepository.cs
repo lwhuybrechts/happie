@@ -1,6 +1,7 @@
 using Happie.Api.Infrastructure;
 using Happie.Api.Infrastructure.Entities;
 using Happie.Api.Infrastructure.Mappers;
+using Happie.Api.Domain;
 using Happie.Shared.Domain;
 
 namespace Happie.Api.Infrastructure.Repositories;

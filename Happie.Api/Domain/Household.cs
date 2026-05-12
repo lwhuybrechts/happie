@@ -1,4 +1,4 @@
-namespace Happie.Shared.Domain;
+namespace Happie.Api.Domain;
 
 /// <summary>A group of housemates sharing a single Happie instance, identified by a unique password.</summary>
 public record Household(

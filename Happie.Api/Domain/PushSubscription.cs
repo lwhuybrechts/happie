@@ -1,4 +1,6 @@
-namespace Happie.Shared.Domain;
+using Happie.Shared.Domain;
+
+namespace Happie.Api.Domain;
 
 /// <summary>A VAPID Web Push subscription for a housemate, used to deliver nudges and auto-notifications.</summary>
 public record PushSubscription(

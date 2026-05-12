@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Happie.Api.Models;
+namespace Happie.Shared.Contracts;
 
 /// <summary>Standard error response body returned by all API endpoints.</summary>
 public record ApiErrorResponse(

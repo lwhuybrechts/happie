@@ -1,4 +1,4 @@
-namespace Happie.Api.Models;
+namespace Happie.Api.Results;
 
 /// <summary>Outcome of a delete housemate operation.</summary>
 public enum DeleteHousemateOutcome

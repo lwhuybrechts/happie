@@ -1,4 +1,4 @@
-namespace Happie.Shared.Domain;
+namespace Happie.Api.Domain;
 
 /// <summary>The dish planned for a specific day in a household.</summary>
 public record DishRecord(

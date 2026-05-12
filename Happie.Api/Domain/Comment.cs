@@ -1,4 +1,4 @@
-namespace Happie.Shared.Domain;
+namespace Happie.Api.Domain;
 
 /// <summary>A free-text note from a housemate for a specific day (one slot per housemate per day).</summary>
 public record Comment(

@@ -1,7 +1,9 @@
 using ExpectedObjects;
 using Happie.Api.Functions;
 using Happie.Api.Handlers;
-using Happie.Api.Models;
+using Happie.Api.Results;
+using Happie.Shared.Contracts;
+using Happie.Api.Domain;
 using Happie.Shared.Domain;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
