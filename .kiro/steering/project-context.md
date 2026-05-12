@@ -67,7 +67,18 @@ Error responses follow this shape:
 { "error": "Human-readable message", "code": "MACHINE_READABLE_CODE" }
 ```
 
-Standard error codes: `UNAUTHORIZED` (401), `FORBIDDEN` (403), `NOT_FOUND` (404), `VALIDATION_ERROR` (422), `COLOR_CONFLICT` (409), `INTERNAL_ERROR` (500).
+The response body is typed as `ApiErrorResponse(string Error, string Code)` with `[JsonPropertyName]` attributes for lowercase wire format. Error codes are defined as constants in `ApiErrorCodes`:
+
+| Code | Status | Meaning |
+|---|---|---|
+| `UNAUTHORIZED` | 401 | Missing or invalid credentials |
+| `FORBIDDEN` | 403 | Authenticated but not permitted |
+| `NOT_FOUND` | 404 | Resource does not exist |
+| `VALIDATION_ERROR` | 422 | Request payload failed validation |
+| `COLOR_CONFLICT` | 409 | Requested housemate color already in use |
+| `BAD_REQUEST` | 400 | Malformed or missing request body |
+
+Unhandled enum values in switch expressions throw `InvalidOperationException` rather than returning a 500 response.
 
 ## Authentication Flow
 

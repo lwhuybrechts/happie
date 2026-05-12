@@ -260,7 +260,31 @@ public class MyFunction
 }
 ```
 
+### Error Responses
+
+All HTTP error responses MUST use `ApiErrorResponse` and `ApiErrorCodes` — never anonymous objects:
+
+```csharp
+// ❌ BAD: anonymous object.
+return new NotFoundObjectResult(new { error = "Not found.", code = "NOT_FOUND" });
+
+// ✅ GOOD: typed record with constant code.
+return new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound));
+```
+
+- `ApiErrorResponse` is a record in `Happie.Api/Models/` with `[JsonPropertyName]` attributes for lowercase wire format
+- `ApiErrorCodes` is a static class in `Happie.Api/Constants/` with `const string` values
+- Exhaustive enum switches that reach an unhandled arm MUST throw `InvalidOperationException`, not return a 500 response:
+
+```csharp
+_ => throw new InvalidOperationException($"Unhandled {nameof(MyOutcome)}: {outcome}"),
+```
+
 ## Test Conventions (MUST follow)
+
+### Shared test helpers
+
+Helpers shared across multiple test classes MUST live in their own file, not be duplicated. For example, `HttpRequestFactory` in `Happie.Api.Tests/Functions/` provides `HttpRequestFactory.Create<T>(body)` for all function tests that need to build an `HttpRequest` with a JSON body.
 
 ### File naming
 
@@ -488,7 +512,7 @@ public class MyRepositoryTests
 
 ```csharp
 [Property(MaxTest = 100)]
-public Task<Property> MyRepository_SomeProperty()
+public Property MyRepository_SomeProperty()
 {
     return Prop.ForAll(
         MyArb(),
@@ -502,7 +526,7 @@ public Task<Property> MyRepository_SomeProperty()
 
             return (result != null)
                 .Label($"Expected to find {input.Id} after upsert");
-        }).ToProperty();
+        });
 }
 ```
 
