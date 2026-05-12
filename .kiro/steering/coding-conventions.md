@@ -544,6 +544,37 @@ public class MyRepositoryTests
 }
 ```
 
+### Integration tests — Azurite prerequisite (MUST follow)
+
+Integration tests that hit Azure Table Storage use the local Azurite emulator. **Azurite must be running before executing `dotnet test`**, otherwise all integration tests will fail with a connection error.
+
+Start Azurite before running tests:
+
+```bash
+azurite --silent
+```
+
+Or use the **Azurite extension** in VS Code / Visual Studio, which starts it automatically when the workspace opens.
+
+The connection string used by integration tests defaults to `"UseDevelopmentStorage=true"` when the `AZURE_STORAGE_CONNECTION_STRING` environment variable is not set — this points to the local Azurite instance on the default ports (Blob: 10000, Queue: 10001, Table: 10002).
+
+### Integration tests — disable parallel execution (MUST follow)
+
+Any integration test project that shares Azure Table Storage tables across test classes MUST disable xUnit's parallel test execution. Without this, multiple test class constructors truncate the same tables simultaneously, causing cross-test contamination.
+
+Add an `AssemblyInfo.cs` file to the integration test project with the following content:
+
+```csharp
+using Xunit;
+
+// Disable parallel test execution for integration tests because they share Azure Table Storage tables.
+// Running tests in parallel causes cross-test contamination when multiple test class constructors
+// truncate and write to the same tables simultaneously.
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+```
+
+This file already exists in `Happie.Api.IntegrationTests/AssemblyInfo.cs`. Any new integration test project that uses shared tables MUST include the same file.
+
 ### Property-based tests (FsCheck)
 
 - Use **FsCheck 3.1+** which supports `async` property callbacks natively — **never use `GetAwaiter().GetResult()`**

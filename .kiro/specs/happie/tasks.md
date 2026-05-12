@@ -204,7 +204,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - DayHistoryLog entries are ordered reverse-chronologically
     - _Requirements: 5.4, 6.5_
 
-- [ ] 8. Checkpoint — Ensure all tests pass
+- [x] 8. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 9. Push notifications — backend
