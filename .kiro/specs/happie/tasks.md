@@ -48,8 +48,8 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Property 6: Data isolation between households**
     - **Validates: Requirements 1.8, 2.2, 2.3**
 
-- [ ] 4. Authentication — backend
-  - [ ] 4.1 Implement `POST /api/auth/login`
+- [x] 4. Authentication — backend
+  - [x] 4.1 Implement `POST /api/auth/login`
     - Look up household via `IHouseholdRepository`; verify password hash (bcrypt); return signed JWT (signed with `JwtSigningKey` from Key Vault) scoped to `HouseholdId` + list of active housemates fetched via `IHousemateRepository`
     - Return 401 with `UNAUTHORIZED` code on mismatch
     - _Requirements: 1.1, 1.2, 1.6_
@@ -62,7 +62,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Property 4: Wrong password is denied**
     - **Validates: Requirements 1.6**
 
-  - [ ] 4.4 Implement JWT validation middleware / `IFunctionMiddleware`
+  - [x] 4.4 Implement JWT validation middleware / `IFunctionMiddleware`
     - Validate `Authorization: Bearer` JWT and `X-Housemate-Id` header on every protected function
     - Reject with 401 `UNAUTHORIZED` or 403 `FORBIDDEN` as appropriate
     - _Requirements: 1.7, 1.8_
@@ -71,7 +71,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Property 5: Logout invalidates session**
     - **Validates: Requirements 1.7**
 
-  - [~] 4.6 Write unit tests for authentication
+  - [x] 4.6 Write unit tests for authentication
     - Login with correct password returns expected household
     - Login with incorrect password returns 401
     - Logout clears session token

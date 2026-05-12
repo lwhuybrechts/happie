@@ -3,8 +3,8 @@ using FsCheck;
 using FsCheck.Fluent;
 using FsCheck.Xunit;
 using Happie.Api.Infrastructure;
-using Happie.Api.Repositories;
-using Happie.Api.Repositories.Mappers;
+using Happie.Api.Infrastructure.Mappers;
+using Happie.Api.Infrastructure.Repositories;
 using Happie.Shared.Domain;
 
 namespace Happie.Tests;
@@ -53,7 +53,7 @@ public class DataIsolationTests
     /// Validates: Requirements 1.8, 2.2, 2.3
     /// </summary>
     [Property(MaxTest = 100)]
-    public Task<Property> HousemateRepository_DataIsolation_BetweenHouseholds()
+    public Property HousemateRepository_DataIsolation_BetweenHouseholds()
     {
         return Prop.ForAll(
             DistinctHouseholdPairArb(),
@@ -72,9 +72,9 @@ public class DataIsolationTests
                 // Clean up to avoid cross-iteration interference when household GUIDs collide.
                 await _housemateRepository.DeleteAsync(householdA, housemateId);
 
-                return resultsB.All(h => h.HouseholdId != householdA)
+                return resultsB.All(x => x.HouseholdId != householdA)
                     .Label($"Housemate written to household A ({householdA}) must not appear in household B ({householdB})");
-            }).ToProperty();
+            });
     }
 
     // Feature: happie, Property 6: Data isolation between households
@@ -84,7 +84,7 @@ public class DataIsolationTests
     /// Validates: Requirements 1.8, 2.2, 2.3
     /// </summary>
     [Property(MaxTest = 100)]
-    public Task<Property> AttendanceRepository_DataIsolation_BetweenHouseholds()
+    public Property AttendanceRepository_DataIsolation_BetweenHouseholds()
     {
         return Prop.ForAll(
             DistinctHouseholdPairWithDateArb(),
@@ -99,9 +99,9 @@ public class DataIsolationTests
                 // Query from household B on the same date — must return no results belonging to household A.
                 var resultsB = await _attendanceRepository.GetByDateAsync(householdB, date);
 
-                return resultsB.All(r => r.HouseholdId != householdA)
+                return resultsB.All(x => x.HouseholdId != householdA)
                     .Label($"Attendance written to household A ({householdA}) must not appear in household B ({householdB})");
-            }).ToProperty();
+            });
     }
 
     // Feature: happie, Property 6: Data isolation between households
@@ -111,7 +111,7 @@ public class DataIsolationTests
     /// Validates: Requirements 1.8, 2.2, 2.3
     /// </summary>
     [Property(MaxTest = 100)]
-    public Task<Property> DishRepository_DataIsolation_BetweenHouseholds()
+    public Property DishRepository_DataIsolation_BetweenHouseholds()
     {
         return Prop.ForAll(
             DistinctHouseholdPairWithDateArb(),
@@ -128,7 +128,7 @@ public class DataIsolationTests
 
                 return (resultB == null || resultB.HouseholdId != householdA)
                     .Label($"Dish written to household A ({householdA}) must not appear in household B ({householdB})");
-            }).ToProperty();
+            });
     }
 
     // Feature: happie, Property 6: Data isolation between households
@@ -138,7 +138,7 @@ public class DataIsolationTests
     /// Validates: Requirements 1.8, 2.2, 2.3
     /// </summary>
     [Property(MaxTest = 100)]
-    public Task<Property> CommentRepository_DataIsolation_BetweenHouseholds()
+    public Property CommentRepository_DataIsolation_BetweenHouseholds()
     {
         return Prop.ForAll(
             DistinctHouseholdPairWithDateArb(),
@@ -156,9 +156,9 @@ public class DataIsolationTests
                 // Clean up to avoid cross-iteration interference when household GUIDs collide.
                 await _commentRepository.DeleteAsync(householdA, date, housemateId);
 
-                return resultsB.All(c => c.HouseholdId != householdA)
+                return resultsB.All(x => x.HouseholdId != householdA)
                     .Label($"Comment written to household A ({householdA}) must not appear in household B ({householdB})");
-            }).ToProperty();
+            });
     }
 
     // Feature: happie, Property 6: Data isolation between households
@@ -168,7 +168,7 @@ public class DataIsolationTests
     /// Validates: Requirements 1.8, 2.2, 2.3
     /// </summary>
     [Property(MaxTest = 100)]
-    public Task<Property> PushSubscriptionRepository_DataIsolation_BetweenHouseholds()
+    public Property PushSubscriptionRepository_DataIsolation_BetweenHouseholds()
     {
         return Prop.ForAll(
             DistinctHouseholdPairArb(),
@@ -193,9 +193,9 @@ public class DataIsolationTests
                 // Clean up to avoid cross-iteration interference when household GUIDs collide.
                 await _pushSubscriptionRepository.DeleteAsync(householdA, housemateId);
 
-                return resultsB.All(s => s.HouseholdId != householdA)
+                return resultsB.All(x => x.HouseholdId != householdA)
                     .Label($"Push subscription written to household A ({householdA}) must not appear in household B ({householdB})");
-            }).ToProperty();
+            });
     }
 
     // Feature: happie, Property 6: Data isolation between households
@@ -205,7 +205,7 @@ public class DataIsolationTests
     /// Validates: Requirements 1.8, 2.2, 2.3
     /// </summary>
     [Property(MaxTest = 100)]
-    public Task<Property> DayHistoryRepository_DataIsolation_BetweenHouseholds()
+    public Property DayHistoryRepository_DataIsolation_BetweenHouseholds()
     {
         return Prop.ForAll(
             DistinctHouseholdPairWithDateArb(),
@@ -226,9 +226,9 @@ public class DataIsolationTests
                 // Query from household B on the same date — must return no results belonging to household A.
                 var resultsB = await _dayHistoryRepository.GetByDateAsync(householdB, date);
 
-                return resultsB.All(e => e.HouseholdId != householdA)
+                return resultsB.All(x => x.HouseholdId != householdA)
                     .Label($"Day history written to household A ({householdA}) must not appear in household B ({householdB})");
-            }).ToProperty();
+            });
     }
 
     /// <summary>Generates two distinct household GUIDs as a tuple.</summary>

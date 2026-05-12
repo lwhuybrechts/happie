@@ -266,6 +266,186 @@ public class MyFunction
 
 `{ClassUnderTest}Tests.cs`
 
+### One class/record per file
+
+Every class, record, and interface MUST live in its own file. This applies to production code and test helpers alike. Never define multiple types in a single `.cs` file.
+
+### Test method naming
+
+Use the **Act_Arrange_Assert** pattern. **Act (the method under test) comes first** so tests group alphabetically by the method being tested:
+
+```
+MethodUnderTest_Scenario_ExpectedOutcome
+```
+
+Examples:
+- `HandleAsync_CorrectPassword_ReturnsActiveHousemates`
+- `Run_NullBody_ReturnsBadRequest`
+- `TryValidateToken_ExpiredToken_Rejects`
+
+❌ BAD: `CorrectPassword_HandleAsync_ReturnsHousemates` — scenario first breaks alphabetical grouping
+✅ GOOD: `HandleAsync_CorrectPassword_ReturnsActiveHousemates` — act first, groups with all other `HandleAsync_*` tests
+
+### System under test naming
+
+The instance of the class being tested MUST be named `_sut` (System Under Test). This makes it immediately clear which object is the focus of the test.
+
+```csharp
+// ❌ BAD: named after the type.
+private readonly LoginHandler _handler;
+private readonly LoginFunction _function;
+
+// ✅ GOOD: always _sut.
+private readonly LoginHandler _sut;
+```
+
+### Mock field initialization
+
+Mock dependencies MUST be initialized inline at the field declaration using `new()`, not inside the constructor. This keeps the constructor focused solely on wiring up `_sut`.
+
+```csharp
+// ❌ BAD: initialized in constructor.
+private readonly Mock<ILoginHandler> _loginHandlerMock;
+
+public LoginFunctionTests()
+{
+    _loginHandlerMock = new Mock<ILoginHandler>();
+    _sut = new LoginFunction(_loginHandlerMock.Object);
+}
+
+// ✅ GOOD: initialized inline, constructor only wires _sut.
+private readonly Mock<ILoginHandler> _loginHandlerMock = new();
+
+public LoginFunctionTests()
+{
+    _sut = new LoginFunction(_loginHandlerMock.Object);
+}
+```
+
+### Setup and create helper methods
+
+To keep test methods readable, extract mock setups and object construction into **private helper methods** at the bottom of the test class. This removes noise from the Arrange section and makes helpers reusable across tests.
+
+- **Setup methods** configure mock behavior. Name them `Setup{MethodName}(...)`.
+- **Create methods** construct domain objects or DTOs. Name them `Create{TypeName}(...)`. Make them `static` when they don't reference instance fields.
+- Only add a value as a parameter to a create method if the test needs to assert or reference that specific value. If a property is irrelevant to the test, define it inside the create method instead.
+- Place all helper methods **at the bottom of the class**, after all test methods. All setup methods come first, followed by all create methods — no separating comments.
+
+```csharp
+// ❌ BAD: householdId is passed in but never asserted — it's noise in the test.
+var loginResult = CreateLoginResult(token, housemateId, householdId);
+
+private static LoginResult CreateLoginResult(string token, Guid housemateId, Guid householdId) =>
+    new(token, new List<Housemate>
+    {
+        new(housemateId, householdId, "Alice", HousemateColors.Palette[0], false),
+    });
+
+// ✅ GOOD: householdId is irrelevant to the test, so it lives inside the create method.
+var loginResult = CreateLoginResult(token, housemateId);
+
+private static LoginResult CreateLoginResult(string token, Guid housemateId) =>
+    new(token, new List<Housemate>
+    {
+        new(housemateId, Guid.NewGuid(), "Alice", HousemateColors.Palette[0], false),
+    });
+```
+
+```csharp
+// ✅ GOOD: Arrange is concise; all setup methods first, then create methods at the bottom.
+[Fact]
+public async Task HandleAsync_CorrectPassword_ReturnsActiveHousemates()
+{
+    // Arrange.
+    var housemates = CreateHousemates(householdId, aliceId, bobId);
+    SetupGetAllHouseholds(new List<Household> { new(householdId, "Test Household", passwordHash) });
+    SetupGetAllHousemates(householdId, housemates);
+
+    // Act.
+    var result = await _sut.HandleAsync("correct-password");
+
+    // Assert.
+    housemates.ToExpectedObject().ShouldEqual(result!.Housemates);
+}
+
+private void SetupGetAllHouseholds(List<Household> returns)
+{
+    _householdRepositoryMock
+        .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+        .ReturnsAsync(returns);
+}
+
+private void SetupGetAllHousemates(Guid householdId, List<Housemate> returns)
+{
+    _housemateRepositoryMock
+        .Setup(r => r.GetAllAsync(householdId, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(returns);
+}
+
+private static List<Housemate> CreateHousemates(Guid householdId, Guid aliceId, Guid bobId) =>
+    new()
+    {
+        new(aliceId, householdId, "Alice", HousemateColors.Palette[0], false),
+        new(bobId, householdId, "Bob", HousemateColors.Palette[1], false),
+    };
+```
+
+Every test body MUST contain the three section comments exactly as shown:
+
+```csharp
+// Arrange.
+// Act.
+// Assert.
+```
+
+### Assertions — prefer single assert with ExpectedObjects
+
+- Prefer **one assert per test** — when a test has multiple asserts, only the first failure is reported, hiding subsequent failures.
+- When asserting multiple properties of an object, use the **`ExpectedObjects`** package instead of multiple `Assert.*` calls.
+- Add `ExpectedObjects` to the test project: `dotnet add package ExpectedObjects --version 2.2.0`
+- **Prefer actual typed objects over anonymous objects** when comparing with `ExpectedObjects`. This improves discoverability and ensures tests break when properties are renamed.
+
+```csharp
+// ❌ BAD: multiple asserts — later failures are hidden when the first one fails.
+Assert.Equal("Alice", result.Name);
+Assert.Equal(housemateId, result.Id);
+Assert.Equal("#FF0000", result.Color);
+
+// ❌ ALSO BAD: anonymous object — property renames silently break the comparison.
+new { Name = "Alice", Id = housemateId, Color = "#FF0000" }
+    .ToExpectedObject()
+    .ShouldEqual(new { Name = result.Name, Id = result.Id, Color = result.Color });
+
+// ✅ GOOD: actual typed object — rename-safe and discoverable.
+new Housemate(housemateId, householdId, "Alice", "#FF0000", false)
+    .ToExpectedObject()
+    .ShouldEqual(result);
+```
+
+Use plain `Assert.*` only when asserting a single scalar value (e.g., `Assert.Null`, `Assert.True`, `Assert.IsType`).
+
+### Full example
+
+```csharp
+private readonly LoginHandler _sut;
+
+[Fact]
+public async Task HandleAsync_CorrectPassword_ReturnsActiveHousemates()
+{
+    // Arrange.
+    var householdId = Guid.NewGuid();
+    _repositoryMock.Setup(...).ReturnsAsync(...);
+
+    // Act.
+    var result = await _sut.HandleAsync("correct-password");
+
+    // Assert.
+    new LoginResult("expected-token", expectedHousemates)
+        .ToExpectedObject()
+        .ShouldEqual(result);
+}
+```
+
 ### Test isolation
 
 - **DO NOT use `IDisposable`** for Azure Table Storage test cleanup — it doesn't guarantee execution order
@@ -330,6 +510,13 @@ public Task<Property> MyRepository_SomeProperty()
 
 ## Code Conventions (MUST follow)
 
+### One type per file
+
+Every class, record, interface, and enum MUST live in its own `.cs` file. Never define multiple types in a single file, even for small DTOs or request/response records.
+
+- ❌ BAD: `LoginFunction.cs` containing `LoginRequest`, `LoginResponse`, `HousemateDto`, and `LoginFunction`
+- ✅ GOOD: `LoginRequest.cs`, `LoginResponse.cs`, `HousemateDto.cs`, `LoginFunction.cs` — one type each
+
 ### Comments
 
 - All comments MUST end with a period at the end of sentences
@@ -359,8 +546,13 @@ public Task<Property> MyRepository_SomeProperty()
 
 - **Always use method syntax** (`.Where(...)`, `.Select(...)`, `.All(...)`, etc.)
 - **Never use query syntax** (`from x in ...`, `where`, `select` keywords)
+- **Single non-nested lambda variable MUST be named `x`**. Use descriptive names only when lambdas are nested and need to be distinguished.
 - ❌ BAD: `from a in gen from b in gen where a != b select (a, b)`
-- ✅ GOOD: `gen.SelectMany(a => gen.Where(b => b != a).Select(b => (a, b)))`
+- ✅ GOOD: `gen.SelectMany(a => gen.Where(b => b != a).Select(b => (a, b)))` — nested, so `a`/`b` are acceptable
+- ❌ BAD: `entities.Select(e => _mapper.ToModel(e))`
+- ✅ GOOD: `entities.Select(x => _mapper.ToModel(x))`
+- ❌ BAD: `households.FirstOrDefault(h => BCrypt.Verify(password, h.PasswordHash))`
+- ✅ GOOD: `households.FirstOrDefault(x => BCrypt.Verify(password, x.PasswordHash))`
 
 ### Implicit Usings
 

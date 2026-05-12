@@ -2,10 +2,12 @@ using Azure.Data.Tables;
 using Azure.Identity;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Security.KeyVault.Secrets;
+using Happie.Api.Handlers;
 using Happie.Api.Infrastructure;
+using Happie.Api.Infrastructure.Mappers;
+using Happie.Api.Infrastructure.Repositories;
+using Happie.Api.Middleware;
 using Happie.Api.Options;
-using Happie.Api.Repositories;
-using Happie.Api.Repositories.Mappers;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using HappieSentryOptions = Happie.Api.Options.SentryOptions;
+using Happie.Api.Infrastructure.Mappers;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -39,9 +42,9 @@ builder.Services
 
 // Register TableServiceClient and the ITableStorageClient wrapper.
 // The connection string is resolved from Key Vault at runtime.
-builder.Services.AddSingleton(sp =>
+builder.Services.AddSingleton(x =>
 {
-    var config = sp.GetRequiredService<IConfiguration>();
+    var config = x.GetRequiredService<IConfiguration>();
     return new TableServiceClient(config["TableStorageConnectionString"]);
 });
 builder.Services.AddSingleton<ITableStorageClient, TableStorageClient>();
@@ -69,13 +72,25 @@ builder.Services
     .Configure<HappieSentryOptions>(builder.Configuration.GetSection(HappieSentryOptions.SectionName))
     .AddOptionsWithValidateOnStart<HappieSentryOptions>();
 
+// Register JwtOptions with startup validation.
+// JwtSigningKey is loaded from Key Vault as a flat secret and mapped to JwtOptions.SigningKey.
+builder.Services
+    .Configure<JwtOptions>(x => x.SigningKey = builder.Configuration["JwtSigningKey"] ?? string.Empty)
+    .AddOptionsWithValidateOnStart<JwtOptions>();
+
+// Register authentication handlers.
+builder.Services.AddSingleton<ILoginHandler, LoginHandler>();
+
 // Register Sentry as an ILogger provider; DSN is read from SentryOptions at startup.
 // All ILogger.Log* calls and unhandled exceptions flow to Sentry automatically.
-builder.Logging.AddSentry(o =>
+builder.Logging.AddSentry(x =>
 {
-    o.Dsn = builder.Configuration[$"{HappieSentryOptions.SectionName}:{nameof(HappieSentryOptions.Dsn)}"];
-    o.MinimumBreadcrumbLevel = LogLevel.Information;
-    o.MinimumEventLevel = LogLevel.Warning;
+    x.Dsn = builder.Configuration[$"{HappieSentryOptions.SectionName}:{nameof(HappieSentryOptions.Dsn)}"];
+    x.MinimumBreadcrumbLevel = LogLevel.Information;
+    x.MinimumEventLevel = LogLevel.Warning;
 });
+
+// Register JWT authentication middleware.
+builder.UseMiddleware<JwtMiddleware>();
 
 builder.Build().Run();
