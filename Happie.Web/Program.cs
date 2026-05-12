@@ -15,9 +15,17 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddTransient<AuthHeaderHandler>();
 
 // Register the named HttpClient with base address pointing to the /api proxy.
+// In local development, appsettings.Development.json sets ApiBaseUrl to the Functions host directly.
+// In production on Azure Static Web Apps, appsettings.json uses the relative "api/" proxy path.
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"]
+    ?? throw new InvalidOperationException("ApiBaseUrl is not configured. Add it to appsettings.json or appsettings.Development.json.");
+var apiBaseUri = apiBaseUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+    ? new Uri(apiBaseUrl)
+    : new Uri(builder.HostEnvironment.BaseAddress + apiBaseUrl);
+
 builder.Services.AddHttpClient("HappieApi", client =>
 {
-    client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress + "api/");
+    client.BaseAddress = apiBaseUri;
 }).AddHttpMessageHandler<AuthHeaderHandler>();
 
 // Register a typed HttpClient factory so components can resolve HttpClient directly.
@@ -32,6 +40,9 @@ builder.Services.AddLocalization();
 
 // Register the locale service as scoped so it is shared within a single render session.
 builder.Services.AddScoped<LocaleService>();
+
+// Register the session service as scoped so it is shared within a single render session.
+builder.Services.AddScoped<SessionService>();
 
 var host = builder.Build();
 

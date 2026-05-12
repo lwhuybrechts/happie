@@ -1,5 +1,101 @@
 @page "/"
+@using Happie.Shared.Contracts
+@inject HttpClient Http
+@inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<AppStrings> Localizer
 
-<PageTitle>Happie</PageTitle>
+<PageTitle>@Localizer["Login_Title"]</PageTitle>
 
-<h1>Login</h1>
+@if (_housemates is null)
+{
+    <h1>@Localizer["Login_Title"]</h1>
+
+    <EditForm Model="_loginModel" OnValidSubmit="SubmitLoginAsync">
+        <DataAnnotationsValidator />
+
+        <div>
+            <label for="password">@Localizer["Login_PasswordLabel"]</label>
+            <InputText id="password"
+                       type="password"
+                       @bind-Value="_loginModel.Password"
+                       placeholder="@Localizer["Login_PasswordPlaceholder"]" />
+        </div>
+
+        @if (_showError)
+        {
+            <p role="alert">@Localizer["Login_ErrorMessage"]</p>
+        }
+
+        <button type="submit" disabled="@_isSubmitting">@Localizer["Login_SubmitButton"]</button>
+    </EditForm>
+}
+else
+{
+    <h1>@Localizer["Login_SelectHousemate"]</h1>
+
+    <ul>
+        @foreach (var housemate in _housemates)
+        {
+            <li>
+                <button @onclick="() => SelectHousemateAsync(housemate)">
+                    @housemate.Name
+                </button>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private readonly LoginFormModel _loginModel = new();
+    private IReadOnlyList<HousemateDto>? _housemates;
+    private bool _showError;
+    private bool _isSubmitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var existingToken = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "jwt");
+
+        if (!string.IsNullOrWhiteSpace(existingToken))
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+            NavigationManager.NavigateTo($"/day/{today}", replace: true);
+        }
+    }
+
+    private async Task SubmitLoginAsync()
+    {
+        _isSubmitting = true;
+        _showError = false;
+
+        var response = await Http.PostAsJsonAsync("auth/login", new LoginRequest(_loginModel.Password));
+
+        if (response.IsSuccessStatusCode)
+        {
+            var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
+
+            await JsRuntime.InvokeVoidAsync("localStorage.setItem", "jwt", loginResponse!.Token);
+
+            _housemates = loginResponse.Housemates;
+        }
+        else
+        {
+            _showError = true;
+        }
+
+        _isSubmitting = false;
+    }
+
+    private async Task SelectHousemateAsync(HousemateDto housemate)
+    {
+        await JsRuntime.InvokeVoidAsync("localStorage.setItem", "activeHousemateId", housemate.Id.ToString());
+
+        var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+        NavigationManager.NavigateTo($"/day/{today}");
+    }
+
+    private sealed class LoginFormModel
+    {
+        public string Password { get; set; } = string.Empty;
+    }
+}

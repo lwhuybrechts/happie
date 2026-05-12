@@ -109,4 +109,7 @@
   <data name="Language_Dutch" xml:space="preserve">
     <value>Dutch</value>
   </data>
+  <data name="Logout" xml:space="preserve">
+    <value>Log out</value>
+  </data>
 </root>

@@ -119,3 +119,53 @@ PartitionKey is always `HouseholdId` (string) so all records for a household are
 - Property-based tests: FsCheck, minimum 100 iterations per property
 - Each property test must be tagged: `// Feature: happie, Property {N}: {property_text}`
 - Both client-side and server-side validation must be enforced for all field length rules
+
+## Running Locally
+
+### Prerequisites
+
+- [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local) (`func` on PATH)
+- [Azurite](https://learn.microsoft.com/azure/storage/common/storage-use-azurite) running on default ports (Table: 10002)
+- `az login` is only required if `KeyVaultUri` is set in `local.settings.json`; if it is absent the app skips Key Vault entirely and reads secrets directly from `local.settings.json`
+
+### Start the API
+
+```bash
+cd Happie.Api
+func start
+```
+
+The API starts on **http://localhost:7071**. All function endpoints are listed in the startup output.
+
+The `local.settings.json` includes a `Host.CORS` entry that allows requests from the Blazor dev server (`http://localhost:5195`). This is required because the browser enforces CORS when the frontend and API run on different ports locally.
+
+### Start the Frontend
+
+```bash
+dotnet run --project Happie.Web --launch-profile http
+```
+
+The frontend starts on **http://localhost:5195**.
+
+### Local Test Data — Seed a Household
+
+The `Households` table in Azurite must contain at least one record before login works. Insert a row with the values below using Azure Storage Explorer or any Table Storage client:
+
+| Field | Value |
+|---|---|
+| PartitionKey | `households` |
+| RowKey | any new GUID, e.g. `00000000-0000-0000-0000-000000000001` |
+| Name | `Test Household` |
+| PasswordHash | `$2a$11$qa7dtLgVeLxVbxunMy2n2OIQXU8mZx5K8C4okHgF8LdbejOpXRboi` |
+
+The hash above corresponds to the password **`happie`** (bcrypt, cost 11).
+
+Add at least one housemate in the `Housemates` table:
+
+| Field | Value |
+|---|---|
+| PartitionKey | `{HouseholdId}` (the RowKey of the household above) |
+| RowKey | any new GUID, e.g. `00000000-0000-0000-0000-000000000002` |
+| Name | `Alice` |
+| Color | `#EF4444` |
+| IsDeleted | `false` |

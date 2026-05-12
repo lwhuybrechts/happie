@@ -275,22 +275,22 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
   - [x] 11.5 Write unit test: default locale is "nl" when no locale is set
     - _Requirements: 11.4_
 
-- [~] 12. Blazor WASM — LoginPage and session management
-  - [ ] 12.1 Implement `LoginPage` (`/`)
+- [x] 12. Blazor WASM — LoginPage and session management
+  - [x] 12.1 Implement `LoginPage` (`/`)
     - Password entry form; on success store JWT in `localStorage`, display housemate selection list
     - On housemate selection store `ActiveHousemateId` in `localStorage`; redirect to `/day/{today}`
     - Show error message on wrong password
     - _Requirements: 1.1, 1.2, 1.3, 1.6_
 
-  - [ ]* 12.2 Write property test: active housemate selection round-trip
+  - [x]* 12.2 Write property test: active housemate selection round-trip
     - **Property 2: Active housemate selection round-trip**
     - **Validates: Requirements 1.3, 1.4**
 
-  - [~] 12.3 Implement session restore on app startup
+  - [x] 12.3 Implement session restore on app startup
     - On load, read JWT + `ActiveHousemateId` from `localStorage`; if valid JWT skip login screen
     - _Requirements: 1.4, 1.5_
 
-  - [ ] 12.4 Implement logout
+  - [x] 12.4 Implement logout
     - Clear JWT and `ActiveHousemateId` from `localStorage`; redirect to `/`
     - _Requirements: 1.7_
 

@@ -1,4 +1,7 @@
 ﻿@inherits LayoutComponentBase
+@inject SessionService SessionService
+@inject IStringLocalizer<AppStrings> Localizer
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -7,7 +10,7 @@
     <main>
         <div class="top-row px-4">
             <LocaleSwitcher />
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <button @onclick="LogoutAsync" class="btn btn-link">@Localizer["Logout"]</button>
         </div>
 
         <article class="content px-4">
@@ -15,3 +18,7 @@
         </article>
     </main>
 </div>
+
+@code {
+    private Task LogoutAsync() => SessionService.LogoutAsync();
+}
