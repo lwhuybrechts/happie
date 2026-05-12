@@ -82,7 +82,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - Return all active (non-deleted) housemates for the household via `IHousemateRepository`
     - _Requirements: 12.1, 12.8_
 
-  - [ ]* 5.2 Write property test: active housemate list contains no deleted housemates
+  - [x]* 5.2 Write property test: active housemate list contains no deleted housemates
     - **Property 22: Active housemate list contains no deleted housemates**
     - **Validates: Requirements 12.1, 12.8**
 
@@ -91,11 +91,11 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - Return 422 `VALIDATION_ERROR` on invalid name
     - _Requirements: 12.3, 12.4, 12.10_
 
-  - [ ]* 5.4 Write property test: add housemate round-trip
+  - [x]* 5.4 Write property test: add housemate round-trip
     - **Property 23: Add housemate round-trip**
     - **Validates: Requirements 12.3**
 
-  - [ ]* 5.5 Write property test: housemate name validation
+  - [x]* 5.5 Write property test: housemate name validation
     - **Property 30: Housemate name validation**
     - **Validates: Requirements 12.4**
 
@@ -103,11 +103,11 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - Validate name rules; check color uniqueness via `IHousemateRepository`; reject color already in use with 409 `COLOR_CONFLICT`; persist via `IHousemateRepository`
     - _Requirements: 12.11, 12.12, 12.13, 12.14_
 
-  - [ ]* 5.7 Write property test: color uniqueness invariant within a household
+  - [x]* 5.7 Write property test: color uniqueness invariant within a household
     - **Property 27: Color uniqueness invariant within a household**
     - **Validates: Requirements 12.10, 12.11, 12.12, 12.13**
 
-  - [ ]* 5.8 Write property test: rename round-trip
+  - [x]* 5.8 Write property test: rename round-trip
     - **Property 28: Rename round-trip**
     - **Validates: Requirements 12.14**
 
@@ -115,7 +115,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - Check for linked records via `IAttendanceRepository` and `ICommentRepository`; hard delete via `IHousemateRepository` if none, soft delete (`IsDeleted = true`) via `IHousemateRepository` otherwise
     - _Requirements: 12.5, 12.6, 12.7_
 
-  - [ ]* 5.10 Write property test: hard delete removes housemate with no history
+  - [x]* 5.10 Write property test: hard delete removes housemate with no history
     - **Property 24: Hard delete removes housemate with no history**
     - **Validates: Requirements 12.5**
 
@@ -134,7 +134,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - Housemate name validation rejects empty, whitespace-only, and strings > 50 chars (boundary: 50, 51)
     - _Requirements: 12.4, 12.5, 12.6, 12.7, 12.12_
 
-- [ ] 6. Checkpoint — Ensure all tests pass
+- [x] 6. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Day plan — backend
