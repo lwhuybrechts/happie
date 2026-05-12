@@ -510,6 +510,24 @@ public Task<Property> MyRepository_SomeProperty()
 
 ## Code Conventions (MUST follow)
 
+### Braces
+
+- **Omit braces for single-statement `if`, `else`, `for`, `foreach`, `while` bodies**
+- The statement goes on the next line, indented
+- ❌ BAD:
+  ```csharp
+  if (result is null)
+  {
+      return null;
+  }
+  ```
+- ✅ GOOD:
+  ```csharp
+  if (result is null)
+      return null;
+  ```
+- Exception: always use braces when the body spans multiple lines or when an `if`/`else` chain mixes single-line and multi-line bodies
+
 ### One type per file
 
 Every class, record, interface, and enum MUST live in its own `.cs` file. Never define multiple types in a single file, even for small DTOs or request/response records.

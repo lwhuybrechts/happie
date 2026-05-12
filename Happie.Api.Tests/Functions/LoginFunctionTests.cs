@@ -3,10 +3,8 @@ using Happie.Api.Functions;
 using Happie.Api.Handlers;
 using Happie.Api.Models;
 using Happie.Shared.Domain;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using System.Text;
 using System.Text.Json;
 
 namespace Happie.Api.Tests.Functions;
@@ -34,7 +32,7 @@ public class LoginFunctionTests
         var loginResult = CreateLoginResult(token, housemateId);
         SetupHandleAsync("correct-password", loginResult);
 
-        var request = CreateRequest(new { Password = "correct-password" });
+        var request = HttpRequestFactory.Create(new { Password = "correct-password" });
 
         // Act.
         var result = await _sut.Run(request, CancellationToken.None);
@@ -55,7 +53,7 @@ public class LoginFunctionTests
         // Arrange.
         SetupHandleAsync("wrong-password", null);
 
-        var request = CreateRequest(new { Password = "wrong-password" });
+        var request = HttpRequestFactory.Create(new { Password = "wrong-password" });
 
         // Act.
         var result = await _sut.Run(request, CancellationToken.None);
@@ -70,7 +68,7 @@ public class LoginFunctionTests
     public async Task Run_EmptyPassword_ReturnsBadRequest()
     {
         // Arrange.
-        var request = CreateRequest(new { Password = "" });
+        var request = HttpRequestFactory.Create(new { Password = "" });
 
         // Act.
         var result = await _sut.Run(request, CancellationToken.None);
@@ -84,7 +82,7 @@ public class LoginFunctionTests
     public async Task Run_NullBody_ReturnsBadRequest()
     {
         // Arrange.
-        var request = CreateRequest<object?>(null);
+        var request = HttpRequestFactory.Create<object?>(null);
 
         // Act.
         var result = await _sut.Run(request, CancellationToken.None);
@@ -105,17 +103,4 @@ public class LoginFunctionTests
         {
             new(housemateId, Guid.NewGuid(), "Alice", HousemateColors.Palette[0], false),
         });
-
-    private static HttpRequest CreateRequest<T>(T body)
-    {
-        var json = JsonSerializer.Serialize(body);
-        var bytes = Encoding.UTF8.GetBytes(json);
-
-        var context = new DefaultHttpContext();
-        context.Request.ContentType = "application/json";
-        context.Request.Body = new MemoryStream(bytes);
-        context.Request.ContentLength = bytes.Length;
-
-        return context.Request;
-    }
 }

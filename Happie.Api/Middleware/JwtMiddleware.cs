@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Happie.Api.Constants;
+using Happie.Api.Models;
 using Happie.Api.Options;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -55,13 +56,13 @@ public class JwtMiddleware : IFunctionsWorkerMiddleware
 
         if (!TryExtractBearerToken(authHeader, out var token))
         {
-            await WriteErrorAsync(context, requestData, 401, "Missing or invalid Authorization header.", "UNAUTHORIZED");
+            await WriteErrorAsync(context, requestData, 401, "Missing or invalid Authorization header.", ApiErrorCodes.Unauthorized);
             return;
         }
 
         if (!TryValidateToken(token, out var householdId))
         {
-            await WriteErrorAsync(context, requestData, 401, "Invalid or expired token.", "UNAUTHORIZED");
+            await WriteErrorAsync(context, requestData, 401, "Invalid or expired token.", ApiErrorCodes.Unauthorized);
             return;
         }
 
@@ -72,7 +73,7 @@ public class JwtMiddleware : IFunctionsWorkerMiddleware
 
         if (!TryParseHousemateId(housemateIdHeader, out var housemateId))
         {
-            await WriteErrorAsync(context, requestData, 401, "Missing or invalid X-Housemate-Id header.", "UNAUTHORIZED");
+            await WriteErrorAsync(context, requestData, 401, "Missing or invalid X-Housemate-Id header.", ApiErrorCodes.Unauthorized);
             return;
         }
 
@@ -90,9 +91,7 @@ public class JwtMiddleware : IFunctionsWorkerMiddleware
 
         // Strip the leading "api/" prefix added by the Azure Functions host.
         if (path.StartsWith("api/", StringComparison.OrdinalIgnoreCase))
-        {
             path = path["api/".Length..];
-        }
 
         return path.Equals(AnonymousRoute, StringComparison.OrdinalIgnoreCase);
     }
@@ -106,9 +105,7 @@ public class JwtMiddleware : IFunctionsWorkerMiddleware
         token = string.Empty;
 
         if (string.IsNullOrWhiteSpace(authHeader) || !authHeader.StartsWith(BearerPrefix, StringComparison.OrdinalIgnoreCase))
-        {
             return false;
-        }
 
         token = authHeader[BearerPrefix.Length..].Trim();
         return !string.IsNullOrWhiteSpace(token);
@@ -142,9 +139,7 @@ public class JwtMiddleware : IFunctionsWorkerMiddleware
 
             var claim = principal.FindFirst(HouseholdIdClaim);
             if (claim is null || !Guid.TryParse(claim.Value, out householdId))
-            {
                 return false;
-            }
 
             return true;
         }
@@ -175,7 +170,7 @@ public class JwtMiddleware : IFunctionsWorkerMiddleware
         var response = requestData.CreateResponse();
         response.StatusCode = (System.Net.HttpStatusCode)statusCode;
         response.Headers.Add("Content-Type", "application/json; charset=utf-8");
-        await response.WriteAsJsonAsync(new { error = message, code });
+        await response.WriteAsJsonAsync(new ApiErrorResponse(message, code));
 
         // Bind the response to the function invocation result so the pipeline is short-circuited.
         var invocationResult = context.GetInvocationResult();

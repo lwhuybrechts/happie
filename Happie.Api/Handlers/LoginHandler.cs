@@ -36,9 +36,7 @@ public class LoginHandler : ILoginHandler
 
         var household = households.FirstOrDefault(x => BCrypt.Net.BCrypt.Verify(password, x.PasswordHash));
         if (household is null)
-        {
             return null;
-        }
 
         // Fetch all active (non-deleted) housemates for the matched household.
         var allHousemates = await _housemateRepository.GetAllAsync(household.Id, ct);

@@ -1,3 +1,4 @@
+using Happie.Api.Constants;
 using Happie.Api.Handlers;
 using Happie.Api.Models;
 using Microsoft.AspNetCore.Http;
@@ -30,20 +31,16 @@ public class LoginFunction
         }
         catch
         {
-            return new BadRequestObjectResult(new { error = "Invalid request body.", code = "BAD_REQUEST" });
+            return new BadRequestObjectResult(new ApiErrorResponse("Invalid request body.", ApiErrorCodes.BadRequest));
         }
 
         if (body is null || string.IsNullOrWhiteSpace(body.Password))
-        {
-            return new BadRequestObjectResult(new { error = "Password is required.", code = "BAD_REQUEST" });
-        }
+            return new BadRequestObjectResult(new ApiErrorResponse("Password is required.", ApiErrorCodes.BadRequest));
 
         var result = await _loginHandler.HandleAsync(body.Password, ct);
 
         if (result is null)
-        {
-            return new UnauthorizedObjectResult(new { error = "Invalid password.", code = "UNAUTHORIZED" });
-        }
+            return new UnauthorizedObjectResult(new ApiErrorResponse("Invalid password.", ApiErrorCodes.Unauthorized));
 
         var housemates = result.Housemates
             .Select(h => new HousemateDto(h.Id, h.Name, h.Color))

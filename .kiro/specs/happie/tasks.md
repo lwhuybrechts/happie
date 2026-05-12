@@ -77,8 +77,8 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - Logout clears session token
     - _Requirements: 1.1, 1.2, 1.6, 1.7_
 
-- [ ] 5. Housemate management — backend
-  - [ ] 5.1 Implement `GET /api/housemates`
+- [x] 5. Housemate management — backend
+  - [x] 5.1 Implement `GET /api/housemates`
     - Return all active (non-deleted) housemates for the household via `IHousemateRepository`
     - _Requirements: 12.1, 12.8_
 
@@ -86,7 +86,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Property 22: Active housemate list contains no deleted housemates**
     - **Validates: Requirements 12.1, 12.8**
 
-  - [ ] 5.3 Implement `POST /api/housemates`
+  - [x] 5.3 Implement `POST /api/housemates`
     - Validate name (1–50 chars, trimmed, not empty); fetch existing housemates via `IHousemateRepository` to auto-assign first unused palette color; persist via `IHousemateRepository`
     - Return 422 `VALIDATION_ERROR` on invalid name
     - _Requirements: 12.3, 12.4, 12.10_
@@ -99,7 +99,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Property 30: Housemate name validation**
     - **Validates: Requirements 12.4**
 
-  - [ ] 5.6 Implement `PATCH /api/housemates/{housemateId}` (rename + color change)
+  - [x] 5.6 Implement `PATCH /api/housemates/{housemateId}` (rename + color change)
     - Validate name rules; check color uniqueness via `IHousemateRepository`; reject color already in use with 409 `COLOR_CONFLICT`; persist via `IHousemateRepository`
     - _Requirements: 12.11, 12.12, 12.13, 12.14_
 
@@ -111,7 +111,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Property 28: Rename round-trip**
     - **Validates: Requirements 12.14**
 
-  - [ ] 5.9 Implement `DELETE /api/housemates/{housemateId}`
+  - [x] 5.9 Implement `DELETE /api/housemates/{housemateId}`
     - Check for linked records via `IAttendanceRepository` and `ICommentRepository`; hard delete via `IHousemateRepository` if none, soft delete (`IsDeleted = true`) via `IHousemateRepository` otherwise
     - _Requirements: 12.5, 12.6, 12.7_
 
@@ -127,7 +127,7 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Property 26: Deleted housemate name formatted as "Name (deleted)"**
     - **Validates: Requirements 12.7**
 
-  - [ ] 5.13 Write unit tests for housemate management
+  - [x] 5.13 Write unit tests for housemate management
     - Soft delete vs hard delete decision logic
     - Deleted housemate name formatting ("Name (deleted)")
     - Color conflict returns 409
