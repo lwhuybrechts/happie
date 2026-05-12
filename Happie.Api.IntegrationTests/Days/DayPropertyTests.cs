@@ -50,7 +50,8 @@ public class DayPropertyTests
             _attendanceRepository,
             _dishRepository,
             _commentRepository,
-            _dayHistoryRepository);
+            _dayHistoryRepository,
+            new NoOpPushHandler());
     }
 
     // Feature: happie, Property 10: Dish length validation

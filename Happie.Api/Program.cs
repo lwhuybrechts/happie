@@ -8,6 +8,7 @@ using Happie.Api.Infrastructure.Mappers;
 using Happie.Api.Infrastructure.Repositories;
 using Happie.Api.Middleware;
 using Happie.Api.Options;
+using Happie.Api.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Extensions.Configuration;
@@ -85,6 +86,18 @@ builder.Services.AddSingleton<IHousemateHandler, HousemateHandler>();
 
 // Register day handlers.
 builder.Services.AddSingleton<IDayHandler, DayHandler>();
+
+// Register push notification services.
+builder.Services
+    .Configure<VapidOptions>(x =>
+    {
+        x.PublicKey = builder.Configuration["VapidPublicKey"] ?? string.Empty;
+        x.PrivateKey = builder.Configuration["VapidPrivateKey"] ?? string.Empty;
+    })
+    .AddOptionsWithValidateOnStart<VapidOptions>();
+
+builder.Services.AddSingleton<IPushNotificationService, PushNotificationService>();
+builder.Services.AddSingleton<IPushHandler, PushHandler>();
 
 // Register Sentry as an ILogger provider; DSN is read from SentryOptions at startup.
 // All ILogger.Log* calls and unhandled exceptions flow to Sentry automatically.

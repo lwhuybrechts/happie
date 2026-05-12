@@ -16,17 +16,23 @@ public class DayHandlerTests
     private readonly Mock<IDishRepository> _dishRepositoryMock = new();
     private readonly Mock<ICommentRepository> _commentRepositoryMock = new();
     private readonly Mock<IDayHistoryRepository> _dayHistoryRepositoryMock = new();
+    private readonly Mock<IPushHandler> _pushHandlerMock = new();
     private readonly DayHandler _sut;
 
     /// <summary>Initializes a new instance of <see cref="DayHandlerTests"/> with mocked dependencies.</summary>
     public DayHandlerTests()
     {
+        _pushHandlerMock
+            .Setup(x => x.SendAutoNotificationsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         _sut = new DayHandler(
             _housemateRepositoryMock.Object,
             _attendanceRepositoryMock.Object,
             _dishRepositoryMock.Object,
             _commentRepositoryMock.Object,
-            _dayHistoryRepositoryMock.Object);
+            _dayHistoryRepositoryMock.Object,
+            _pushHandlerMock.Object);
     }
 
     /// <summary>A dish description of exactly 100 characters is accepted and saved.</summary>

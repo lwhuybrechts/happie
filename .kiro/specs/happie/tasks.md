@@ -207,49 +207,49 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
 - [x] 8. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Push notifications — backend
-  - [ ] 9.1 Implement `POST /api/push/subscribe`
+- [x] 9. Push notifications — backend
+  - [x] 9.1 Implement `POST /api/push/subscribe`
     - Upsert push subscription for the active housemate via `IPushSubscriptionRepository`; store locale from request body
     - _Requirements: 8.2, 8.4_
 
-  - [ ] 9.2 Implement `POST /api/days/{date}/nudge`
+  - [x] 9.2 Implement `POST /api/days/{date}/nudge`
     - Validate recipients are all `Unknown` status via `IAttendanceRepository`; validate `predefinedMessageKey` XOR `message` (max 20 chars, trimmed)
     - Fetch recipient subscriptions via `IPushSubscriptionRepository`; resolve predefined message keys in each recipient's stored locale; dispatch VAPID push per recipient using `VapidPublicKey` and `VapidPrivateKey` from Key Vault
     - Collect per-recipient failures; log each failure via `ILogger.LogWarning` (flows to Sentry automatically) and return them in the response without aborting delivery to others
     - _Requirements: 7.1, 7.2, 7.4, 7.5_
 
-  - [ ]* 9.3 Write property test: nudge payload contains sender and date
+  - [x]* 9.3 Write property test: nudge payload contains sender and date
     - **Property 14: Nudge payload contains sender and date**
     - **Validates: Requirements 7.2**
 
-  - [ ]* 9.4 Write property test: nudge default recipients are housemates with unknown status
+  - [x]* 9.4 Write property test: nudge default recipients are housemates with unknown status
     - **Property 15: Nudge default recipients are housemates with unknown status**
     - **Validates: Requirements 7.4**
 
-  - [ ] 9.5 Implement automatic push notifications on day plan changes
+  - [x] 9.5 Implement automatic push notifications on day plan changes
     - After any successful attendance/dish/comment save for today or tomorrow, fetch all active housemate subscriptions via `IPushSubscriptionRepository` and dispatch push to all except the actor
     - Log push failures server-side via `ILogger.LogWarning` / `ILogger.LogError` (flows to Sentry automatically); do not roll back the save
     - _Requirements: 10.1, 10.2, 10.3, 10.5_
 
-  - [ ]* 9.6 Write property test: auto-notification recipients exclude the sender
+  - [x]* 9.6 Write property test: auto-notification recipients exclude the sender
     - **Property 17: Auto-notification recipients exclude the sender**
     - **Validates: Requirements 10.1, 10.3**
 
-  - [ ]* 9.7 Write property test: auto-notification payload contains actor, date, and change description
+  - [x]* 9.7 Write property test: auto-notification payload contains actor, date, and change description
     - **Property 18: Auto-notification payload contains actor, date, and change description**
     - **Validates: Requirements 10.2**
 
-  - [ ]* 9.8 Write property test: push failure does not interrupt save
+  - [x]* 9.8 Write property test: push failure does not interrupt save
     - **Property 19: Push failure does not interrupt save**
     - **Validates: Requirements 10.5**
 
-  - [~] 9.9 Write unit tests for push notifications
+  - [x] 9.9 Write unit tests for push notifications
     - Nudge message validation rejects strings > 20 chars (boundary: 20, 21)
     - Auto-notification is not sent to the housemate who made the change
     - Push failure does not cause save to fail (mock push service throws, save succeeds)
     - _Requirements: 7.5, 10.3, 10.5_
 
-- [ ] 10. Checkpoint — Ensure all tests pass
+- [x] 10. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 11. Blazor WASM — project setup and i18n

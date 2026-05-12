@@ -13,6 +13,7 @@ public class DayHandler : IDayHandler
     private readonly IDishRepository _dishRepository;
     private readonly ICommentRepository _commentRepository;
     private readonly IDayHistoryRepository _dayHistoryRepository;
+    private readonly IPushHandler _pushHandler;
 
     /// <summary>Initializes a new instance of <see cref="DayHandler"/>.</summary>
     public DayHandler(
@@ -20,13 +21,15 @@ public class DayHandler : IDayHandler
         IAttendanceRepository attendanceRepository,
         IDishRepository dishRepository,
         ICommentRepository commentRepository,
-        IDayHistoryRepository dayHistoryRepository)
+        IDayHistoryRepository dayHistoryRepository,
+        IPushHandler pushHandler)
     {
         _housemateRepository = housemateRepository;
         _attendanceRepository = attendanceRepository;
         _dishRepository = dishRepository;
         _commentRepository = commentRepository;
         _dayHistoryRepository = dayHistoryRepository;
+        _pushHandler = pushHandler;
     }
 
     /// <inheritdoc/>
@@ -110,6 +113,10 @@ public class DayHandler : IDayHandler
             _attendanceRepository.UpsertAsync(record, ct),
             _dayHistoryRepository.AddAsync(historyEntry, ct));
 
+        // Send auto-notifications for today and tomorrow only; failures must not interrupt the save.
+        if (IsTodayOrTomorrow(date))
+            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.Description, ct);
+
         return true;
     }
 
@@ -128,6 +135,10 @@ public class DayHandler : IDayHandler
         await Task.WhenAll(
             _dishRepository.UpsertAsync(record, actingHousemateId, ct),
             _dayHistoryRepository.AddAsync(historyEntry, ct));
+
+        // Send auto-notifications for today and tomorrow only; failures must not interrupt the save.
+        if (IsTodayOrTomorrow(date))
+            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.Description, ct);
     }
 
     /// <inheritdoc/>
@@ -149,6 +160,10 @@ public class DayHandler : IDayHandler
         await Task.WhenAll(
             _commentRepository.UpsertAsync(comment, ct),
             _dayHistoryRepository.AddAsync(historyEntry, ct));
+
+        // Send auto-notifications for today and tomorrow only; failures must not interrupt the save.
+        if (IsTodayOrTomorrow(date))
+            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.Description, ct);
 
         return true;
     }
@@ -172,7 +187,18 @@ public class DayHandler : IDayHandler
             _commentRepository.DeleteAsync(householdId, date, housemateId, ct),
             _dayHistoryRepository.AddAsync(historyEntry, ct));
 
+        // Send auto-notifications for today and tomorrow only; failures must not interrupt the save.
+        if (IsTodayOrTomorrow(date))
+            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.Description, ct);
+
         return true;
+    }
+
+    /// <summary>Returns true when the given date is today or tomorrow (UTC).</summary>
+    private static bool IsTodayOrTomorrow(DateOnly date)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        return date == today || date == today.AddDays(1);
     }
 
     /// <inheritdoc/>

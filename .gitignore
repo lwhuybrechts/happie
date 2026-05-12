@@ -80,3 +80,7 @@ wwwroot/_framework/
 # Test results.
 *.trx
 coverage/
+
+# Azurite local storage emulator data files.
+__azurite_db_*.json
+AzuriteConfig
