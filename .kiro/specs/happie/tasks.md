@@ -252,27 +252,27 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
 - [x] 10. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Blazor WASM — project setup and i18n
-  - [ ] 11.1 Configure Blazor WASM PWA project
+- [x] 11. Blazor WASM — project setup and i18n
+  - [x] 11.1 Configure Blazor WASM PWA project
     - Set up routing (`/`, `/day/{date}`, `/calendar`, `/housemates`)
     - Add `HttpClient` with base address pointing to `/api`; configure JWT + `X-Housemate-Id` header injection via `DelegatingHandler`
     - _Requirements: 1.1, 3.1_
 
-  - [ ] 11.2 Implement i18n resource files and locale switching
+  - [x] 11.2 Implement i18n resource files and locale switching
     - Add `en` and `nl` `.resx` resource files for all UI strings
     - Implement locale persistence in `localStorage`; default to `"nl"` when unset
     - Wire locale switcher so language changes immediately without page reload
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
 
-  - [ ]* 11.3 Write property test: all translation keys exist in both locales
+  - [x]* 11.3 Write property test: all translation keys exist in both locales
     - **Property 20: All translation keys exist in both locales**
     - **Validates: Requirements 11.1**
 
-  - [ ]* 11.4 Write property test: locale persistence round-trip
+  - [x]* 11.4 Write property test: locale persistence round-trip
     - **Property 21: Locale persistence round-trip**
     - **Validates: Requirements 11.3**
 
-  - [ ] 11.5 Write unit test: default locale is "nl" when no locale is set
+  - [x] 11.5 Write unit test: default locale is "nl" when no locale is set
     - _Requirements: 11.4_
 
 - [~] 12. Blazor WASM — LoginPage and session management

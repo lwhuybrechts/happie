@@ -1,0 +1,10 @@
+@page "/day/{date}"
+
+<PageTitle>Day Plan</PageTitle>
+
+<h1>Day Plan — @Date</h1>
+
+@code {
+    [Parameter]
+    public string Date { get; set; } = string.Empty;
+}

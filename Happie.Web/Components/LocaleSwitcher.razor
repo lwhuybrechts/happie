@@ -1,0 +1,33 @@
+@using Happie.Shared.Domain
+@using Happie.Web.Services
+@inject LocaleService LocaleService
+@inject NavigationManager NavigationManager
+
+<div class="locale-switcher">
+    <button class="locale-btn @(LocaleService.CurrentLocale == Locale.En ? "locale-btn--active" : "")"
+            @onclick="SwitchToEnglishAsync"
+            aria-pressed="@(LocaleService.CurrentLocale == Locale.En ? "true" : "false")"
+            aria-label="Switch to English">
+        EN
+    </button>
+    <button class="locale-btn @(LocaleService.CurrentLocale == Locale.Nl ? "locale-btn--active" : "")"
+            @onclick="SwitchToDutchAsync"
+            aria-pressed="@(LocaleService.CurrentLocale == Locale.Nl ? "true" : "false")"
+            aria-label="Schakel naar Nederlands">
+        NL
+    </button>
+</div>
+
+@code {
+    private Task SwitchToEnglishAsync() => SwitchLocaleAsync(Locale.En);
+
+    private Task SwitchToDutchAsync() => SwitchLocaleAsync(Locale.Nl);
+
+    private async Task SwitchLocaleAsync(Locale locale)
+    {
+        await LocaleService.SetLocaleAsync(locale);
+
+        // Blazor WASM requires a full page reload to apply the new culture before the component tree renders.
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+    }
+}
