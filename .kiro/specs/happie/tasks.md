@@ -119,11 +119,11 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - **Property 24: Hard delete removes housemate with no history**
     - **Validates: Requirements 12.5**
 
-  - [~]* 5.11 Write property test: soft delete preserves history but removes from active list
+  - [x]* 5.11 Write property test: soft delete preserves history but removes from active list
     - **Property 25: Soft delete preserves history but removes from active list**
     - **Validates: Requirements 12.6**
 
-  - [~]* 5.12 Write property test: deleted housemate name formatted as "Name (deleted)"
+  - [x]* 5.12 Write property test: deleted housemate name formatted as "Name (deleted)"
     - **Property 26: Deleted housemate name formatted as "Name (deleted)"**
     - **Validates: Requirements 12.7**
 
@@ -137,68 +137,68 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
 - [x] 6. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Day plan — backend
-  - [ ] 7.1 Implement `GET /api/days/{date}`
+- [x] 7. Day plan — backend
+  - [x] 7.1 Implement `GET /api/days/{date}`
     - Fetch active housemates via `IHousemateRepository` (default `Unknown` attendance if no record), attendance via `IAttendanceRepository`, dish via `IDishRepository`, comments via `ICommentRepository`, and history entries via `IDayHistoryRepository`
     - Format soft-deleted housemate names as `"Name (deleted)"` in historical data
     - _Requirements: 3.4, 3.5, 3.6, 12.7_
 
-  - [ ]* 7.2 Write property test: day plan contains all active housemates' attendance
+  - [x]* 7.2 Write property test: day plan contains all active housemates' attendance
     - **Property 7: Day plan contains all active housemates' attendance**
     - **Validates: Requirements 3.4**
 
-  - [ ] 7.3 Implement `PUT /api/days/{date}/attendance/{housemateId}`
+  - [x] 7.3 Implement `PUT /api/days/{date}/attendance/{housemateId}`
     - Upsert via `IAttendanceRepository`; write history entry via `IDayHistoryRepository` attributing the change to `X-Housemate-Id`
     - _Requirements: 4.1, 4.3, 4.4, 1.5_
 
-  - [ ]* 7.4 Write property test: attendance round-trip with overwrite semantics
+  - [x]* 7.4 Write property test: attendance round-trip with overwrite semantics
     - **Property 8: Attendance round-trip with overwrite semantics**
     - **Validates: Requirements 4.1, 4.3, 4.4**
 
-  - [ ]* 7.5 Write property test: all actions attributed to the active housemate
+  - [x]* 7.5 Write property test: all actions attributed to the active housemate
     - **Property 3: All actions attributed to the active housemate**
     - **Validates: Requirements 1.5**
 
-  - [ ] 7.6 Implement `PUT /api/days/{date}/dish`
+  - [x] 7.6 Implement `PUT /api/days/{date}/dish`
     - Validate max 100 chars (trimmed); upsert via `IDishRepository`; write history entry via `IDayHistoryRepository`
     - Return 422 `VALIDATION_ERROR` on length violation
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-  - [ ]* 7.7 Write property test: dish round-trip with overwrite semantics
+  - [x]* 7.7 Write property test: dish round-trip with overwrite semantics
     - **Property 9: Dish round-trip with overwrite semantics**
     - **Validates: Requirements 5.1, 5.2, 5.3**
 
-  - [ ]* 7.8 Write property test: dish length validation
+  - [x]* 7.8 Write property test: dish length validation
     - **Property 10: Dish length validation**
     - **Validates: Requirements 5.4**
 
-  - [ ] 7.9 Implement `PUT /api/days/{date}/comments/{housemateId}` and `DELETE`
+  - [x] 7.9 Implement `PUT /api/days/{date}/comments/{housemateId}` and `DELETE`
     - PUT: validate max 200 chars (trimmed); upsert via `ICommentRepository`; write history entry via `IDayHistoryRepository`
     - DELETE: remove comment via `ICommentRepository`; write history entry via `IDayHistoryRepository`
     - Return 422 on length violation
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-  - [ ]* 7.10 Write property test: comment slot — one per housemate per day
+  - [x]* 7.10 Write property test: comment slot — one per housemate per day
     - **Property 11: Comment slot — one per housemate per day**
     - **Validates: Requirements 6.1, 6.2, 6.3**
 
-  - [ ]* 7.11 Write property test: comment deletion removes the comment
+  - [x]* 7.11 Write property test: comment deletion removes the comment
     - **Property 12: Comment deletion removes the comment**
     - **Validates: Requirements 6.4**
 
-  - [ ]* 7.12 Write property test: comment length validation
+  - [x]* 7.12 Write property test: comment length validation
     - **Property 13: Comment length validation**
     - **Validates: Requirements 6.5**
 
-  - [ ] 7.13 Implement `GET /api/days?from={date}&to={date}`
+  - [x] 7.13 Implement `GET /api/days?from={date}&to={date}`
     - Fetch attendance summaries (housemate color + status) for the date range via `IAttendanceRepository` and `IHousemateRepository`; used by CalendarPage
     - _Requirements: 13.1, 13.2, 13.4_
 
-  - [ ]* 7.14 Write property test: calendar color indicators match eating-in housemates
+  - [x]* 7.14 Write property test: calendar color indicators match eating-in housemates
     - **Property 29: Calendar color indicators match eating-in housemates**
     - **Validates: Requirements 13.2, 13.4**
 
-  - [ ] 7.15 Write unit tests for day plan endpoints
+  - [x] 7.15 Write unit tests for day plan endpoints
     - Dish validation rejects strings > 100 chars (boundary: 100, 101)
     - Comment validation rejects strings > 200 chars (boundary: 200, 201)
     - DayHistoryLog entries are ordered reverse-chronologically

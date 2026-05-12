@@ -83,6 +83,9 @@ builder.Services.AddSingleton<ILoginHandler, LoginHandler>();
 // Register housemate handlers.
 builder.Services.AddSingleton<IHousemateHandler, HousemateHandler>();
 
+// Register day handlers.
+builder.Services.AddSingleton<IDayHandler, DayHandler>();
+
 // Register Sentry as an ILogger provider; DSN is read from SentryOptions at startup.
 // All ILogger.Log* calls and unhandled exceptions flow to Sentry automatically.
 builder.Logging.AddSentry(x =>
