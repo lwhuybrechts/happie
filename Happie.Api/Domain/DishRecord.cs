@@ -5,5 +5,7 @@ public record DishRecord(
     Guid HouseholdId,
     DateOnly Date,
     // Max 100 chars.
-    string Description
+    string Description,
+    Guid? LastChangedByHousemateId,
+    DateTimeOffset? LastChangedAt
 );

@@ -27,6 +27,6 @@ public class DishRepository : BaseRepository<DishRecordEntity>, IDishRepository
     }
 
     /// <inheritdoc/>
-    public Task UpsertAsync(DishRecord record, Guid lastChangedByHousemateId, CancellationToken ct = default)
-        => UpsertAsync(_mapper.ToEntity(record, lastChangedByHousemateId), ct);
+    public Task UpsertAsync(DishRecord record, CancellationToken ct = default)
+        => UpsertAsync(_mapper.ToEntity(record), ct);
 }

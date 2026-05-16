@@ -88,7 +88,7 @@ public class HousemateHandlerTests
         SetupGetAllAttendanceByHousehold(householdId, new List<AttendanceRecord>());
         SetupGetAllCommentsByHousehold(householdId, new List<Comment>
         {
-            new(householdId, housemateId, DateOnly.FromDateTime(DateTime.Today), "Great dinner!"),
+            new(householdId, housemateId, DateOnly.FromDateTime(DateTime.Today), "Great dinner!", null),
         });
 
         // Act.

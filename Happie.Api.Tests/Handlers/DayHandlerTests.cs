@@ -53,7 +53,7 @@ public class DayHandlerTests
 
         // Assert.
         _dishRepositoryMock.Verify(
-            x => x.UpsertAsync(It.Is<DishRecord>(r => r.Description == description), actingHousemateId, It.IsAny<CancellationToken>()),
+            x => x.UpsertAsync(It.Is<DishRecord>(r => r.Description == description && r.LastChangedByHousemateId == actingHousemateId), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -117,9 +117,9 @@ public class DayHandlerTests
         // Assert.
         var expectedHistory = new List<HistoryEntryDto>
         {
-            new(t3, housemate.Name, ChangeType.Comment, "Comment set."),
-            new(t2, housemate.Name, ChangeType.Dish, "Dish set."),
-            new(t1, housemate.Name, ChangeType.Attendance, "Attendance set."),
+            new(t3, housemateId, housemate.Name, ChangeType.Comment, "Comment set."),
+            new(t2, housemateId, housemate.Name, ChangeType.Dish, "Dish set."),
+            new(t1, housemateId, housemate.Name, ChangeType.Attendance, "Attendance set."),
         };
 
         expectedHistory.ToExpectedObject().ShouldEqual(result.History);
@@ -233,7 +233,7 @@ public class DayHandlerTests
     private void SetupDishUpsert()
     {
         _dishRepositoryMock
-            .Setup(x => x.UpsertAsync(It.IsAny<DishRecord>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.UpsertAsync(It.IsAny<DishRecord>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
     }
 

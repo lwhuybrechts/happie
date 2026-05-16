@@ -11,5 +11,5 @@ public interface IDishRecordMapper
     DishRecord ToModel(Guid householdId, DateOnly date, DishRecordEntity entity);
 
     /// <summary>Maps a <see cref="DishRecord"/> domain record to a <see cref="DishRecordEntity"/>.</summary>
-    DishRecordEntity ToEntity(DishRecord record, Guid lastChangedByHousemateId);
+    DishRecordEntity ToEntity(DishRecord record);
 }

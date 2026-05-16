@@ -123,8 +123,8 @@ public class DataIsolationTests
                 var (householdA, householdB, housemateId, date) = args;
 
                 // Arrange.
-                var dish = new DishRecord(householdA, date, "Pasta");
-                await _dishRepository.UpsertAsync(dish, housemateId);
+                var dish = new DishRecord(householdA, date, "Pasta", housemateId, DateTimeOffset.UtcNow);
+                await _dishRepository.UpsertAsync(dish);
 
                 // Act.
                 var resultB = await _dishRepository.GetAsync(householdB, date);
@@ -151,7 +151,7 @@ public class DataIsolationTests
                 var (householdA, householdB, housemateId, date) = args;
 
                 // Arrange.
-                var comment = new Comment(householdA, housemateId, date, "Home late");
+                var comment = new Comment(householdA, housemateId, date, "Home late", null);
                 await _commentRepository.UpsertAsync(comment);
 
                 // Act.

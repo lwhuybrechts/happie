@@ -6,8 +6,8 @@ This plan implements the visual and structural redesign of the Happie PWA's main
 
 ## Tasks
 
-- [ ] 1. Extend backend DTOs and entities
-  - [ ] 1.1 Extend DishDto, DishRecordEntity, DishRecord domain type, and DishRecordMapper to include `LastChangedByHousemateId` (Guid?) and `LastChangedAt` (DateTimeOffset?)
+- [x] 1. Extend backend DTOs and entities
+  - [x] 1.1 Extend DishDto, DishRecordEntity, DishRecord domain type, and DishRecordMapper to include `LastChangedByHousemateId` (Guid?) and `LastChangedAt` (DateTimeOffset?)
     - Add `LastChangedByHousemateId` and `LastChangedAt` properties to `DishDto` in `Happie.Shared/Contracts/DishDto.cs`
     - Add `LastChangedByHousemateId` and `LastChangedAt` to `DishRecordEntity` in `Happie.Api/Infrastructure/Entities/DishRecordEntity.cs`
     - Add `LastChangedByHousemateId` and `LastChangedAt` to `DishRecord` domain type in `Happie.Api/Domain/DishRecord.cs`
@@ -16,7 +16,7 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Update `DayHandler` to set `LastChangedByHousemateId` and `LastChangedAt` when saving a dish
     - _Requirements: 11.3, 11.5_
 
-  - [ ] 1.2 Extend CommentDto and CommentEntity to include `LastEditedAt` (DateTimeOffset?)
+  - [x] 1.2 Extend CommentDto and CommentEntity to include `LastEditedAt` (DateTimeOffset?)
     - Add `LastEditedAt` to `CommentDto` in `Happie.Shared/Contracts/CommentDto.cs`
     - Add `LastEditedAt` to `CommentEntity` in `Happie.Api/Infrastructure/Entities/CommentEntity.cs`
     - Add `LastEditedAt` to `Comment` domain type in `Happie.Api/Domain/Comment.cs`
@@ -25,7 +25,7 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Update `DayHandler` to set `LastEditedAt` when saving a comment
     - _Requirements: 14.2_
 
-  - [ ] 1.3 Extend HistoryEntryDto to include `ChangedByHousemateId` (Guid)
+  - [x] 1.3 Extend HistoryEntryDto to include `ChangedByHousemateId` (Guid)
     - Add `ChangedByHousemateId` to `HistoryEntryDto` in `Happie.Shared/Contracts/HistoryEntryDto.cs`
     - Update `DayHandler` to populate `ChangedByHousemateId` when building `HistoryEntryDto`
     - _Requirements: 15.3_

@@ -20,4 +20,7 @@ public class CommentEntity : MyTableEntity
 
     /// <summary>The ID of the housemate who authored this comment.</summary>
     public Guid HousemateId { get; set; }
+
+    /// <summary>The timestamp when the comment was last edited.</summary>
+    public DateTimeOffset? LastEditedAt { get; set; }
 }

@@ -68,7 +68,9 @@ public class DayHandler : IDayHandler
             .ToList();
 
         // Build dish DTO.
-        var DishDto = dish is null ? null : new DishDto(dish.Description);
+        var DishDto = dish is null
+            ? null
+            : new DishDto(dish.Description, dish.LastChangedByHousemateId, dish.LastChangedAt);
 
         // Build comment DTOs — include only housemates who have a comment.
         // Soft-deleted housemates are included if they have a comment; their name is formatted as "Name (deleted)".
@@ -77,7 +79,7 @@ public class DayHandler : IDayHandler
             {
                 var name = ResolveHousemateName(housemateById, x.HousemateId);
                 var color = housemateById.TryGetValue(x.HousemateId, out var housemate) ? housemate.Color : string.Empty;
-                return new CommentDto(x.HousemateId, name, color, x.Text);
+                return new CommentDto(x.HousemateId, name, color, x.Text, x.LastEditedAt);
             })
             .ToList();
 
@@ -86,7 +88,7 @@ public class DayHandler : IDayHandler
             .Select(x =>
             {
                 var name = ResolveHousemateName(housemateById, x.ChangedByHousemateId);
-                return new HistoryEntryDto(x.ChangedAt, name, x.ChangeType, x.Description);
+                return new HistoryEntryDto(x.ChangedAt, x.ChangedByHousemateId, name, x.ChangeType, x.Description);
             })
             .ToList();
 
@@ -123,7 +125,7 @@ public class DayHandler : IDayHandler
     /// <inheritdoc/>
     public async Task UpsertDishAsync(Guid householdId, DateOnly date, string description, Guid actingHousemateId, CancellationToken ct = default)
     {
-        var record = new DishRecord(householdId, date, description);
+        var record = new DishRecord(householdId, date, description, actingHousemateId, DateTimeOffset.UtcNow);
         var historyEntry = new DayHistoryEntry(
             householdId,
             date,
@@ -133,7 +135,7 @@ public class DayHandler : IDayHandler
             $"Dish set to \"{description}\".");
 
         await Task.WhenAll(
-            _dishRepository.UpsertAsync(record, actingHousemateId, ct),
+            _dishRepository.UpsertAsync(record, ct),
             _dayHistoryRepository.AddAsync(historyEntry, ct));
 
         // Send auto-notifications for today and tomorrow only; failures must not interrupt the save.
@@ -148,7 +150,7 @@ public class DayHandler : IDayHandler
         if (housemate is null)
             return false;
 
-        var comment = new Comment(householdId, housemateId, date, text);
+        var comment = new Comment(householdId, housemateId, date, text, DateTimeOffset.UtcNow);
         var historyEntry = new DayHistoryEntry(
             householdId,
             date,

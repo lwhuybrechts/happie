@@ -6,5 +6,6 @@ public record Comment(
     Guid HousemateId,
     DateOnly Date,
     // Max 200 chars.
-    string Text
+    string Text,
+    DateTimeOffset? LastEditedAt
 );

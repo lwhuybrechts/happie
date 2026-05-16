@@ -20,4 +20,7 @@ public class DishRecordEntity : MyTableEntity
 
     /// <summary>The ID of the housemate who last changed this dish record.</summary>
     public Guid LastChangedByHousemateId { get; set; }
+
+    /// <summary>The timestamp when this dish record was last changed.</summary>
+    public DateTimeOffset? LastChangedAt { get; set; }
 }

@@ -177,7 +177,7 @@
         if (_dayPlan is null)
             return Task.CompletedTask;
 
-        _dayPlan = _dayPlan with { Dish = new DishDto(newDescription) };
+        _dayPlan = _dayPlan with { Dish = new DishDto(newDescription, null, DateTimeOffset.UtcNow) };
         return Task.CompletedTask;
     }
 
@@ -223,7 +223,8 @@
                     housemateId,
                     attendance?.HousemateName ?? string.Empty,
                     attendance?.Color ?? string.Empty,
-                    newText);
+                    newText,
+                    DateTimeOffset.UtcNow);
                 updated = _dayPlan.Comments.Append(newComment).ToList();
             }
         }
