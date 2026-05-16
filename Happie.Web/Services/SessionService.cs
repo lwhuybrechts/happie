@@ -15,11 +15,13 @@ public class SessionService
         _navigationManager = navigationManager;
     }
 
-    /// <summary>Clears the JWT and active housemate ID from localStorage and navigates to the login page.</summary>
+    /// <summary>Clears the JWT and active housemate data from localStorage and navigates to the login page.</summary>
     public async Task LogoutAsync()
     {
         await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "jwt");
         await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateId");
+        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateName");
+        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateColor");
 
         _navigationManager.NavigateTo("/");
     }

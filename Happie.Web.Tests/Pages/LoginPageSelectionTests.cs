@@ -22,6 +22,10 @@ public class LoginPageSelectionTests : BunitContext
         Services.AddSingleton(serviceProvider =>
             new LocaleService(serviceProvider.GetRequiredService<IJSRuntime>()));
 
+        // Register ActiveHousemateService so LoginPage can resolve it.
+        Services.AddScoped(serviceProvider =>
+            new ActiveHousemateService(serviceProvider.GetRequiredService<IJSRuntime>()));
+
         Services.AddLocalization();
     }
 

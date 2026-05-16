@@ -151,6 +151,8 @@ public class LoginPagePropertyTests
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddSingleton(serviceProvider =>
             new LocaleService(serviceProvider.GetRequiredService<IJSRuntime>()));
+        context.Services.AddScoped(serviceProvider =>
+            new ActiveHousemateService(serviceProvider.GetRequiredService<IJSRuntime>()));
         context.Services.AddLocalization();
         context.RegisterHttpClient(HttpStatusCode.Unauthorized, null);
         return context;

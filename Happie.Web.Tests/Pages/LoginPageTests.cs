@@ -27,6 +27,7 @@ public class LoginPageTests : BunitContext
 
         Services.AddSingleton(_localizerMock.Object);
         Services.AddScoped<LocaleService>();
+        Services.AddScoped<ActiveHousemateService>();
     }
 
     [Fact]

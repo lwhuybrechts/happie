@@ -30,8 +30,8 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Update `DayHandler` to populate `ChangedByHousemateId` when building `HistoryEntryDto`
     - _Requirements: 15.3_
 
-- [ ] 2. Implement frontend utility services
-  - [ ] 2.1 Create `DateLabelService` static class in `Happie.Web/Services/DateLabelService.cs`
+- [x] 2. Implement frontend utility services
+  - [x] 2.1 Create `DateLabelService` static class in `Happie.Web/Services/DateLabelService.cs`
     - Implement `GetLabel(DateOnly viewedDate, DateOnly today, CultureInfo culture)` returning `DateLabel` record
     - Logic: offset 0 → "Today", -1 → "Yesterday", +1 → "Tomorrow", ±2–6 → day name, ≥7 → null title with bold date
     - Date format: `d MMM yyyy` using provided CultureInfo for locale-aware month abbreviation
@@ -45,7 +45,7 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - **Property 2: Date label formatted date uses locale-aware month abbreviation**
     - **Validates: Requirements 10.9**
 
-  - [ ] 2.4 Create `TimeFormatter` static class in `Happie.Web/Services/TimeFormatter.cs`
+  - [x] 2.4 Create `TimeFormatter` static class in `Happie.Web/Services/TimeFormatter.cs`
     - Implement `FormatDishTime(DateTimeOffset editedAt, DateTimeOffset now)` with rules: <60s → "just now", <60min → "{N} min ago", <3h → "{N} hours ago", ≥3h same day → HH:mm, previous day → "d MMM HH:mm"
     - Implement `FormatHistoryTime(DateTimeOffset changedAt, DateTimeOffset now)` with rules: same day → HH:mm, different day same year → "d MMM HH:mm", previous year → "d MMM yyyy HH:mm"
     - _Requirements: 11.5, 15.4, 15.5, 15.6_
@@ -58,14 +58,14 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - **Property 4: History timestamp formatting**
     - **Validates: Requirements 15.4, 15.5, 15.6**
 
-  - [ ] 2.7 Create `ActiveHousemateService` in `Happie.Web/Services/ActiveHousemateService.cs`
+  - [x] 2.7 Create `ActiveHousemateService` in `Happie.Web/Services/ActiveHousemateService.cs`
     - Implement `Id`, `Name`, `Color` properties
     - Implement `InitializeAsync()` that reads active housemate data from localStorage
     - Persist active housemate name and color in localStorage at selection time (update login flow)
     - Register as scoped service in `Program.cs`
     - _Requirements: 3.1, 8.3_
 
-- [ ] 3. Checkpoint - Ensure all tests pass
+- [x] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. Implement layout components

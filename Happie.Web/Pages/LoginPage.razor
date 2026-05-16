@@ -8,6 +8,7 @@
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<AppStrings> Localizer
 @inject LocaleService LocaleService
+@inject ActiveHousemateService ActiveHousemateService
 
 <PageTitle>@Localizer["Login_Title"]</PageTitle>
 
@@ -160,7 +161,7 @@
 
     private async Task SelectHousemateAsync(HousemateDto housemate)
     {
-        await JsRuntime.InvokeVoidAsync("localStorage.setItem", "activeHousemateId", housemate.Id.ToString());
+        await ActiveHousemateService.SetActiveHousemateAsync(housemate.Id, housemate.Name, housemate.Color);
         await JsRuntime.InvokeVoidAsync("sessionStorage.removeItem", "pendingHousemates");
 
         var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
