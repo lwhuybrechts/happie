@@ -1,0 +1,114 @@
+@inject NavigationManager NavigationManager
+@inject ActiveHousemateService ActiveHousemateService
+@inject IStringLocalizer<AppStrings> Localizer
+@implements IDisposable
+
+<aside class="sidebar" aria-label="Main navigation">
+    <div class="sidebar__top">
+        <div class="sidebar__brand">
+            <div class="sidebar__logo" aria-hidden="true">H</div>
+            <span class="sidebar__title">Happie</span>
+        </div>
+
+        <nav class="sidebar__nav">
+            <a class="sidebar__nav-item @(IsActive("menu") ? "sidebar__nav-item--active" : "")"
+               href="@GetTodayUrl()" @onclick:preventDefault @onclick="NavigateToToday">
+                <svg class="sidebar__nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+                    <path d="M7 2v20" />
+                    <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+                </svg>
+                @Localizer["Nav_OnTheMenu"]
+            </a>
+            <a class="sidebar__nav-item @(IsActive("calendar") ? "sidebar__nav-item--active" : "")"
+               href="@GetTodayUrl()" @onclick:preventDefault @onclick="NavigateToCalendar">
+                <svg class="sidebar__nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                @Localizer["Nav_Calendar"]
+            </a>
+            <a class="sidebar__nav-item @(IsActive("housemates") ? "sidebar__nav-item--active" : "")"
+               href="/housemates" @onclick:preventDefault @onclick="NavigateToHousemates">
+                <svg class="sidebar__nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                @Localizer["Nav_Housemates"]
+            </a>
+        </nav>
+    </div>
+
+    <div class="sidebar__bottom">
+        <div class="sidebar__tagline">
+            <span class="sidebar__tagline-title">HAPPIE</span>
+            <span class="sidebar__tagline-text">@Localizer["Sidebar_Tagline"]</span>
+        </div>
+
+        <div class="sidebar__bottom-row">
+            <HousemateAvatar Name="@(ActiveHousemateService.Name ?? "")"
+                             Color="@(ActiveHousemateService.Color ?? "#888888")"
+                             ShowHoverEffect="true"
+                             OnClick="NavigateToHousemates" />
+
+            <LocaleSwitcher />
+        </div>
+    </div>
+</aside>
+
+@code {
+    private string _currentUri = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _currentUri = NavigationManager.Uri;
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs args)
+    {
+        _currentUri = args.Location;
+        StateHasChanged();
+    }
+
+    private bool IsActive(string page)
+    {
+        var relativePath = NavigationManager.ToBaseRelativePath(_currentUri).ToLowerInvariant();
+
+        return page switch
+        {
+            "menu" => relativePath.StartsWith("day/"),
+            "calendar" => relativePath.StartsWith("calendar"),
+            "housemates" => relativePath.StartsWith("housemates"),
+            _ => false
+        };
+    }
+
+    private void NavigateToToday()
+    {
+        NavigationManager.NavigateTo(GetTodayUrl());
+    }
+
+    private void NavigateToHousemates()
+    {
+        NavigationManager.NavigateTo("/housemates");
+    }
+
+    private void NavigateToCalendar()
+    {
+        // Navigate to day plan until dedicated calendar page is implemented.
+        var today = DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd");
+        NavigationManager.NavigateTo($"/day/{today}");
+    }
+
+    private static string GetTodayUrl() => $"/day/{DateOnly.FromDateTime(DateTime.Today):yyyy-MM-dd}";
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

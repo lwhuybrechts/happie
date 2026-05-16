@@ -1,0 +1,22 @@
+@using Happie.Web.Services
+@inject ActiveHousemateService ActiveHousemateService
+@inject NavigationManager NavigationManager
+
+<header class="mobile-header">
+    <span class="mobile-header__brand">Happie</span>
+
+    <div class="mobile-header__right">
+        <LocaleSwitcher />
+        <HousemateAvatar Name="@(ActiveHousemateService.Name ?? "")"
+                         Color="@(ActiveHousemateService.Color ?? "#888888")"
+                         OnClick="NavigateToHousemates"
+                         ShowHoverEffect="true" />
+    </div>
+</header>
+
+@code {
+    private void NavigateToHousemates()
+    {
+        NavigationManager.NavigateTo("/housemates");
+    }
+}

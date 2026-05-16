@@ -55,4 +55,8 @@ var culture = new CultureInfo(localeService.CurrentLocale.ToCultureCode());
 CultureInfo.DefaultThreadCurrentCulture = culture;
 CultureInfo.DefaultThreadCurrentUICulture = culture;
 
+// Initialize the ActiveHousemateService so the avatar is available from the first render.
+var activeHousemateService = host.Services.GetRequiredService<ActiveHousemateService>();
+await activeHousemateService.InitializeAsync();
+
 await host.RunAsync();

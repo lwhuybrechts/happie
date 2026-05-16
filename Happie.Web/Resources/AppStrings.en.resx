@@ -208,11 +208,17 @@
   <data name="Nav_DayPlan" xml:space="preserve">
     <value>Today</value>
   </data>
+  <data name="Nav_OnTheMenu" xml:space="preserve">
+    <value>On the menu</value>
+  </data>
   <data name="Nav_Calendar" xml:space="preserve">
     <value>Calendar</value>
   </data>
   <data name="Nav_Housemates" xml:space="preserve">
     <value>Housemates</value>
+  </data>
+  <data name="Sidebar_Tagline" xml:space="preserve">
+    <value>Coordinate dinner with your housemates effortlessly.</value>
   </data>
   <data name="Language_English" xml:space="preserve">
     <value>English</value>

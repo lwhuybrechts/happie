@@ -1,24 +1,21 @@
 ﻿@inherits LayoutComponentBase
-@inject SessionService SessionService
-@inject IStringLocalizer<AppStrings> Localizer
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
+    <div class="sidebar-container">
+        <Sidebar />
+    </div>
+
+    <div class="mobile-header-container">
+        <MobileHeader />
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <LocaleSwitcher />
-            <button @onclick="LogoutAsync" class="btn btn-link">@Localizer["Logout"]</button>
-        </div>
-
-        <article class="content px-4">
+        <article class="content">
             @Body
         </article>
     </main>
-</div>
 
-@code {
-    private Task LogoutAsync() => SessionService.LogoutAsync();
-}
+    <div class="mobile-bottom-nav-container">
+        <MobileBottomNav />
+    </div>
+</div>

@@ -1,0 +1,25 @@
+<div class="avatar @(ShowHoverEffect ? "avatar--hoverable" : "")"
+     style="background-color: @Color;"
+     @onclick="OnClick"
+     role="button"
+     aria-label="@Name">
+    <span class="avatar__initial">@(string.IsNullOrEmpty(Name) ? "" : Name[..1].ToUpperInvariant())</span>
+</div>
+
+@code {
+    /// <summary>The housemate's display name. The first letter is shown in the avatar.</summary>
+    [Parameter, EditorRequired]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>The hex color used as the avatar background.</summary>
+    [Parameter, EditorRequired]
+    public string Color { get; set; } = string.Empty;
+
+    /// <summary>Callback invoked when the avatar is clicked.</summary>
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    /// <summary>When true, shows a green outline and pointer cursor on hover.</summary>
+    [Parameter]
+    public bool ShowHoverEffect { get; set; }
+}

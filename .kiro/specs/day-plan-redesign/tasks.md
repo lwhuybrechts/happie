@@ -68,15 +68,15 @@ This plan implements the visual and structural redesign of the Happie PWA's main
 - [x] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Implement layout components
-  - [ ] 4.1 Create `HousemateAvatar` component in `Happie.Web/Components/HousemateAvatar.razor`
+- [x] 4. Implement layout components
+  - [x] 4.1 Create `HousemateAvatar` component in `Happie.Web/Components/HousemateAvatar.razor`
     - Render a 36×36px colored rounded square with the first letter of the name in white
     - Parameters: `Name`, `Color`, `OnClick` (EventCallback), `ShowHoverEffect` (bool)
     - When `ShowHoverEffect` is true and hovered, show green outline (#4CAF50) and pointer cursor
     - Add scoped CSS file `HousemateAvatar.razor.css`
     - _Requirements: 3.1, 3.2, 8.3_
 
-  - [ ] 4.2 Create `Sidebar` component in `Happie.Web/Layout/Sidebar.razor`
+  - [x] 4.2 Create `Sidebar` component in `Happie.Web/Layout/Sidebar.razor`
     - Display Happie logo (green rounded square with white "H") + "Happie" text as topmost element
     - Display navigation items: "On the menu", "Calendar", "Housemates" — all navigating to `/day/{today}` for now
     - Display "Log Out" link that clears localStorage and navigates to `/`
@@ -86,7 +86,7 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Add scoped CSS file `Sidebar.razor.css`
     - _Requirements: 1.1, 1.2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 3.1, 3.2, 3.3, 4.1, 4.2, 6.1, 6.2, 6.3, 7.1_
 
-  - [ ] 4.3 Create `MobileHeader` component in `Happie.Web/Layout/MobileHeader.razor`
+  - [x] 4.3 Create `MobileHeader` component in `Happie.Web/Layout/MobileHeader.razor`
     - Display "Happie" text in top-left (no logo)
     - Display `LocaleSwitcher` to the left of the avatar
     - Display `HousemateAvatar` for active housemate in top-right, clicking navigates to `/housemates`
@@ -94,7 +94,7 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Add scoped CSS file `MobileHeader.razor.css`
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
 
-  - [ ] 4.4 Create `MobileBottomNav` component in `Happie.Web/Layout/MobileBottomNav.razor`
+  - [x] 4.4 Create `MobileBottomNav` component in `Happie.Web/Layout/MobileBottomNav.razor`
     - Display floating bar fixed at bottom with icons: "On the menu", "Calendar", "Housemates"
     - All icons navigate to `/day/{today}` until dedicated pages are implemented
     - Highlight the currently active page icon
@@ -102,7 +102,7 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Add scoped CSS file `MobileBottomNav.razor.css`
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6_
 
-  - [ ] 4.5 Redesign `MainLayout.razor` to integrate new layout components
+  - [x] 4.5 Redesign `MainLayout.razor` to integrate new layout components
     - Remove the top header bar for desktop (≥641px)
     - Render `Sidebar` for desktop viewports (≥641px)
     - Render `MobileHeader` for mobile viewports (<641px)
