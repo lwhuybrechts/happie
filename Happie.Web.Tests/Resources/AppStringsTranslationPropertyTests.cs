@@ -15,7 +15,7 @@ public class AppStringsTranslationPropertyTests
     {
         // Arrange.
         var englishKeys = LoadKeys("AppStrings.en.resx");
-        var dutchKeys = LoadKeys("AppStrings.nl.resx");
+        var dutchKeys = LoadKeys("AppStrings.resx");
 
         // Act.
         var missingInDutch = englishKeys.Except(dutchKeys).ToList();
@@ -32,7 +32,7 @@ public class AppStringsTranslationPropertyTests
     {
         // Arrange.
         var englishKeys = LoadKeys("AppStrings.en.resx").ToList();
-        var dutchKeys = LoadKeys("AppStrings.nl.resx");
+        var dutchKeys = LoadKeys("AppStrings.resx");
 
         return Prop.ForAll(
             Gen.Elements(englishKeys.ToArray()).ToArbitrary(),
@@ -49,7 +49,7 @@ public class AppStringsTranslationPropertyTests
     public Property AnyDutchKey_ExistsInEnglish()
     {
         // Arrange.
-        var dutchKeys = LoadKeys("AppStrings.nl.resx").ToList();
+        var dutchKeys = LoadKeys("AppStrings.resx").ToList();
         var englishKeys = LoadKeys("AppStrings.en.resx");
 
         return Prop.ForAll(

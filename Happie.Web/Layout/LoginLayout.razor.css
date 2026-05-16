@@ -1,0 +1,14 @@
+.login-page {
+    min-height: 100dvh;
+    background-color: #E8EEF4;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+@media (min-width: 641px) {
+    .login-page {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}

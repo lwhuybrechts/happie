@@ -64,8 +64,14 @@
   <data name="Login_PasswordLabel" xml:space="preserve">
     <value>Password</value>
   </data>
+  <data name="Login_WelcomeHeading" xml:space="preserve">
+    <value>Welcome to Happie</value>
+  </data>
+  <data name="Login_Subtitle" xml:space="preserve">
+    <value>Coordinate your household meals</value>
+  </data>
   <data name="Login_PasswordPlaceholder" xml:space="preserve">
-    <value>Enter household password</value>
+    <value>Household Password</value>
   </data>
   <data name="Login_SubmitButton" xml:space="preserve">
     <value>Log in</value>
@@ -75,6 +81,9 @@
   </data>
   <data name="Login_SelectHousemate" xml:space="preserve">
     <value>Select your name</value>
+  </data>
+  <data name="Login_NoHousemates" xml:space="preserve">
+    <value>No housemates found</value>
   </data>
   <data name="DayPlan_Title" xml:space="preserve">
     <value>Day Plan</value>

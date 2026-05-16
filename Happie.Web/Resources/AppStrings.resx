@@ -59,54 +59,222 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Login_Title" xml:space="preserve">
-    <value>Login</value>
+    <value>Inloggen</value>
   </data>
   <data name="Login_PasswordLabel" xml:space="preserve">
-    <value>Password</value>
+    <value>Wachtwoord</value>
+  </data>
+  <data name="Login_WelcomeHeading" xml:space="preserve">
+    <value>Welkom bij Happie</value>
+  </data>
+  <data name="Login_Subtitle" xml:space="preserve">
+    <value>Coördineer de maaltijden van je huishouden</value>
   </data>
   <data name="Login_PasswordPlaceholder" xml:space="preserve">
-    <value>Enter household password</value>
+    <value>Huishoudwachtwoord</value>
   </data>
   <data name="Login_SubmitButton" xml:space="preserve">
-    <value>Log in</value>
+    <value>Inloggen</value>
   </data>
   <data name="Login_ErrorMessage" xml:space="preserve">
-    <value>Incorrect password. Please try again.</value>
+    <value>Onjuist wachtwoord. Probeer het opnieuw.</value>
   </data>
   <data name="Login_SelectHousemate" xml:space="preserve">
-    <value>Select your name</value>
+    <value>Selecteer je naam</value>
+  </data>
+  <data name="Login_NoHousemates" xml:space="preserve">
+    <value>Geen huisgenoten gevonden</value>
   </data>
   <data name="DayPlan_Title" xml:space="preserve">
-    <value>Day Plan</value>
+    <value>Dagplan</value>
   </data>
   <data name="DayPlan_NoAttendance" xml:space="preserve">
-    <value>No attendance recorded</value>
+    <value>Geen aanwezigheid geregistreerd</value>
   </data>
   <data name="DayPlan_NoDish" xml:space="preserve">
-    <value>No dish planned</value>
+    <value>Geen gerecht gepland</value>
+  </data>
+  <data name="DayPlan_Loading" xml:space="preserve">
+    <value>Laden…</value>
+  </data>
+  <data name="DayPlan_LoadError" xml:space="preserve">
+    <value>Dagplan laden mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="DayPlan_PreviousDay" xml:space="preserve">
+    <value>Vorige dag</value>
+  </data>
+  <data name="DayPlan_NextDay" xml:space="preserve">
+    <value>Volgende dag</value>
+  </data>
+  <data name="DayPlan_DishSection" xml:space="preserve">
+    <value>Gerecht</value>
+  </data>
+  <data name="DayPlan_DishHeading" xml:space="preserve">
+    <value>Gerecht</value>
+  </data>
+  <data name="DayPlan_AttendanceSection" xml:space="preserve">
+    <value>Aanwezigheid</value>
+  </data>
+  <data name="DayPlan_AttendanceHeading" xml:space="preserve">
+    <value>Aanwezigheid</value>
+  </data>
+  <data name="DayPlan_CommentsSection" xml:space="preserve">
+    <value>Opmerkingen</value>
+  </data>
+  <data name="DayPlan_CommentsHeading" xml:space="preserve">
+    <value>Opmerkingen</value>
+  </data>
+  <data name="DayPlan_NudgeSection" xml:space="preserve">
+    <value>Nudge</value>
+  </data>
+  <data name="DayPlan_NudgeButton" xml:space="preserve">
+    <value>Nudge sturen</value>
+  </data>
+  <data name="DayHistory_AriaLabel" xml:space="preserve">
+    <value>Wijzigingsgeschiedenis</value>
+  </data>
+  <data name="DayHistory_Heading" xml:space="preserve">
+    <value>Geschiedenis</value>
+  </data>
+  <data name="DayHistory_Empty" xml:space="preserve">
+    <value>Nog geen wijzigingen geregistreerd.</value>
+  </data>
+  <data name="NudgeDialog_Title" xml:space="preserve">
+    <value>Nudge sturen</value>
+  </data>
+  <data name="NudgeDialog_NoRecipients" xml:space="preserve">
+    <value>Iedereen heeft al zijn aanwezigheid ingevuld.</value>
+  </data>
+  <data name="NudgeDialog_RecipientsLabel" xml:space="preserve">
+    <value>Ontvangers</value>
+  </data>
+  <data name="NudgeDialog_MessageLabel" xml:space="preserve">
+    <value>Bericht</value>
+  </data>
+  <data name="NudgeDialog_PredefinedMessage" xml:space="preserve">
+    <value>Vooraf ingesteld bericht</value>
+  </data>
+  <data name="NudgeDialog_PredefinedMessageAriaLabel" xml:space="preserve">
+    <value>Kies een vooraf ingesteld bericht</value>
+  </data>
+  <data name="NudgeDialog_CustomMessage" xml:space="preserve">
+    <value>Eigen bericht</value>
+  </data>
+  <data name="NudgeDialog_CustomMessagePlaceholder" xml:space="preserve">
+    <value>Max. 20 tekens</value>
+  </data>
+  <data name="NudgeDialog_CustomMessageAriaLabel" xml:space="preserve">
+    <value>Eigen nudge-bericht</value>
+  </data>
+  <data name="NudgeDialog_CustomMessageRequired" xml:space="preserve">
+    <value>Voer een bericht in.</value>
+  </data>
+  <data name="NudgeDialog_CustomMessageTooLong" xml:space="preserve">
+    <value>Bericht mag maximaal 20 tekens bevatten.</value>
+  </data>
+  <data name="NudgeDialog_PartialFailure" xml:space="preserve">
+    <value>Kon niet bezorgen bij sommige ontvangers:</value>
+  </data>
+  <data name="NudgeDialog_SendError" xml:space="preserve">
+    <value>Nudge sturen mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="NudgeDialog_SendButton" xml:space="preserve">
+    <value>Versturen</value>
+  </data>
+  <data name="NudgeDialog_CancelButton" xml:space="preserve">
+    <value>Annuleren</value>
+  </data>
+  <data name="NudgeDialog_CloseButton" xml:space="preserve">
+    <value>Sluiten</value>
+  </data>
+  <data name="NudgeMessageKey_PleaseAddAttendance" xml:space="preserve">
+    <value>Vul je aanwezigheid in</value>
+  </data>
+  <data name="NudgeMessageKey_WhatWouldYouLikeToEat" xml:space="preserve">
+    <value>Wat wil je vanavond eten?</value>
+  </data>
+  <data name="NudgeMessageKey_DinnerSoonWhatsYourPlan" xml:space="preserve">
+    <value>Het eten komt eraan — doe je mee?</value>
   </data>
   <data name="Calendar_Title" xml:space="preserve">
-    <value>Calendar</value>
+    <value>Kalender</value>
   </data>
   <data name="Housemates_Title" xml:space="preserve">
-    <value>Housemates</value>
+    <value>Huisgenoten</value>
   </data>
   <data name="Housemates_AddButton" xml:space="preserve">
-    <value>Add housemate</value>
+    <value>Huisgenoot toevoegen</value>
   </data>
   <data name="Nav_DayPlan" xml:space="preserve">
-    <value>Today</value>
+    <value>Vandaag</value>
   </data>
   <data name="Nav_Calendar" xml:space="preserve">
-    <value>Calendar</value>
+    <value>Kalender</value>
   </data>
   <data name="Nav_Housemates" xml:space="preserve">
-    <value>Housemates</value>
+    <value>Huisgenoten</value>
   </data>
   <data name="Language_English" xml:space="preserve">
-    <value>English</value>
+    <value>Engels</value>
   </data>
   <data name="Language_Dutch" xml:space="preserve">
-    <value>Dutch</value>
+    <value>Nederlands</value>
+  </data>
+  <data name="Logout" xml:space="preserve">
+    <value>Uitloggen</value>
+  </data>
+  <data name="AttendanceToggle_EatingIn" xml:space="preserve">
+    <value>Eet mee</value>
+  </data>
+  <data name="AttendanceToggle_NotEatingIn" xml:space="preserve">
+    <value>Eet niet mee</value>
+  </data>
+  <data name="AttendanceToggle_Unknown" xml:space="preserve">
+    <value>Onbekend</value>
+  </data>
+  <data name="AttendanceToggle_AriaLabel" xml:space="preserve">
+    <value>Aanwezigheid van {0}</value>
+  </data>
+  <data name="AttendanceToggle_SaveError" xml:space="preserve">
+    <value>Opslaan mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="DishEditor_AriaLabel" xml:space="preserve">
+    <value>Gerecht omschrijving</value>
+  </data>
+  <data name="DishEditor_EditAriaLabel" xml:space="preserve">
+    <value>Gerecht bewerken</value>
+  </data>
+  <data name="DishEditor_SaveButton" xml:space="preserve">
+    <value>Gerecht opslaan</value>
+  </data>
+  <data name="DishEditor_CancelButton" xml:space="preserve">
+    <value>Bewerken annuleren</value>
+  </data>
+  <data name="DishEditor_TooLong" xml:space="preserve">
+    <value>Gerecht mag maximaal 100 tekens bevatten.</value>
+  </data>
+  <data name="DishEditor_SaveError" xml:space="preserve">
+    <value>Opslaan mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="CommentEditor_AriaLabel" xml:space="preserve">
+    <value>Opmerking van {0}</value>
+  </data>
+  <data name="CommentEditor_EditAriaLabel" xml:space="preserve">
+    <value>Opmerking van {0} bewerken</value>
+  </data>
+  <data name="CommentEditor_SaveButton" xml:space="preserve">
+    <value>Opmerking opslaan</value>
+  </data>
+  <data name="CommentEditor_CancelButton" xml:space="preserve">
+    <value>Bewerken annuleren</value>
+  </data>
+  <data name="CommentEditor_Placeholder" xml:space="preserve">
+    <value>Voeg een opmerking toe…</value>
+  </data>
+  <data name="CommentEditor_TooLong" xml:space="preserve">
+    <value>Opmerking mag maximaal 200 tekens bevatten.</value>
+  </data>
+  <data name="CommentEditor_SaveError" xml:space="preserve">
+    <value>Opslaan mislukt. Probeer het opnieuw.</value>
   </data>
 </root>

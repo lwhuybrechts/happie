@@ -21,11 +21,22 @@ public class LocaleService
         _jsRuntime = jsRuntime;
     }
 
-    /// <summary>Reads the persisted locale from localStorage and sets CurrentLocale. Defaults to Dutch when not set.</summary>
+    /// <summary>Reads the persisted locale from localStorage and sets CurrentLocale. On first visit, detects the browser language.</summary>
     public async Task InitializeAsync()
     {
         var storedCode = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", LocaleStorageKey);
-        CurrentLocale = storedCode.ToLocale();
+
+        if (!string.IsNullOrWhiteSpace(storedCode))
+        {
+            CurrentLocale = storedCode.ToLocale();
+            return;
+        }
+
+        // First visit — detect browser language.
+        var browserLanguage = await _jsRuntime.InvokeAsync<string?>("eval", "navigator.language || navigator.userLanguage");
+        CurrentLocale = browserLanguage?.StartsWith("en", StringComparison.OrdinalIgnoreCase) == true
+            ? Locale.En
+            : LocaleExtensions.Default;
     }
 
     /// <summary>Persists the new locale to localStorage, updates CurrentLocale, and raises LocaleChanged.</summary>

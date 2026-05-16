@@ -1,66 +1,127 @@
+@layout LoginLayout
 @page "/"
 @using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@using Happie.Web.Services
 @inject HttpClient Http
 @inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<AppStrings> Localizer
+@inject LocaleService LocaleService
 
 <PageTitle>@Localizer["Login_Title"]</PageTitle>
 
-@if (_housemates is null)
-{
-    <h1>@Localizer["Login_Title"]</h1>
+<div class="login-card">
+    <div class="login-locale-toggle">
+        <button class="locale-btn @(LocaleService.CurrentLocale == Locale.En ? "locale-btn--active" : "")"
+                @onclick="() => SwitchLocaleAsync(Locale.En)">EN</button>
+        <button class="locale-btn @(LocaleService.CurrentLocale == Locale.Nl ? "locale-btn--active" : "")"
+                @onclick="() => SwitchLocaleAsync(Locale.Nl)">NL</button>
+    </div>
 
-    <EditForm Model="_loginModel" OnValidSubmit="SubmitLoginAsync">
-        <DataAnnotationsValidator />
+    <div class="login-logo">H</div>
 
-        <div>
-            <label for="password">@Localizer["Login_PasswordLabel"]</label>
-            <InputText id="password"
-                       type="password"
-                       @bind-Value="_loginModel.Password"
-                       placeholder="@Localizer["Login_PasswordPlaceholder"]" />
-        </div>
+    <h1>@Localizer["Login_WelcomeHeading"]</h1>
+    <p class="login-subtitle">@Localizer["Login_Subtitle"]</p>
 
-        @if (_showError)
+    @if (_housemates is null)
+    {
+        <EditForm Model="_loginModel" OnValidSubmit="SubmitLoginAsync">
+            <DataAnnotationsValidator />
+
+            <div class="password-field">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     width="20"
+                     height="20"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     stroke-linecap="round"
+                     stroke-linejoin="round"
+                     aria-hidden="true">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <InputText type="password"
+                           @bind-Value="_loginModel.Password"
+                           placeholder="@Localizer["Login_PasswordPlaceholder"]" />
+            </div>
+
+            @if (_showError)
+            {
+                <p role="alert">@Localizer["Login_ErrorMessage"]</p>
+            }
+
+            <button type="submit" class="login-btn" disabled="@_isSubmitting">@Localizer["Login_SubmitButton"]</button>
+        </EditForm>
+    }
+    else
+    {
+        <h2>@Localizer["Login_SelectHousemate"]</h2>
+
+        @if (!_housemates.Any())
         {
-            <p role="alert">@Localizer["Login_ErrorMessage"]</p>
+            <p>@Localizer["Login_NoHousemates"]</p>
         }
-
-        <button type="submit" disabled="@_isSubmitting">@Localizer["Login_SubmitButton"]</button>
-    </EditForm>
-}
-else
-{
-    <h1>@Localizer["Login_SelectHousemate"]</h1>
-
-    <ul>
-        @foreach (var housemate in _housemates)
+        else
         {
-            <li>
-                <button @onclick="() => SelectHousemateAsync(housemate)">
-                    @housemate.Name
-                </button>
-            </li>
+            <ul class="housemate-list">
+                @foreach (var housemate in _housemates)
+                {
+                    <li>
+                        <button class="housemate-row" style="--housemate-color: @housemate.Color" @onclick="() => SelectHousemateAsync(housemate)">
+                            <span class="housemate-avatar" style="background-color: @housemate.Color">@housemate.Name[0]</span>
+                            <span class="housemate-name">@housemate.Name</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                        </button>
+                    </li>
+                }
+            </ul>
         }
-    </ul>
-}
+    }
+</div>
 
 @code {
     private readonly LoginFormModel _loginModel = new();
-    private IReadOnlyList<HousemateDto>? _housemates;
+    private List<HousemateDto>? _housemates;
     private bool _showError;
     private bool _isSubmitting;
 
     protected override async Task OnInitializedAsync()
     {
         var existingToken = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "jwt");
+        var activeHousemateId = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "activeHousemateId");
 
-        if (!string.IsNullOrWhiteSpace(existingToken))
+        // Only redirect if both JWT and housemate selection are present (fully logged in).
+        if (!string.IsNullOrWhiteSpace(existingToken) && !string.IsNullOrWhiteSpace(activeHousemateId))
         {
             var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
             NavigationManager.NavigateTo($"/day/{today}", replace: true);
+            return;
         }
+
+        // JWT exists but no housemate selected — restore housemates from sessionStorage to show the selection view.
+        if (!string.IsNullOrWhiteSpace(existingToken))
+        {
+            var storedHousemates = await JsRuntime.InvokeAsync<string?>("sessionStorage.getItem", "pendingHousemates");
+
+            if (!string.IsNullOrWhiteSpace(storedHousemates))
+            {
+                var housemates = System.Text.Json.JsonSerializer.Deserialize<List<HousemateDto>>(storedHousemates);
+
+                if (housemates is not null && housemates.Any())
+                    _housemates = housemates.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
+            }
+        }
+    }
+
+    private async Task SwitchLocaleAsync(Locale locale)
+    {
+        await LocaleService.SetLocaleAsync(locale);
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
     }
 
     private async Task SubmitLoginAsync()
@@ -74,9 +135,20 @@ else
         {
             var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
 
-            await JsRuntime.InvokeVoidAsync("localStorage.setItem", "jwt", loginResponse!.Token);
+            if (loginResponse is null || loginResponse.Housemates is null || !loginResponse.Housemates.Any())
+            {
+                _showError = true;
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("localStorage.setItem", "jwt", loginResponse.Token);
 
-            _housemates = loginResponse.Housemates;
+                _housemates = loginResponse.Housemates.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
+
+                // Persist housemates to sessionStorage so they survive a locale-switch reload.
+                var serialized = System.Text.Json.JsonSerializer.Serialize(_housemates);
+                await JsRuntime.InvokeVoidAsync("sessionStorage.setItem", "pendingHousemates", serialized);
+            }
         }
         else
         {
@@ -89,6 +161,7 @@ else
     private async Task SelectHousemateAsync(HousemateDto housemate)
     {
         await JsRuntime.InvokeVoidAsync("localStorage.setItem", "activeHousemateId", housemate.Id.ToString());
+        await JsRuntime.InvokeVoidAsync("sessionStorage.removeItem", "pendingHousemates");
 
         var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
         NavigationManager.NavigateTo($"/day/{today}");

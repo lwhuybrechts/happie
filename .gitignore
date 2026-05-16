@@ -83,4 +83,8 @@ coverage/
 
 # Azurite local storage emulator data files.
 __azurite_db_*.json
+__blobstorage__/
+__queuestorage__/
+__tablestorage__/
+azurite-debug.log
 AzuriteConfig

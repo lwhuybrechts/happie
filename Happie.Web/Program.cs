@@ -5,7 +5,6 @@ using Happie.Web.Http;
 using Happie.Web.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.JSInterop;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -46,10 +45,10 @@ builder.Services.AddScoped<SessionService>();
 
 var host = builder.Build();
 
-// Initialize locale from localStorage before rendering so the correct culture is active from the first render.
-var jsRuntime = host.Services.GetRequiredService<IJSRuntime>();
-var storedLocale = await jsRuntime.InvokeAsync<string?>("localStorage.getItem", "locale");
-var culture = new CultureInfo(storedLocale.ToLocale().ToCultureCode());
+// Initialize the LocaleService and set the thread culture before rendering so the correct locale is active from the first frame.
+var localeService = host.Services.GetRequiredService<LocaleService>();
+await localeService.InitializeAsync();
+var culture = new CultureInfo(localeService.CurrentLocale.ToCultureCode());
 CultureInfo.DefaultThreadCurrentCulture = culture;
 CultureInfo.DefaultThreadCurrentUICulture = culture;
 

@@ -149,23 +149,37 @@ The frontend starts on **http://localhost:5195**.
 
 ### Local Test Data — Seed a Household
 
-The `Households` table in Azurite must contain at least one record before login works. Insert a row with the values below using Azure Storage Explorer or any Table Storage client:
+The `Households` table in Azurite must contain at least one record before login works. Run the seed script to insert a test household and housemates:
 
-| Field | Value |
-|---|---|
-| PartitionKey | `households` |
-| RowKey | any new GUID, e.g. `00000000-0000-0000-0000-000000000001` |
-| Name | `Test Household` |
-| PasswordHash | `$2a$11$qa7dtLgVeLxVbxunMy2n2OIQXU8mZx5K8C4okHgF8LdbejOpXRboi` |
+```bash
+dotnet-script Happie.Api.IntegrationTests/Scripts/seed-local.csx
+```
 
-The hash above corresponds to the password **`happie`** (bcrypt, cost 11).
+This inserts a test household (password: **`happie`**) with two housemates (Alice and Bob). The script is idempotent (uses upsert), so it's safe to run after integration tests truncate the tables or after restarting Azurite.
 
-Add at least one housemate in the `Housemates` table:
 
-| Field | Value |
-|---|---|
-| PartitionKey | `{HouseholdId}` (the RowKey of the household above) |
-| RowKey | any new GUID, e.g. `00000000-0000-0000-0000-000000000002` |
-| Name | `Alice` |
-| Color | `#EF4444` |
-| IsDeleted | `false` |
+## Blazor WebAssembly Patterns
+
+### Locale switching — forceLoad pattern
+
+Blazor WASM's `ResourceManager` caches satellite assemblies per culture and cannot switch them mid-session. The only reliable way to change the active locale at runtime is to persist the choice and reload the page.
+
+**Pattern:**
+1. Persist the new locale via `LocaleService.SetLocaleAsync(locale)` (writes to `localStorage`)
+2. Call `NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true)` to reload
+3. On startup, `Program.cs` reads the stored locale via `LocaleService.InitializeAsync()` and sets `CultureInfo.DefaultThreadCurrentCulture` / `DefaultThreadCurrentUICulture` before rendering
+
+**Preserving component state across reload:**
+If the page has in-memory state that must survive the reload (e.g., a list fetched from the API), store it in `sessionStorage` before the reload and read it back in `OnInitializedAsync`. Clean up `sessionStorage` once the state is no longer needed.
+
+### CSS isolation — `::deep` for child component elements
+
+Blazor's scoped CSS adds a unique attribute to elements rendered directly by the component, but NOT to elements rendered by child Blazor components (e.g., `<InputText>` renders an `<input>`). To style those inner elements, use the `::deep` combinator in the scoped `.razor.css` file.
+
+### Login page auto-redirect guard
+
+The login page (`/`) checks for an existing session on load. It MUST only redirect to the day plan if **both** conditions are met:
+- `jwt` exists in `localStorage` (user has authenticated)
+- `activeHousemateId` exists in `localStorage` (user has selected a housemate)
+
+If only the JWT exists (e.g., user is on the housemate selection step and reloads), the page MUST show the housemate selection view, not redirect.

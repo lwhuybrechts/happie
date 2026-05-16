@@ -1,0 +1,197 @@
+/* Login card container. */
+.login-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (min-width: 641px) {
+    .login-card {
+        max-width: 400px;
+        padding: 32px;
+    }
+}
+
+/* Locale toggle — flex row pinned to the top-right of the card. */
+.login-locale-toggle {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+/* Individual locale button. */
+.locale-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #666666;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.locale-btn:hover {
+    color: #4CAF50;
+    background-color: rgba(76, 175, 80, 0.08);
+}
+
+/* Active locale button. */
+.locale-btn--active {
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+/* Brand logo — 56×56px green rounded square with centered white "H". */
+.login-logo {
+    width: 56px;
+    height: 56px;
+    background-color: #4CAF50;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 2rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px auto;
+}
+
+/* Welcome heading. */
+h1 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0 0 4px 0;
+    color: #111827;
+    text-align: center;
+}
+
+/* Housemate selection sub-heading. */
+h2 {
+    font-size: 1.125rem;
+    font-weight: bold;
+    margin: 0 0 12px 0;
+    color: #111827;
+}
+
+/* Subtitle paragraph below the welcome heading. */
+.login-subtitle {
+    font-size: 0.9375rem;
+    color: #6b7280;
+    margin: 0 0 20px 0;
+    text-align: center;
+}
+
+/* Password field wrapper — pill-shaped with subtle border; focus-within highlights in brand green. */
+.password-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 24px;
+    padding: 12px 16px;
+    background-color: #f3f4f6;
+    margin-bottom: 12px;
+}
+
+.password-field:focus-within {
+    border-color: #4CAF50;
+    outline: none;
+}
+
+/* Lock icon inside the password field. */
+.password-field svg {
+    color: #9ca3af;
+    flex-shrink: 0;
+}
+
+/* Password input — fills remaining space, blends into the wrapper seamlessly. */
+.password-field ::deep input {
+    flex: 1;
+    border: 0 !important;
+    outline: 0 !important;
+    font-size: 0.9375rem;
+    background: transparent !important;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    color: inherit;
+    box-shadow: none !important;
+}
+
+/* Login submit button. */
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #4CAF50;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 8px;
+}
+
+.login-btn:hover:not(:disabled) {
+    background-color: #43A047;
+}
+
+.login-btn:disabled {
+    background-color: #A5D6A7;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Housemate list — no list decoration, stacked with gap. */
+.housemate-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Housemate row button — full-width flex row with subtle border. */
+.housemate-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+}
+
+/* Hover state — brand green outline with drop shadow. */
+.housemate-row:hover {
+    outline: 2px solid #4CAF50;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Housemate avatar — 36×36px colored rounded square with white initial. */
+.housemate-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    color: #ffffff;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+
+/* Housemate name — bold, fills remaining row space. */
+.housemate-name {
+    font-weight: bold;
+    flex: 1;
+}
