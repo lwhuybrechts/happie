@@ -139,11 +139,13 @@ resource staticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
   properties: {}
 }
 
-// Custom domain — requires DNS CNAME to be configured in Cloudflare first.
+// Custom domain — apex domain validated via TXT record.
 resource customDomain 'Microsoft.Web/staticSites/customDomains@2023-12-01' = {
   parent: staticWebApp
   name: 'happie.dev'
-  properties: {}
+  properties: {
+    validationMethod: 'dns-txt-token'
+  }
 }
 
 // Note: Linked backends require Standard tier. With Free tier, the frontend calls

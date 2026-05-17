@@ -85,10 +85,19 @@ az keyvault secret set --vault-name happie-kv --name SecretName --value "secret-
 | `AZURE_STATIC_WEB_APPS_API_TOKEN` | SWA deployment token (see command above) |
 | `AZURE_FUNCTIONAPP_PUBLISH_PROFILE` | Functions publish profile XML (see command above) |
 
+## Custom Domain
+
+- **Domain**: `happie.dev` (registered via Cloudflare Registrar)
+- **DNS**: Cloudflare DNS with CNAME flattening at the apex, proxy **disabled** (DNS only / grey cloud)
+- **SSL**: Managed by Azure Static Web Apps (free certificate, auto-renewed)
+- **Bicep**: The custom domain is declared as a `Microsoft.Web/staticSites/customDomains` resource in `infra/main.bicep`
+- **Prerequisite**: The CNAME record must exist in Cloudflare DNS before deploying the Bicep template, otherwise Azure cannot validate domain ownership
+
 ## CORS Configuration
 
 CORS is set in the Bicep template on the Functions App (`siteConfig.cors`):
 - The SWA default hostname (production)
+- `https://happie.dev` (custom domain)
 - `http://localhost:5195` (local development)
 
-If the SWA hostname changes (e.g., custom domain), update the CORS allowed origins in `infra/main.bicep` and redeploy.
+If the domain changes, update the CORS allowed origins in `infra/main.bicep` and redeploy.
