@@ -100,21 +100,21 @@ jobs:
           name: happie-api
           path: ./api
 
-      - name: Deploy to Azure Functions
-        uses: Azure/functions-action@v1
-        with:
-          app-name: happie-func
-          package: ./api
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
-          respect-funcignore: true
-
-      - name: Sync triggers
+      - name: Deploy to Azure Functions via Zip Deploy
         run: |
           PROFILE='${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}'
           USER=$(echo "$PROFILE" | grep -oP 'userName="\K[^"]+' | head -1)
           PASS=$(echo "$PROFILE" | grep -oP 'userPWD="\K[^"]+' | head -1)
+          cd api
+          zip -r ../deploy.zip .
+          cd ..
+          # Deploy via Kudu zip deploy API.
+          curl -sf -X POST "https://happie-func.scm.azurewebsites.net/api/zipdeploy" \
+            -u "$USER:$PASS" \
+            -H "Content-Type: application/zip" \
+            --data-binary @deploy.zip
           # Wait for deployment to settle.
-          sleep 10
+          sleep 15
           # Sync triggers to register functions.
           curl -sf -X POST "https://happie-func.scm.azurewebsites.net/api/functions/synctriggers" \
             -u "$USER:$PASS" \
