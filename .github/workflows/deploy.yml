@@ -51,7 +51,7 @@ jobs:
         run: dotnet publish Happie.Web --configuration Release --no-build --output ./publish/web
 
       - name: Publish Happie.Api
-        run: dotnet publish Happie.Api --configuration Release --no-build --output ./publish/api
+        run: dotnet publish Happie.Api --configuration Release --output ./publish/api
 
       - name: Upload Web artifact
         uses: actions/upload-artifact@v4
