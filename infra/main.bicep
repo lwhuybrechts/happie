@@ -100,10 +100,6 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'WEBSITE_CONTENTSHARE'
           value: '${appName}-func'
         }
-        {
-          name: 'WEBSITE_RUN_FROM_PACKAGE'
-          value: '1'
-        }
       ]
       cors: {
         allowedOrigins: [

@@ -100,7 +100,7 @@ jobs:
           name: happie-api
           path: ./api
 
-      - name: Deploy to Azure Functions via Zip Deploy
+      - name: Deploy to Azure Functions
         run: |
           PROFILE='${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}'
           USER=$(echo "$PROFILE" | grep -oP 'userName="\K[^"]+' | head -1)
@@ -108,15 +108,22 @@ jobs:
           cd api
           zip -r ../deploy.zip .
           cd ..
-          # Deploy via Kudu zip deploy API.
-          curl -sf -X POST "https://happie-func.scm.azurewebsites.net/api/zipdeploy" \
+          # Deploy via Kudu zip deploy API (synchronous).
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            "https://happie-func.scm.azurewebsites.net/api/zipdeploy?isAsync=false" \
             -u "$USER:$PASS" \
             -H "Content-Type: application/zip" \
-            --data-binary @deploy.zip
-          # Wait for deployment to settle.
-          sleep 15
-          # Sync triggers to register functions.
-          curl -sf -X POST "https://happie-func.scm.azurewebsites.net/api/functions/synctriggers" \
+            --data-binary @deploy.zip)
+          echo "Zip deploy response: $HTTP_CODE"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Deployment failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+          # Wait for the app to restart and load.
+          sleep 30
+          # Sync triggers to register functions with the host.
+          curl -sf -X POST \
+            "https://happie-func.azurewebsites.net/admin/host/synctriggers" \
             -u "$USER:$PASS" \
             -H "Content-Type: application/json" \
-            -d '{}'
+            -d '{}' || true
