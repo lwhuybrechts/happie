@@ -16,7 +16,7 @@
             <div class="comments-section__row @(IsActiveHousemate(comment.HousemateId) ? "comments-section__row--clickable" : "")"
                  @onclick="() => EditExistingComment(comment)"
                  role="@(IsActiveHousemate(comment.HousemateId) ? "button" : null)"
-                 aria-label="@(IsActiveHousemate(comment.HousemateId) ? Localizer["CommentEditor_EditAriaLabel", comment.HousemateName] : null)">
+                 aria-label="@(IsActiveHousemate(comment.HousemateId) ? Localizer["CommentEditor_EditAriaLabel", comment.HousemateName].Value : null)">
                 <HousemateAvatar Name="@comment.HousemateName" Color="@comment.Color" />
                 <div class="comments-section__bubble">
                     <span class="comments-section__name">@comment.HousemateName.ToUpperInvariant()</span>

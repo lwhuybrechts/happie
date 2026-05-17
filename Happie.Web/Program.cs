@@ -5,10 +5,20 @@ using Happie.Web.Http;
 using Happie.Web.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.Logging;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
+
+// Initialize Sentry for client-side error monitoring.
+var sentryDsn = builder.Configuration["SentryDsn"] ?? string.Empty;
+builder.UseSentry(options =>
+{
+    options.Dsn = sentryDsn;
+    options.SendDefaultPii = true;
+});
+builder.Logging.AddSentry(options => options.InitializeSdk = false);
 
 // Register the delegating handler that injects JWT and X-Housemate-Id headers.
 builder.Services.AddTransient<AuthHeaderHandler>();
