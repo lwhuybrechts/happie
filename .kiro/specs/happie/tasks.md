@@ -352,17 +352,17 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
 - [x] 16. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 17. Push notification permission and subscription — frontend
-  - [~] 17.1 Implement push permission request flow
+- [x] 17. Push notification permission and subscription — frontend
+  - [x] 17.1 Implement push permission request flow
     - On first PWA launch, request notification permission; on grant call `POST /api/push/subscribe` with VAPID public key, subscription object, and current locale
     - Show informational message if permission is denied
     - _Requirements: 8.1, 8.2, 8.3_
 
-  - [ ] 17.2 Implement subscription renewal
+  - [x] 17.2 Implement subscription renewal
     - Listen for `pushsubscriptionchange` event in the Service Worker; re-register updated subscription via `POST /api/push/subscribe`
     - _Requirements: 8.4_
 
-  - [ ] 17.3 Implement Service Worker push event handler
+  - [x] 17.3 Implement Service Worker push event handler
     - Handle incoming push events; show notification with title, body, and `data.url` for the relevant day
     - On notification click, open `/day/{date}`
     - _Requirements: 7.3, 10.4_

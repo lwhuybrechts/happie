@@ -1,4 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@inject PushNotificationService PushNotificationService
+@inject ActiveHousemateService ActiveHousemateService
+@inject IStringLocalizer<AppStrings> Localizer
+@implements IDisposable
 
 <div class="page">
     <div class="sidebar-container">
@@ -11,6 +15,13 @@
 
     <main>
         <article class="content">
+            @if (PushNotificationService.PermissionDenied && _showDeniedMessage)
+            {
+                <div class="push-denied-banner" role="alert">
+                    <span>@Localizer["Push_PermissionDenied"]</span>
+                    <button class="push-denied-banner__dismiss" @onclick="DismissBanner" aria-label="@Localizer["Push_DismissAriaLabel"]">✕</button>
+                </div>
+            }
             @Body
         </article>
     </main>
@@ -19,3 +30,34 @@
         <MobileBottomNav />
     </div>
 </div>
+
+@code {
+    private bool _showDeniedMessage;
+
+    protected override void OnInitialized()
+    {
+        PushNotificationService.OnPermissionStateChanged += HandlePermissionStateChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && ActiveHousemateService.Id.HasValue)
+            await PushNotificationService.RequestPermissionAndSubscribeAsync();
+    }
+
+    private void HandlePermissionStateChanged()
+    {
+        _showDeniedMessage = PushNotificationService.PermissionDenied;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void DismissBanner()
+    {
+        _showDeniedMessage = false;
+    }
+
+    public void Dispose()
+    {
+        PushNotificationService.OnPermissionStateChanged -= HandlePermissionStateChanged;
+    }
+}

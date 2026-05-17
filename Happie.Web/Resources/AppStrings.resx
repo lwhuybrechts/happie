@@ -363,4 +363,10 @@
   <data name="ColorPicker_ColorInUse" xml:space="preserve">
     <value>Kleur {0} is al in gebruik</value>
   </data>
+  <data name="Push_PermissionDenied" xml:space="preserve">
+    <value>Pushmeldingen zijn geblokkeerd. Je kunt geen nudges ontvangen zonder toestemming voor meldingen.</value>
+  </data>
+  <data name="Push_DismissAriaLabel" xml:space="preserve">
+    <value>Melding sluiten</value>
+  </data>
 </root>

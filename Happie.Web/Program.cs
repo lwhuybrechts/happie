@@ -56,6 +56,9 @@ builder.Services.AddScoped<SessionService>();
 // Register the active housemate service as scoped so it is shared within a single render session.
 builder.Services.AddScoped<ActiveHousemateService>();
 
+// Register the push notification service as scoped so it is shared within a single render session.
+builder.Services.AddScoped<PushNotificationService>();
+
 var host = builder.Build();
 
 // Initialize the LocaleService and set the thread culture before rendering so the correct locale is active from the first frame.
