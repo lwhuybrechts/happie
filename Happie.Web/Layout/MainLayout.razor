@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject PushNotificationService PushNotificationService
 @inject ActiveHousemateService ActiveHousemateService
+@inject NavigationManager NavigationManager
 @inject IStringLocalizer<AppStrings> Localizer
 @implements IDisposable
 
@@ -15,11 +16,21 @@
 
     <main>
         <article class="content">
+            @if (PushNotificationService.ShouldShowEnablePrompt && _showEnablePrompt)
+            {
+                <div class="push-enable-banner" role="alert">
+                    <span>@Localizer["Push_EnablePrompt"]</span>
+                    <div class="push-enable-banner__actions">
+                        <button class="push-enable-banner__enable" @onclick="EnablePush">@Localizer["Push_EnableButton"]</button>
+                        <button class="push-enable-banner__dismiss" @onclick="DismissEnablePrompt" aria-label="@Localizer["Push_DismissAriaLabel"]">✕</button>
+                    </div>
+                </div>
+            }
             @if (PushNotificationService.PermissionDenied && _showDeniedMessage)
             {
                 <div class="push-denied-banner" role="alert">
-                    <span>@Localizer["Push_PermissionDenied"]</span>
-                    <button class="push-denied-banner__dismiss" @onclick="DismissBanner" aria-label="@Localizer["Push_DismissAriaLabel"]">✕</button>
+                    <span>@Localizer["Push_PermissionDenied"] <a class="push-denied-banner__link" href="/push-help">@Localizer["Push_HowToEnable"]</a></span>
+                    <button class="push-denied-banner__dismiss" @onclick="DismissDeniedBanner" aria-label="@Localizer["Push_DismissAriaLabel"]">✕</button>
                 </div>
             }
             @Body
@@ -33,6 +44,7 @@
 
 @code {
     private bool _showDeniedMessage;
+    private bool _showEnablePrompt = true;
 
     protected override void OnInitialized()
     {
@@ -42,16 +54,29 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && ActiveHousemateService.Id.HasValue)
-            await PushNotificationService.RequestPermissionAndSubscribeAsync();
+            await PushNotificationService.CheckPermissionStateAsync();
+    }
+
+    private async Task EnablePush()
+    {
+        // This is called from a button click — user gesture context is preserved.
+        await PushNotificationService.RequestPermissionAsync();
+        _showEnablePrompt = false;
     }
 
     private void HandlePermissionStateChanged()
     {
         _showDeniedMessage = PushNotificationService.PermissionDenied;
+        _showEnablePrompt = PushNotificationService.ShouldShowEnablePrompt;
         InvokeAsync(StateHasChanged);
     }
 
-    private void DismissBanner()
+    private void DismissEnablePrompt()
+    {
+        _showEnablePrompt = false;
+    }
+
+    private void DismissDeniedBanner()
     {
         _showDeniedMessage = false;
     }

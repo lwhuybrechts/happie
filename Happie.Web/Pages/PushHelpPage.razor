@@ -1,0 +1,50 @@
+@page "/push-help"
+@inject IStringLocalizer<AppStrings> Localizer
+@inject NavigationManager NavigationManager
+
+<PageTitle>Happie</PageTitle>
+
+<div class="push-help">
+    <h1 class="push-help__title">@Localizer["PushHelp_Title"]</h1>
+
+    <p class="push-help__intro">@Localizer["PushHelp_Intro"]</p>
+
+    <section class="push-help__section">
+        <h2 class="push-help__section-title">@Localizer["PushHelp_IosTitle"]</h2>
+        <ol class="push-help__steps">
+            <li>@Localizer["PushHelp_IosStep1"]</li>
+            <li>@Localizer["PushHelp_IosStep2"]</li>
+            <li>@Localizer["PushHelp_IosStep3"]</li>
+            <li>@Localizer["PushHelp_IosStep4"]</li>
+        </ol>
+    </section>
+
+    <section class="push-help__section">
+        <h2 class="push-help__section-title">@Localizer["PushHelp_AndroidTitle"]</h2>
+        <ol class="push-help__steps">
+            <li>@Localizer["PushHelp_AndroidStep1"]</li>
+            <li>@Localizer["PushHelp_AndroidStep2"]</li>
+            <li>@Localizer["PushHelp_AndroidStep3"]</li>
+        </ol>
+    </section>
+
+    <section class="push-help__section">
+        <h2 class="push-help__section-title">@Localizer["PushHelp_DesktopTitle"]</h2>
+        <ol class="push-help__steps">
+            <li>@Localizer["PushHelp_DesktopStep1"]</li>
+            <li>@Localizer["PushHelp_DesktopStep2"]</li>
+            <li>@Localizer["PushHelp_DesktopStep3"]</li>
+        </ol>
+    </section>
+
+    <p class="push-help__note">@Localizer["PushHelp_Note"]</p>
+
+    <button class="push-help__back" @onclick="GoBack">@Localizer["PushHelp_BackButton"]</button>
+</div>
+
+@code {
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}

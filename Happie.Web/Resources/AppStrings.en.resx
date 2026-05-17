@@ -369,4 +369,64 @@
   <data name="Push_DismissAriaLabel" xml:space="preserve">
     <value>Dismiss notification</value>
   </data>
+  <data name="Push_HowToEnable" xml:space="preserve">
+    <value>How do I enable this?</value>
+  </data>
+  <data name="Push_EnablePrompt" xml:space="preserve">
+    <value>Want to receive notifications when someone sends a nudge or changes the day plan?</value>
+  </data>
+  <data name="Push_EnableButton" xml:space="preserve">
+    <value>Enable</value>
+  </data>
+  <data name="PushHelp_Title" xml:space="preserve">
+    <value>Enable push notifications</value>
+  </data>
+  <data name="PushHelp_Intro" xml:space="preserve">
+    <value>Push notifications are needed to receive nudges and day plan changes. Below you'll find instructions per device to enable (or re-enable) notifications.</value>
+  </data>
+  <data name="PushHelp_IosTitle" xml:space="preserve">
+    <value>iPhone / iPad</value>
+  </data>
+  <data name="PushHelp_IosStep1" xml:space="preserve">
+    <value>Make sure Happie is added to your home screen (open Safari → share button → Add to Home Screen)</value>
+  </data>
+  <data name="PushHelp_IosStep2" xml:space="preserve">
+    <value>Open Happie from your home screen (not from Safari)</value>
+  </data>
+  <data name="PushHelp_IosStep3" xml:space="preserve">
+    <value>If you previously denied the prompt: go to Settings → Happie → Notifications → toggle Allow Notifications on</value>
+  </data>
+  <data name="PushHelp_IosStep4" xml:space="preserve">
+    <value>Reopen Happie — the app will ask you to enable notifications again</value>
+  </data>
+  <data name="PushHelp_AndroidTitle" xml:space="preserve">
+    <value>Android</value>
+  </data>
+  <data name="PushHelp_AndroidStep1" xml:space="preserve">
+    <value>Open Chrome and navigate to the Happie website</value>
+  </data>
+  <data name="PushHelp_AndroidStep2" xml:space="preserve">
+    <value>Tap the lock icon to the left of the address bar → Permissions (or Site settings)</value>
+  </data>
+  <data name="PushHelp_AndroidStep3" xml:space="preserve">
+    <value>Set Notifications to Allow and reload the page</value>
+  </data>
+  <data name="PushHelp_DesktopTitle" xml:space="preserve">
+    <value>Desktop (Chrome / Edge / Firefox)</value>
+  </data>
+  <data name="PushHelp_DesktopStep1" xml:space="preserve">
+    <value>Click the lock icon (or settings icon) to the left of the address bar</value>
+  </data>
+  <data name="PushHelp_DesktopStep2" xml:space="preserve">
+    <value>Click Site settings or Permissions</value>
+  </data>
+  <data name="PushHelp_DesktopStep3" xml:space="preserve">
+    <value>Set Notifications to Allow and reload the page</value>
+  </data>
+  <data name="PushHelp_Note" xml:space="preserve">
+    <value>Tip: if you dismissed the banner without choosing, it will reappear on your next visit. Just tap "Enable" when you're ready.</value>
+  </data>
+  <data name="PushHelp_BackButton" xml:space="preserve">
+    <value>Back to Happie</value>
+  </data>
 </root>

@@ -16,7 +16,7 @@ public class PushNotificationService
     private readonly IConfiguration _configuration;
     private readonly ILogger<PushNotificationService> _logger;
 
-    private bool _hasRequestedThisSession;
+    private bool _hasCheckedThisSession;
 
     public PushNotificationService(
         IJSRuntime jsRuntime,
@@ -35,20 +35,24 @@ public class PushNotificationService
     /// <summary>Whether the user denied push notification permission.</summary>
     public bool PermissionDenied { get; private set; }
 
+    /// <summary>Whether the user has not yet been asked (permission is "default") and should see the enable prompt.</summary>
+    public bool ShouldShowEnablePrompt { get; private set; }
+
     /// <summary>Raised when the permission state changes so UI components can react.</summary>
     public event Action? OnPermissionStateChanged;
 
     /// <summary>
-    /// Requests push notification permission if not already granted or denied.
-    /// On grant, subscribes and registers with the backend.
-    /// This method is non-blocking and safe to call multiple times per session.
+    /// Checks the current push permission state without triggering the browser prompt.
+    /// If already granted, subscribes silently. If denied, sets PermissionDenied.
+    /// If "default", sets ShouldShowEnablePrompt so the UI can show an enable button.
+    /// Safe to call on page load (no user gesture required).
     /// </summary>
-    public async Task RequestPermissionAndSubscribeAsync()
+    public async Task CheckPermissionStateAsync()
     {
-        if (_hasRequestedThisSession)
+        if (_hasCheckedThisSession)
             return;
 
-        _hasRequestedThisSession = true;
+        _hasCheckedThisSession = true;
 
         try
         {
@@ -56,25 +60,52 @@ public class PushNotificationService
 
             if (currentState == "granted")
             {
-                // Already granted — subscribe silently.
                 await SubscribeAndRegisterAsync();
                 return;
             }
 
-            if (currentState == "denied" || currentState == "unsupported")
+            if (currentState == "denied")
             {
-                PermissionDenied = currentState == "denied";
+                PermissionDenied = true;
                 OnPermissionStateChanged?.Invoke();
                 return;
             }
 
-            // Permission is "default" — request it.
+            if (currentState == "unsupported")
+                return;
+
+            // Permission is "default" — show the enable prompt (don't auto-request).
+            ShouldShowEnablePrompt = true;
+            OnPermissionStateChanged?.Invoke();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Failed to check push notification permission state.");
+        }
+    }
+
+    /// <summary>
+    /// Requests push notification permission from the user. MUST be called from a user gesture
+    /// (button click) on iOS — calling without a gesture will silently fail.
+    /// On grant, subscribes and registers with the backend.
+    /// </summary>
+    public async Task RequestPermissionAsync()
+    {
+        try
+        {
             var result = await _jsRuntime.InvokeAsync<string>("happie.requestPushPermission");
 
+            ShouldShowEnablePrompt = false;
+
             if (result == "granted")
+            {
+                PermissionDenied = false;
                 await SubscribeAndRegisterAsync();
+            }
             else
+            {
                 PermissionDenied = result == "denied";
+            }
 
             OnPermissionStateChanged?.Invoke();
         }

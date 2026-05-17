@@ -1,0 +1,61 @@
+.push-help {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.push-help__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #1a1a2e;
+}
+
+.push-help__intro {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #333;
+    margin-bottom: 24px;
+}
+
+.push-help__section {
+    margin-bottom: 24px;
+}
+
+.push-help__section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #1a1a2e;
+}
+
+.push-help__steps {
+    padding-left: 20px;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: #444;
+}
+
+.push-help__note {
+    font-size: 0.85rem;
+    color: #666;
+    font-style: italic;
+    margin-top: 16px;
+    margin-bottom: 24px;
+}
+
+.push-help__back {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #4a6fa5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.push-help__back:hover {
+    background-color: #3d5d8a;
+}

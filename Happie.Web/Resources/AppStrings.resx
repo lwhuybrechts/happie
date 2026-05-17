@@ -369,4 +369,64 @@
   <data name="Push_DismissAriaLabel" xml:space="preserve">
     <value>Melding sluiten</value>
   </data>
+  <data name="Push_HowToEnable" xml:space="preserve">
+    <value>Hoe schakel ik dit in?</value>
+  </data>
+  <data name="Push_EnablePrompt" xml:space="preserve">
+    <value>Wil je meldingen ontvangen als iemand een nudge stuurt of het dagplan wijzigt?</value>
+  </data>
+  <data name="Push_EnableButton" xml:space="preserve">
+    <value>Inschakelen</value>
+  </data>
+  <data name="PushHelp_Title" xml:space="preserve">
+    <value>Pushmeldingen inschakelen</value>
+  </data>
+  <data name="PushHelp_Intro" xml:space="preserve">
+    <value>Pushmeldingen zijn nodig om nudges en wijzigingen in het dagplan te ontvangen. Hieronder vind je instructies per apparaat om meldingen (opnieuw) in te schakelen.</value>
+  </data>
+  <data name="PushHelp_IosTitle" xml:space="preserve">
+    <value>iPhone / iPad</value>
+  </data>
+  <data name="PushHelp_IosStep1" xml:space="preserve">
+    <value>Zorg dat Happie is toegevoegd aan je beginscherm (open Safari → deel-knop → Zet op beginscherm)</value>
+  </data>
+  <data name="PushHelp_IosStep2" xml:space="preserve">
+    <value>Open Happie vanaf je beginscherm (niet vanuit Safari)</value>
+  </data>
+  <data name="PushHelp_IosStep3" xml:space="preserve">
+    <value>Als je de melding eerder hebt geweigerd: ga naar Instellingen → Happie → Meldingen → schakel Sta meldingen toe in</value>
+  </data>
+  <data name="PushHelp_IosStep4" xml:space="preserve">
+    <value>Open Happie opnieuw — de app zal je opnieuw vragen om meldingen in te schakelen</value>
+  </data>
+  <data name="PushHelp_AndroidTitle" xml:space="preserve">
+    <value>Android</value>
+  </data>
+  <data name="PushHelp_AndroidStep1" xml:space="preserve">
+    <value>Open Chrome en ga naar de Happie-website</value>
+  </data>
+  <data name="PushHelp_AndroidStep2" xml:space="preserve">
+    <value>Tik op het slotje links van de adresbalk → Machtigingen (of Site-instellingen)</value>
+  </data>
+  <data name="PushHelp_AndroidStep3" xml:space="preserve">
+    <value>Zet Meldingen op Toestaan en herlaad de pagina</value>
+  </data>
+  <data name="PushHelp_DesktopTitle" xml:space="preserve">
+    <value>Desktop (Chrome / Edge / Firefox)</value>
+  </data>
+  <data name="PushHelp_DesktopStep1" xml:space="preserve">
+    <value>Klik op het slotje (of het instellingen-icoon) links van de adresbalk</value>
+  </data>
+  <data name="PushHelp_DesktopStep2" xml:space="preserve">
+    <value>Klik op Site-instellingen of Machtigingen</value>
+  </data>
+  <data name="PushHelp_DesktopStep3" xml:space="preserve">
+    <value>Zet Meldingen op Toestaan en herlaad de pagina</value>
+  </data>
+  <data name="PushHelp_Note" xml:space="preserve">
+    <value>Tip: als je de banner eerder hebt weggeklikt zonder te kiezen, verschijnt deze opnieuw bij je volgende bezoek. Je hoeft dan alleen op "Inschakelen" te tikken.</value>
+  </data>
+  <data name="PushHelp_BackButton" xml:space="preserve">
+    <value>Terug naar Happie</value>
+  </data>
 </root>
