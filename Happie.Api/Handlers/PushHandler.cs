@@ -82,7 +82,7 @@ public class PushHandler : IPushHandler
                 ? message!
                 : NudgeMessageResolver.Resolve(predefinedMessageKey!.Value, subscription.Locale, date);
 
-            var payload = BuildNudgePayload(senderName, date, body);
+            var payload = BuildNudgePayload(senderName, date, body, householdId);
 
             try
             {
@@ -112,7 +112,7 @@ public class PushHandler : IPushHandler
 
         foreach (var subscription in recipients)
         {
-            var payload = BuildAutoNotificationPayload(actorName, date, changeDescription);
+            var payload = BuildAutoNotificationPayload(actorName, date, changeDescription, householdId);
 
             try
             {
@@ -126,26 +126,26 @@ public class PushHandler : IPushHandler
     }
 
     /// <summary>Builds the JSON payload for a nudge push notification.</summary>
-    private static string BuildNudgePayload(string senderName, DateOnly date, string body)
+    private static string BuildNudgePayload(string senderName, DateOnly date, string body, Guid householdId)
     {
         var payload = new
         {
             title = senderName,
             body,
-            data = new { url = $"/day/{date:yyyy-MM-dd}" },
+            data = new { url = $"/day/{date:yyyy-MM-dd}", householdId = householdId.ToString() },
         };
 
         return JsonSerializer.Serialize(payload);
     }
 
     /// <summary>Builds the JSON payload for an automatic day plan change notification.</summary>
-    private static string BuildAutoNotificationPayload(string actorName, DateOnly date, string changeDescription)
+    private static string BuildAutoNotificationPayload(string actorName, DateOnly date, string changeDescription, Guid householdId)
     {
         var payload = new
         {
             title = actorName,
             body = changeDescription,
-            data = new { url = $"/day/{date:yyyy-MM-dd}" },
+            data = new { url = $"/day/{date:yyyy-MM-dd}", householdId = householdId.ToString() },
         };
 
         return JsonSerializer.Serialize(payload);

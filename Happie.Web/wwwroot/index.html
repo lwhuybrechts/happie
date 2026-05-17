@@ -288,11 +288,40 @@
         // Listen for navigation messages from the service worker (notification click while app is open).
         navigator.serviceWorker.addEventListener('message', function (event) {
             if (event.data && event.data.type === 'navigate' && event.data.url) {
-                window.location.href = event.data.url;
+                var notificationHouseholdId = event.data.householdId;
+                var currentHouseholdId = localStorage.getItem('householdId');
+
+                // If the notification is from a different household, clear session and redirect to login
+                // with the target URL preserved as returnUrl.
+                if (notificationHouseholdId && currentHouseholdId && notificationHouseholdId !== currentHouseholdId) {
+                    localStorage.removeItem('jwt');
+                    localStorage.removeItem('activeHousemateId');
+                    localStorage.removeItem('activeHousemateName');
+                    localStorage.removeItem('activeHousemateColor');
+                    localStorage.removeItem('householdId');
+                    localStorage.setItem('returnUrl', event.data.url);
+                    localStorage.setItem('returnUrlHouseholdId', notificationHouseholdId);
+                    window.location.href = '/';
+                } else {
+                    window.location.href = event.data.url;
+                }
             }
         });
 
+        // Decode the householdId claim from a JWT token without verifying the signature.
+        happie.getHouseholdIdFromJwt = function (token) {
+            try {
+                var parts = token.split('.');
+                if (parts.length !== 3) return null;
+                var payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                return payload.householdId || null;
+            } catch (error) {
+                return null;
+            }
+        };
+
         // Check IndexedDB for a pending navigation URL (notification click that launched the app).
+        // Returns an object with url and householdId, or null.
         happie.checkPendingNavigation = async function () {
             try {
                 const db = await new Promise((resolve, reject) => {
@@ -312,11 +341,17 @@
                     req.onsuccess = () => resolve(req.result);
                     req.onerror = () => resolve(null);
                 });
+                const householdId = await new Promise((resolve) => {
+                    const req = store.get('pendingHouseholdId');
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => resolve(null);
+                });
                 // Clear the pending navigation so it doesn't fire again.
                 store.delete('pendingNavigation');
+                store.delete('pendingHouseholdId');
                 await new Promise((resolve) => { tx.oncomplete = resolve; });
                 db.close();
-                return url || null;
+                return url ? { url: url, householdId: householdId || null } : null;
             } catch (error) {
                 console.error('Failed to check pending navigation:', error);
                 return null;

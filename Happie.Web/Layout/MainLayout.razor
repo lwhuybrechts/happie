@@ -59,11 +59,34 @@
             await PushNotificationService.CheckPermissionStateAsync();
 
             // Check if the app was launched from a notification click with a deep link.
-            var pendingUrl = await JsRuntime.InvokeAsync<string?>("happie.checkPendingNavigation");
-            if (!string.IsNullOrWhiteSpace(pendingUrl) && pendingUrl != NavigationManager.ToBaseRelativePath(NavigationManager.Uri))
-                NavigationManager.NavigateTo(pendingUrl);
+            var pending = await JsRuntime.InvokeAsync<PendingNavigation?>("happie.checkPendingNavigation");
+            if (pending is not null && !string.IsNullOrWhiteSpace(pending.Url))
+            {
+                var currentHouseholdId = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "householdId");
+
+                // If the notification is from a different household, clear session and redirect to login with returnUrl.
+                if (!string.IsNullOrWhiteSpace(pending.HouseholdId) && !string.IsNullOrWhiteSpace(currentHouseholdId) && pending.HouseholdId != currentHouseholdId)
+                {
+                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "jwt");
+                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateId");
+                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateName");
+                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateColor");
+                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "householdId");
+                    await JsRuntime.InvokeVoidAsync("localStorage.setItem", "returnUrl", pending.Url);
+                    await JsRuntime.InvokeVoidAsync("localStorage.setItem", "returnUrlHouseholdId", pending.HouseholdId);
+                    NavigationManager.NavigateTo("/", forceLoad: true);
+                }
+                else if (pending.Url != NavigationManager.ToBaseRelativePath(NavigationManager.Uri))
+                {
+                    NavigationManager.NavigateTo(pending.Url);
+                }
+            }
         }
     }
+
+    private record PendingNavigation(
+        [property: System.Text.Json.Serialization.JsonPropertyName("url")] string? Url,
+        [property: System.Text.Json.Serialization.JsonPropertyName("householdId")] string? HouseholdId);
 
     private async Task EnablePush()
     {

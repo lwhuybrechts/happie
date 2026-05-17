@@ -99,6 +99,15 @@
         // Only redirect if both JWT and housemate selection are present (fully logged in).
         if (!string.IsNullOrWhiteSpace(existingToken) && !string.IsNullOrWhiteSpace(activeHousemateId))
         {
+            var returnUrl = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "returnUrl");
+            await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "returnUrl");
+
+            if (!string.IsNullOrWhiteSpace(returnUrl))
+            {
+                NavigationManager.NavigateTo(returnUrl, replace: true);
+                return;
+            }
+
             var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
             NavigationManager.NavigateTo($"/day/{today}", replace: true);
             return;
@@ -144,6 +153,17 @@
             {
                 await JsRuntime.InvokeVoidAsync("localStorage.setItem", "jwt", loginResponse.Token);
 
+                // Decode the householdId from the JWT and persist it for cross-household push detection.
+                var householdId = await JsRuntime.InvokeAsync<string?>("happie.getHouseholdIdFromJwt", loginResponse.Token);
+                if (!string.IsNullOrWhiteSpace(householdId))
+                    await JsRuntime.InvokeVoidAsync("localStorage.setItem", "householdId", householdId);
+
+                // Clear returnUrl if the user logged into a different household than the notification was for.
+                var returnUrlHouseholdId = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "returnUrlHouseholdId");
+                await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "returnUrlHouseholdId");
+                if (!string.IsNullOrWhiteSpace(returnUrlHouseholdId) && returnUrlHouseholdId != householdId)
+                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "returnUrl");
+
                 _housemates = loginResponse.Housemates.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
 
                 // Persist housemates to sessionStorage so they survive a locale-switch reload.
@@ -163,6 +183,15 @@
     {
         await ActiveHousemateService.SetActiveHousemateAsync(housemate.Id, housemate.Name, housemate.Color);
         await JsRuntime.InvokeVoidAsync("sessionStorage.removeItem", "pendingHousemates");
+
+        var returnUrl = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "returnUrl");
+        await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "returnUrl");
+
+        if (!string.IsNullOrWhiteSpace(returnUrl))
+        {
+            NavigationManager.NavigateTo(returnUrl);
+            return;
+        }
 
         var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
         NavigationManager.NavigateTo($"/day/{today}");

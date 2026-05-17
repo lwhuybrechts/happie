@@ -74,7 +74,7 @@ async function onPush(event) {
         body: data.body || '',
         icon: '/icon-192.png',
         badge: '/icon-192.png',
-        data: { url: data.data?.url || '/' }
+        data: { url: data.data?.url || '/', householdId: data.data?.householdId || null }
     };
 
     await self.registration.showNotification(title, options);
@@ -84,6 +84,7 @@ async function onPush(event) {
 async function onNotificationClick(event) {
     event.notification.close();
     const url = event.notification.data?.url || '/';
+    const householdId = event.notification.data?.householdId || null;
     const fullUrl = new URL(url, self.location.origin).href;
 
     const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
@@ -91,8 +92,8 @@ async function onNotificationClick(event) {
     // Try to focus an existing window and navigate it.
     for (const client of windowClients) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-            // Post the target URL to the client so it can navigate via Blazor's router.
-            client.postMessage({ type: 'navigate', url: url });
+            // Post the target URL and householdId to the client so it can navigate via Blazor's router.
+            client.postMessage({ type: 'navigate', url: url, householdId: householdId });
             return client.focus();
         }
     }
@@ -100,13 +101,13 @@ async function onNotificationClick(event) {
     // No existing window — open a new one with the full URL.
     // On iOS PWAs, openWindow may not deep-link reliably, so also store the URL
     // in IndexedDB for the app to pick up on launch.
-    await storePendingNavigation(url);
+    await storePendingNavigation(url, householdId);
     return clients.openWindow(fullUrl);
 }
 
-// Store a pending navigation URL in IndexedDB for the app to pick up on launch.
+// Store a pending navigation URL and householdId in IndexedDB for the app to pick up on launch.
 // This is needed because iOS PWAs don't reliably deep-link via clients.openWindow().
-async function storePendingNavigation(url) {
+async function storePendingNavigation(url, householdId) {
     try {
         const db = await new Promise((resolve, reject) => {
             const request = indexedDB.open('happie-push', 1);
@@ -121,6 +122,8 @@ async function storePendingNavigation(url) {
         const tx = db.transaction('credentials', 'readwrite');
         const store = tx.objectStore('credentials');
         store.put(url, 'pendingNavigation');
+        if (householdId)
+            store.put(householdId, 'pendingHouseholdId');
         await new Promise((resolve, reject) => {
             tx.oncomplete = resolve;
             tx.onerror = () => reject(tx.error);

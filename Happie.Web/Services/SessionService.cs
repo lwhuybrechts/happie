@@ -22,6 +22,7 @@ public class SessionService
         await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateId");
         await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateName");
         await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateColor");
+        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "householdId");
 
         _navigationManager.NavigateTo("/");
     }
