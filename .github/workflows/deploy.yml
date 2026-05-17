@@ -64,6 +64,7 @@ jobs:
         with:
           name: happie-api
           path: ./publish/api
+          include-hidden-files: true
 
   deploy-swa:
     runs-on: ubuntu-latest
