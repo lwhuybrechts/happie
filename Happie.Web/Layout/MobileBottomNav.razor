@@ -71,15 +71,16 @@
 
     private void NavigateToMenu()
     {
-        var today = DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd");
-        NavigationManager.NavigateTo($"/day/{today}");
+        var relativePath = NavigationManager.ToBaseRelativePath(_currentUri).ToLowerInvariant();
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        NavigationManager.NavigateTo(PageNavigationService.GetDayPlanTarget(relativePath, today));
     }
 
     private void NavigateToCalendar()
     {
-        // Navigate to day plan until dedicated calendar page is implemented.
-        var today = DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd");
-        NavigationManager.NavigateTo($"/day/{today}");
+        var relativePath = NavigationManager.ToBaseRelativePath(_currentUri).ToLowerInvariant();
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        NavigationManager.NavigateTo(PageNavigationService.GetCalendarTarget(relativePath, today));
     }
 
     private void NavigateToHousemates()

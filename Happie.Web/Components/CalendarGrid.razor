@@ -1,0 +1,117 @@
+@using System.Globalization
+@using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@inject LocaleService LocaleService
+
+@{
+    var culture = new CultureInfo(LocaleService.CurrentLocale.ToCultureCode());
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var weeks = BuildWeeks();
+}
+
+<div class="calendar-grid">
+    <div class="calendar-grid__day-headers">
+        @foreach (var dayName in GetDayHeaders(culture))
+        {
+            <span class="calendar-grid__day-header">@dayName</span>
+        }
+    </div>
+
+    <div class="calendar-grid__body">
+        @foreach (var week in weeks)
+        {
+            @foreach (var cell in week)
+            {
+                var isToday = cell.Date == today;
+                var isSelected = SelectedDate.HasValue && cell.Date == SelectedDate.Value;
+                var isOutsideMonth = cell.Date.Month != ViewedMonth.Month || cell.Date.Year != ViewedMonth.Year;
+                var colors = GetColorsForDate(cell.Date);
+
+                <button class="calendar-grid__cell @(isSelected ? "calendar-grid__cell--selected" : isToday ? "calendar-grid__cell--today" : "") @(isOutsideMonth ? "calendar-grid__cell--outside" : "")"
+                        @onclick="() => OnDayClicked.InvokeAsync(cell.Date)"
+                        aria-label="@cell.Date.ToString("d MMMM yyyy", culture)">
+                    <span class="calendar-grid__cell-number">@cell.Date.Day</span>
+                    @if (colors.Count > 0)
+                    {
+                        <div class="calendar-grid__dots">
+                            @foreach (var color in colors)
+                            {
+                                <span class="calendar-grid__dot" style="background-color: @color;" aria-hidden="true"></span>
+                            }
+                        </div>
+                    }
+                </button>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>The attendance data from the API.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<CalendarDayDto> Days { get; set; } = [];
+
+    /// <summary>The month currently being displayed (first day of month).</summary>
+    [Parameter, EditorRequired]
+    public DateOnly ViewedMonth { get; set; }
+
+    /// <summary>Optional date to highlight as "selected" (from DayPlanPage navigation).</summary>
+    [Parameter]
+    public DateOnly? SelectedDate { get; set; }
+
+    /// <summary>Callback when user clicks a day.</summary>
+    [Parameter]
+    public EventCallback<DateOnly> OnDayClicked { get; set; }
+
+    private Dictionary<DateOnly, IReadOnlyList<string>>? _colorLookup;
+
+    protected override void OnParametersSet()
+    {
+        _colorLookup = Days.ToDictionary(x => x.Date, x => x.EatingInColors);
+    }
+
+    private IReadOnlyList<string> GetColorsForDate(DateOnly date)
+    {
+        if (_colorLookup is not null && _colorLookup.TryGetValue(date, out var colors))
+            return colors;
+
+        return [];
+    }
+
+    private static IReadOnlyList<string> GetDayHeaders(CultureInfo culture)
+    {
+        // Week starts on Monday (European convention).
+        var dayNames = culture.DateTimeFormat.AbbreviatedDayNames;
+        // AbbreviatedDayNames is indexed Sunday=0, Monday=1, ..., Saturday=6.
+        // Reorder to start on Monday.
+        return new[]
+        {
+            dayNames[(int)DayOfWeek.Monday],
+            dayNames[(int)DayOfWeek.Tuesday],
+            dayNames[(int)DayOfWeek.Wednesday],
+            dayNames[(int)DayOfWeek.Thursday],
+            dayNames[(int)DayOfWeek.Friday],
+            dayNames[(int)DayOfWeek.Saturday],
+            dayNames[(int)DayOfWeek.Sunday],
+        };
+    }
+
+    private List<List<CalendarCell>> BuildWeeks()
+    {
+        var dates = CalendarGridService.GetVisibleDates(ViewedMonth);
+        var weeks = new List<List<CalendarCell>>();
+
+        for (var i = 0; i < dates.Count; i += 7)
+        {
+            var week = new List<CalendarCell>();
+            for (var j = 0; j < 7 && i + j < dates.Count; j++)
+                week.Add(new CalendarCell(dates[i + j]));
+
+            weeks.Add(week);
+        }
+
+        return weeks;
+    }
+
+    private record CalendarCell(DateOnly Date);
+}

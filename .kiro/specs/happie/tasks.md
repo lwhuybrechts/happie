@@ -327,13 +327,13 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - Default to today on initial load
     - _Requirements: 3.1, 3.2, 3.3, 3.7, 3.8_
 
-- [ ] 14. Blazor WASM — CalendarPage
-  - [~] 14.1 Implement `CalendarGrid` component
+- [x] 14. Blazor WASM — CalendarPage
+  - [x] 14.1 Implement `CalendarGrid` component
     - Month grid; each cell shows color dots for housemates with `EatingIn` status; empty cell if none
     - Tap a day to navigate to `/day/{date}`
     - _Requirements: 13.1, 13.2, 13.3, 13.4_
 
-  - [ ] 14.2 Implement `CalendarPage` (`/calendar`)
+  - [x] 14.2 Implement `CalendarPage` (`/calendar`)
     - Load attendance summaries via `GET /api/days?from=&to=`; render `CalendarGrid`
     - CalendarPage is read-only; tapping a day navigates to `/day/{date}`
     - _Requirements: 13.1, 13.2, 13.3, 13.4_

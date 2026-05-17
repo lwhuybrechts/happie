@@ -21,7 +21,7 @@
                 @Localizer["Nav_OnTheMenu"]
             </a>
             <a class="sidebar__nav-item @(IsActive("calendar") ? "sidebar__nav-item--active" : "")"
-               href="@GetTodayUrl()" @onclick:preventDefault @onclick="NavigateToCalendar">
+               href="/calendar" @onclick:preventDefault @onclick="NavigateToCalendar">
                 <svg class="sidebar__nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                     <line x1="16" y1="2" x2="16" y2="6" />
@@ -90,7 +90,9 @@
 
     private void NavigateToToday()
     {
-        NavigationManager.NavigateTo(GetTodayUrl());
+        var relativePath = NavigationManager.ToBaseRelativePath(_currentUri).ToLowerInvariant();
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        NavigationManager.NavigateTo(PageNavigationService.GetDayPlanTarget(relativePath, today));
     }
 
     private void NavigateToHousemates()
@@ -100,9 +102,9 @@
 
     private void NavigateToCalendar()
     {
-        // Navigate to day plan until dedicated calendar page is implemented.
-        var today = DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd");
-        NavigationManager.NavigateTo($"/day/{today}");
+        var relativePath = NavigationManager.ToBaseRelativePath(_currentUri).ToLowerInvariant();
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        NavigationManager.NavigateTo(PageNavigationService.GetCalendarTarget(relativePath, today));
     }
 
     private static string GetTodayUrl() => $"/day/{DateOnly.FromDateTime(DateTime.Today):yyyy-MM-dd}";

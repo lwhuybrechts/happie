@@ -17,8 +17,15 @@
         </svg>
     </button>
 
-    <div class="date-nav__center">
-        @if (label.Title is not null)
+    <button class="date-nav__center @(OnCenterClicked.HasDelegate ? "" : "date-nav__center--static")"
+            @onclick="OnCenterClicked"
+            disabled="@(!OnCenterClicked.HasDelegate)"
+            aria-label="@(OnCenterClicked.HasDelegate ? "Open calendar" : null)">
+        @if (CenterText is not null)
+        {
+            <span class="date-nav__title date-nav__title--bold">@CenterText</span>
+        }
+        else if (label.Title is not null)
         {
             <span class="date-nav__title @(label.TitleIsBold ? "date-nav__title--bold" : "")">@label.Title</span>
             <span class="date-nav__date">@label.FormattedDate</span>
@@ -27,7 +34,7 @@
         {
             <span class="date-nav__date @(label.DateIsBold ? "date-nav__date--bold" : "")">@label.FormattedDate</span>
         }
-    </div>
+    </button>
 
     <button class="date-nav__arrow" @onclick="OnNextDay" aria-label="Next day">
         <svg class="date-nav__arrow-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -42,6 +49,10 @@
     [Parameter, EditorRequired]
     public DateOnly ViewedDate { get; set; }
 
+    /// <summary>Optional override text for the center area (e.g., month/year on CalendarPage).</summary>
+    [Parameter]
+    public string? CenterText { get; set; }
+
     /// <summary>Callback invoked when the user clicks the previous day arrow.</summary>
     [Parameter]
     public EventCallback OnPreviousDay { get; set; }
@@ -49,4 +60,8 @@
     /// <summary>Callback invoked when the user clicks the next day arrow.</summary>
     [Parameter]
     public EventCallback OnNextDay { get; set; }
+
+    /// <summary>Callback invoked when the user clicks the center date area.</summary>
+    [Parameter]
+    public EventCallback OnCenterClicked { get; set; }
 }

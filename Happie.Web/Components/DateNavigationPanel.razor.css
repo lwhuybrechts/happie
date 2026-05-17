@@ -37,6 +37,24 @@
     align-items: center;
     gap: 2px;
     min-width: 0;
+    border: none;
+    background: transparent;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.date-nav__center:hover {
+    background-color: #f0f0f0;
+}
+
+.date-nav__center--static {
+    cursor: default;
+}
+
+.date-nav__center--static:hover {
+    background-color: transparent;
 }
 
 .date-nav__title {

@@ -1,0 +1,105 @@
+.calendar-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.calendar-grid__day-headers {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    text-align: center;
+}
+
+.calendar-grid__day-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666666;
+    text-transform: uppercase;
+    padding: 4px 0;
+}
+
+.calendar-grid__body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.calendar-grid__cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 2px;
+    min-height: 52px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    gap: 3px;
+}
+
+.calendar-grid__cell:hover {
+    background-color: rgba(76, 175, 80, 0.08);
+}
+
+.calendar-grid__cell--outside {
+    opacity: 0.4;
+}
+
+.calendar-grid__cell--today {
+    background-color: rgba(76, 175, 80, 0.06);
+    border: 2px solid rgba(76, 175, 80, 0.4);
+}
+
+.calendar-grid__cell--today:hover {
+    background-color: rgba(76, 175, 80, 0.12);
+}
+
+.calendar-grid__cell--selected {
+    background-color: rgba(76, 175, 80, 0.1);
+    border: 2px solid #4CAF50;
+}
+
+.calendar-grid__cell--selected:hover {
+    background-color: rgba(76, 175, 80, 0.15);
+}
+
+.calendar-grid__cell-number {
+    font-size: 14px;
+    color: #333333;
+    font-weight: 500;
+    line-height: 1;
+    text-align: center;
+    width: 100%;
+    font-variant-numeric: tabular-nums;
+}
+
+.calendar-grid__cell--selected .calendar-grid__cell-number {
+    font-weight: 700;
+    color: #4CAF50;
+}
+
+.calendar-grid__cell--outside .calendar-grid__cell-number {
+    color: #999999;
+}
+
+.calendar-grid__dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: center;
+    max-width: 100%;
+}
+
+.calendar-grid__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}

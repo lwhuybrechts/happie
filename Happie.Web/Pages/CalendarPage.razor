@@ -1,5 +1,151 @@
 @page "/calendar"
+@page "/calendar/{date}"
+@using System.Globalization
+@using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<AppStrings> Localizer
+@inject LocaleService LocaleService
 
-<PageTitle>Calendar</PageTitle>
+<PageTitle>@Localizer["Calendar_Title"]</PageTitle>
 
-<h1>Calendar</h1>
+@{
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var isOnTodaysMonth = _viewedMonth.Year == today.Year && _viewedMonth.Month == today.Month;
+}
+
+<div class="calendar-page">
+    @if (_selectedDate.HasValue && _selectedDate.Value.Year == _viewedMonth.Year && _selectedDate.Value.Month == _viewedMonth.Month)
+    {
+        <DateNavigationPanel ViewedDate="@GetViewedDate()"
+                             CenterText="@GetMonthLabel()"
+                             OnPreviousDay="GoToPreviousMonth"
+                             OnNextDay="GoToNextMonth"
+                             OnCenterClicked="NavigateToDayPlan" />
+    }
+    else
+    {
+        <DateNavigationPanel ViewedDate="@GetViewedDate()"
+                             CenterText="@GetMonthLabel()"
+                             OnPreviousDay="GoToPreviousMonth"
+                             OnNextDay="GoToNextMonth" />
+    }
+
+    @if (_isLoading)
+    {
+        <p>@Localizer["DayPlan_Loading"]</p>
+    }
+    else
+    {
+        <CalendarGrid Days="@_days"
+                      ViewedMonth="@_viewedMonth"
+                      SelectedDate="@_selectedDate"
+                      OnDayClicked="OnDayClicked" />
+    }
+
+    @if (!isOnTodaysMonth)
+    {
+        <button class="calendar-page__today-btn" @onclick="GoToToday">
+            @Localizer["Calendar_GoToToday"]
+        </button>
+    }
+
+    <p class="calendar-page__info">@Localizer["Calendar_InfoText"]</p>
+</div>
+
+@code {
+    [Parameter]
+    public string? Date { get; set; }
+
+    private IReadOnlyList<CalendarDayDto> _days = [];
+    private DateOnly _viewedMonth;
+    private DateOnly? _selectedDate;
+    private bool _isLoading;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (DateOnly.TryParseExact(Date, "yyyy-MM-dd", out var parsedDate))
+        {
+            _viewedMonth = new DateOnly(parsedDate.Year, parsedDate.Month, 1);
+            _selectedDate = parsedDate;
+        }
+        else
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            _viewedMonth = new DateOnly(today.Year, today.Month, 1);
+            _selectedDate = null;
+        }
+
+        await LoadAttendanceDataAsync();
+    }
+
+    private string GetMonthLabel()
+    {
+        var culture = new CultureInfo(LocaleService.CurrentLocale.ToCultureCode());
+        return _viewedMonth.ToDateTime(TimeOnly.MinValue).ToString("MMMM yyyy", culture);
+    }
+
+    private DateOnly GetViewedDate()
+    {
+        // Use the selected date if available, otherwise the first of the viewed month.
+        return _selectedDate ?? _viewedMonth;
+    }
+
+    private Task GoToPreviousMonth()
+    {
+        _viewedMonth = _viewedMonth.AddMonths(-1);
+        return LoadAttendanceDataAsync();
+    }
+
+    private Task GoToNextMonth()
+    {
+        _viewedMonth = _viewedMonth.AddMonths(1);
+        return LoadAttendanceDataAsync();
+    }
+
+    private void NavigateToDayPlan()
+    {
+        // Navigate to the day plan for the selected date, or today if none selected.
+        var targetDate = _selectedDate ?? DateOnly.FromDateTime(DateTime.Today);
+        NavigationManager.NavigateTo($"/day/{targetDate:yyyy-MM-dd}");
+    }
+
+    private void OnDayClicked(DateOnly date)
+    {
+        NavigationManager.NavigateTo($"/day/{date:yyyy-MM-dd}");
+    }
+
+    private Task GoToToday()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        _viewedMonth = new DateOnly(today.Year, today.Month, 1);
+        _selectedDate = today;
+        return LoadAttendanceDataAsync();
+    }
+
+    private async Task LoadAttendanceDataAsync()
+    {
+        _isLoading = true;
+
+        var (startDate, endDate) = GetVisibleDateRange(_viewedMonth);
+        var response = await Http.GetAsync($"days?from={startDate:yyyy-MM-dd}&to={endDate:yyyy-MM-dd}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            var calendarResponse = await response.Content.ReadFromJsonAsync<CalendarResponse>();
+            _days = calendarResponse?.Days ?? [];
+        }
+        else
+        {
+            _days = [];
+        }
+
+        _isLoading = false;
+    }
+
+    private static (DateOnly Start, DateOnly End) GetVisibleDateRange(DateOnly viewedMonth)
+    {
+        return CalendarGridService.GetVisibleDateRange(viewedMonth);
+    }
+}

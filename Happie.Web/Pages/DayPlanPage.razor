@@ -15,7 +15,8 @@
 
     <DateNavigationPanel ViewedDate="@_parsedDate"
                          OnPreviousDay="GoToPreviousDay"
-                         OnNextDay="GoToNextDay" />
+                         OnNextDay="GoToNextDay"
+                         OnCenterClicked="NavigateToCalendar" />
 
     @if (_isLoading)
     {
@@ -108,6 +109,11 @@
         var previous = _parsedDate.AddDays(-1).ToString("yyyy-MM-dd");
         NavigationManager.NavigateTo($"/day/{previous}");
         return Task.CompletedTask;
+    }
+
+    private void NavigateToCalendar()
+    {
+        NavigationManager.NavigateTo($"/calendar/{_parsedDate:yyyy-MM-dd}");
     }
 
     private async Task LoadDayPlanAsync()

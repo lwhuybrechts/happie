@@ -1,0 +1,52 @@
+/* Base layout: vertical stack with spacing. */
+.calendar-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Desktop (≥641px): center content within available space, max-width 600px. */
+@media (min-width: 641px) {
+    .calendar-page {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 24px 16px;
+    }
+}
+
+/* Mobile (<641px): full viewport width with 16px horizontal padding. */
+@media (max-width: 640.98px) {
+    .calendar-page {
+        width: 100%;
+        padding: 16px;
+    }
+}
+
+.calendar-page__info {
+    font-size: 13px;
+    color: #666666;
+    text-align: center;
+    line-height: 1.5;
+    background-color: rgba(76, 175, 80, 0.06);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin: 0;
+}
+
+.calendar-page__today-btn {
+    display: block;
+    padding: 6px 16px;
+    border: none;
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #4CAF50;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    align-self: flex-end;
+}
+
+.calendar-page__today-btn:hover {
+    background-color: rgba(76, 175, 80, 0.18);
+}
