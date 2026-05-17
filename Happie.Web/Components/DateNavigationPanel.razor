@@ -1,0 +1,52 @@
+@using System.Globalization
+@using Happie.Shared.Domain
+@inject LocaleService LocaleService
+@inject IStringLocalizer<AppStrings> Localizer
+
+@{
+    var culture = new CultureInfo(LocaleService.CurrentLocale.ToCultureCode());
+    var label = DateLabelService.GetLabel(ViewedDate, DateOnly.FromDateTime(DateTime.Today), culture,
+        Localizer["DateNav_Today"], Localizer["DateNav_Yesterday"], Localizer["DateNav_Tomorrow"]);
+}
+
+<div class="date-nav">
+    <button class="date-nav__arrow" @onclick="OnPreviousDay" aria-label="Previous day">
+        <svg class="date-nav__arrow-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m15 18-6-6 6-6" />
+        </svg>
+    </button>
+
+    <div class="date-nav__center">
+        @if (label.Title is not null)
+        {
+            <span class="date-nav__title @(label.TitleIsBold ? "date-nav__title--bold" : "")">@label.Title</span>
+            <span class="date-nav__date">@label.FormattedDate</span>
+        }
+        else
+        {
+            <span class="date-nav__date @(label.DateIsBold ? "date-nav__date--bold" : "")">@label.FormattedDate</span>
+        }
+    </div>
+
+    <button class="date-nav__arrow" @onclick="OnNextDay" aria-label="Next day">
+        <svg class="date-nav__arrow-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m9 18 6-6-6-6" />
+        </svg>
+    </button>
+</div>
+
+@code {
+    /// <summary>The date currently being viewed.</summary>
+    [Parameter, EditorRequired]
+    public DateOnly ViewedDate { get; set; }
+
+    /// <summary>Callback invoked when the user clicks the previous day arrow.</summary>
+    [Parameter]
+    public EventCallback OnPreviousDay { get; set; }
+
+    /// <summary>Callback invoked when the user clicks the next day arrow.</summary>
+    [Parameter]
+    public EventCallback OnNextDay { get; set; }
+}

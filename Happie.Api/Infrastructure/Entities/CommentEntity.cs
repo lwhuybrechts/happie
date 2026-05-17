@@ -22,5 +22,5 @@ public class CommentEntity : MyTableEntity
     public Guid HousemateId { get; set; }
 
     /// <summary>The timestamp when the comment was last edited.</summary>
-    public DateTimeOffset? LastEditedAt { get; set; }
+    public DateTimeOffset LastEditedAt { get; set; }
 }

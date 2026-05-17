@@ -112,6 +112,7 @@ PartitionKey is always `HouseholdId` (string) so all records for a household are
 - Language switches immediately without a page reload
 - All source code, identifiers, and comments remain in English regardless of active locale
 - Push subscription records store the housemate's locale so predefined nudge messages are resolved server-side in the recipient's language
+- **All user-visible strings MUST use `IStringLocalizer<AppStrings>`** — NEVER hardcode English text directly in `.razor` components or service classes. This includes labels like "Today"/"Yesterday", relative time strings like "min ago", section headers, button text, placeholders, and error messages. Add keys to both `AppStrings.resx` (Dutch) and `AppStrings.en.resx` (English). For static utility classes that cannot inject `IStringLocalizer`, accept localized strings as method parameters.
 
 ## Testing Conventions
 
@@ -146,6 +147,10 @@ dotnet run --project Happie.Web --launch-profile http
 ```
 
 The frontend starts on **http://localhost:5195**.
+
+### Applying Changes During Development
+
+Blazor WebAssembly does NOT support hot reload for `.razor` or `.razor.css` file changes. A browser hard refresh (Ctrl+Shift+R) is not sufficient to pick up changes. After making code or CSS changes, you MUST stop and restart the frontend dev server (`dotnet run --project Happie.Web --launch-profile http`) for the changes to take effect. The same applies to the API (`func start`) when backend code changes.
 
 ### Local Test Data — Seed a Household
 

@@ -88,6 +88,24 @@
   <data name="DayPlan_Title" xml:space="preserve">
     <value>Dagplan</value>
   </data>
+  <data name="DateNav_Today" xml:space="preserve">
+    <value>Vandaag</value>
+  </data>
+  <data name="DateNav_Yesterday" xml:space="preserve">
+    <value>Gisteren</value>
+  </data>
+  <data name="DateNav_Tomorrow" xml:space="preserve">
+    <value>Morgen</value>
+  </data>
+  <data name="Time_JustNow" xml:space="preserve">
+    <value>zojuist</value>
+  </data>
+  <data name="Time_MinAgo" xml:space="preserve">
+    <value>min geleden</value>
+  </data>
+  <data name="Time_HoursAgo" xml:space="preserve">
+    <value>uur geleden</value>
+  </data>
   <data name="DayPlan_NoAttendance" xml:space="preserve">
     <value>Geen aanwezigheid geregistreerd</value>
   </data>
@@ -139,54 +157,7 @@
   <data name="DayHistory_Empty" xml:space="preserve">
     <value>Nog geen wijzigingen geregistreerd.</value>
   </data>
-  <data name="NudgeDialog_Title" xml:space="preserve">
-    <value>Nudge sturen</value>
-  </data>
-  <data name="NudgeDialog_NoRecipients" xml:space="preserve">
-    <value>Iedereen heeft al zijn aanwezigheid ingevuld.</value>
-  </data>
-  <data name="NudgeDialog_RecipientsLabel" xml:space="preserve">
-    <value>Ontvangers</value>
-  </data>
-  <data name="NudgeDialog_MessageLabel" xml:space="preserve">
-    <value>Bericht</value>
-  </data>
-  <data name="NudgeDialog_PredefinedMessage" xml:space="preserve">
-    <value>Vooraf ingesteld bericht</value>
-  </data>
-  <data name="NudgeDialog_PredefinedMessageAriaLabel" xml:space="preserve">
-    <value>Kies een vooraf ingesteld bericht</value>
-  </data>
-  <data name="NudgeDialog_CustomMessage" xml:space="preserve">
-    <value>Eigen bericht</value>
-  </data>
-  <data name="NudgeDialog_CustomMessagePlaceholder" xml:space="preserve">
-    <value>Max. 20 tekens</value>
-  </data>
-  <data name="NudgeDialog_CustomMessageAriaLabel" xml:space="preserve">
-    <value>Eigen nudge-bericht</value>
-  </data>
-  <data name="NudgeDialog_CustomMessageRequired" xml:space="preserve">
-    <value>Voer een bericht in.</value>
-  </data>
-  <data name="NudgeDialog_CustomMessageTooLong" xml:space="preserve">
-    <value>Bericht mag maximaal 20 tekens bevatten.</value>
-  </data>
-  <data name="NudgeDialog_PartialFailure" xml:space="preserve">
-    <value>Kon niet bezorgen bij sommige ontvangers:</value>
-  </data>
-  <data name="NudgeDialog_SendError" xml:space="preserve">
-    <value>Nudge sturen mislukt. Probeer het opnieuw.</value>
-  </data>
-  <data name="NudgeDialog_SendButton" xml:space="preserve">
-    <value>Versturen</value>
-  </data>
-  <data name="NudgeDialog_CancelButton" xml:space="preserve">
-    <value>Annuleren</value>
-  </data>
-  <data name="NudgeDialog_CloseButton" xml:space="preserve">
-    <value>Sluiten</value>
-  </data>
+
   <data name="NudgeMessageKey_PleaseAddAttendance" xml:space="preserve">
     <value>Vul je aanwezigheid in</value>
   </data>
@@ -244,24 +215,7 @@
   <data name="AttendanceToggle_SaveError" xml:space="preserve">
     <value>Opslaan mislukt. Probeer het opnieuw.</value>
   </data>
-  <data name="DishEditor_AriaLabel" xml:space="preserve">
-    <value>Gerecht omschrijving</value>
-  </data>
-  <data name="DishEditor_EditAriaLabel" xml:space="preserve">
-    <value>Gerecht bewerken</value>
-  </data>
-  <data name="DishEditor_SaveButton" xml:space="preserve">
-    <value>Gerecht opslaan</value>
-  </data>
-  <data name="DishEditor_CancelButton" xml:space="preserve">
-    <value>Bewerken annuleren</value>
-  </data>
-  <data name="DishEditor_TooLong" xml:space="preserve">
-    <value>Gerecht mag maximaal 100 tekens bevatten.</value>
-  </data>
-  <data name="DishEditor_SaveError" xml:space="preserve">
-    <value>Opslaan mislukt. Probeer het opnieuw.</value>
-  </data>
+
   <data name="CommentEditor_AriaLabel" xml:space="preserve">
     <value>Opmerking van {0}</value>
   </data>
@@ -281,6 +235,60 @@
     <value>Opmerking mag maximaal 200 tekens bevatten.</value>
   </data>
   <data name="CommentEditor_SaveError" xml:space="preserve">
+    <value>Opslaan mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="Attendance_Title" xml:space="preserve">
+    <value>Aanwezigheid</value>
+  </data>
+  <data name="Attendance_Nudge" xml:space="preserve">
+    <value>Nudge</value>
+  </data>
+  <data name="Attendance_NudgeAriaLabel" xml:space="preserve">
+    <value>Stuur een herinnering</value>
+  </data>
+  <data name="NudgeModal_SendANudge" xml:space="preserve">
+    <value>Stuur een nudge</value>
+  </data>
+  <data name="NudgeModal_Close" xml:space="preserve">
+    <value>Sluiten</value>
+  </data>
+  <data name="NudgeModal_WhoShouldWeRemind" xml:space="preserve">
+    <value>Wie moeten we herinneren?</value>
+  </data>
+  <data name="NudgeModal_Predefined" xml:space="preserve">
+    <value>Voorgedefinieerd</value>
+  </data>
+  <data name="NudgeModal_Custom" xml:space="preserve">
+    <value>Aangepast</value>
+  </data>
+  <data name="NudgeModal_CustomPlaceholder" xml:space="preserve">
+    <value>Typ een bericht...</value>
+  </data>
+  <data name="NudgeModal_CustomAriaLabel" xml:space="preserve">
+    <value>Aangepast nudge bericht</value>
+  </data>
+  <data name="NudgeModal_SendNudge" xml:space="preserve">
+    <value>Stuur Nudge</value>
+  </data>
+  <data name="DishPanel_OnTheMenu" xml:space="preserve">
+    <value>OP HET MENU</value>
+  </data>
+  <data name="DishPanel_Placeholder" xml:space="preserve">
+    <value>Wat eten we?</value>
+  </data>
+  <data name="DishPanel_Edit" xml:space="preserve">
+    <value>Gerecht bewerken</value>
+  </data>
+  <data name="DishPanel_Accept" xml:space="preserve">
+    <value>Opslaan</value>
+  </data>
+  <data name="DishPanel_Discard" xml:space="preserve">
+    <value>Annuleren</value>
+  </data>
+  <data name="DishPanel_InputAriaLabel" xml:space="preserve">
+    <value>Gerecht omschrijving</value>
+  </data>
+  <data name="DishPanel_SaveError" xml:space="preserve">
     <value>Opslaan mislukt. Probeer het opnieuw.</value>
   </data>
 </root>

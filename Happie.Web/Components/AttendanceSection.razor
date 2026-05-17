@@ -1,0 +1,125 @@
+@using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@inject HttpClient Http
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="attendance-section">
+    <div class="attendance-section__header">
+        <span class="attendance-section__title">@Localizer["Attendance_Title"]</span>
+        <button class="attendance-section__nudge-btn" @onclick="OnNudgeClicked" aria-label="@Localizer["Attendance_NudgeAriaLabel"]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <span>@Localizer["Attendance_Nudge"]</span>
+        </button>
+    </div>
+
+    <div class="attendance-section__list">
+        @foreach (var item in Attendance)
+        {
+            <div class="attendance-section__row">
+                <div class="attendance-section__housemate">
+                    <HousemateAvatar Name="@item.HousemateName" Color="@item.Color" />
+                    <span class="attendance-section__name">@item.HousemateName</span>
+                </div>
+                <div class="attendance-section__buttons">
+                    <button class="attendance-section__btn @(GetStatus(item.HousemateId) == AttendanceStatus.EatingIn ? "attendance-section__btn--eating-in" : "")"
+                            @onclick="() => SetStatusAsync(item.HousemateId, AttendanceStatus.EatingIn)"
+                            disabled="@IsDisabled(item.HousemateId)"
+                            aria-pressed="@(GetStatus(item.HousemateId) == AttendanceStatus.EatingIn ? "true" : "false")"
+                            aria-label="@Localizer["AttendanceToggle_EatingIn"]">
+                        ✓
+                    </button>
+                    <button class="attendance-section__btn @(GetStatus(item.HousemateId) == AttendanceStatus.Unknown ? "attendance-section__btn--unknown" : "")"
+                            @onclick="() => SetStatusAsync(item.HousemateId, AttendanceStatus.Unknown)"
+                            disabled="@IsDisabled(item.HousemateId)"
+                            aria-pressed="@(GetStatus(item.HousemateId) == AttendanceStatus.Unknown ? "true" : "false")"
+                            aria-label="@Localizer["AttendanceToggle_Unknown"]">
+                        ?
+                    </button>
+                    <button class="attendance-section__btn @(GetStatus(item.HousemateId) == AttendanceStatus.NotEatingIn ? "attendance-section__btn--not-eating-in" : "")"
+                            @onclick="() => SetStatusAsync(item.HousemateId, AttendanceStatus.NotEatingIn)"
+                            disabled="@IsDisabled(item.HousemateId)"
+                            aria-pressed="@(GetStatus(item.HousemateId) == AttendanceStatus.NotEatingIn ? "true" : "false")"
+                            aria-label="@Localizer["AttendanceToggle_NotEatingIn"]">
+                        ✗
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (_errorHousemateId is not null)
+{
+    <div class="attendance-section__toast" role="alert">
+        @Localizer["AttendanceToggle_SaveError"]
+    </div>
+}
+
+@code {
+    /// <summary>The date for which attendance is displayed, in yyyy-MM-dd format.</summary>
+    [Parameter, EditorRequired]
+    public string Date { get; set; } = string.Empty;
+
+    /// <summary>The list of attendance records for all active housemates.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<AttendanceDto> Attendance { get; set; } = [];
+
+    /// <summary>Callback invoked when the nudge button is clicked.</summary>
+    [Parameter]
+    public EventCallback OnNudgeClicked { get; set; }
+
+    /// <summary>Callback invoked when a housemate's status is changed, passing the housemate ID and new status.</summary>
+    [Parameter]
+    public EventCallback<(Guid HousemateId, AttendanceStatus Status)> OnStatusChanged { get; set; }
+
+    // Tracks optimistic overrides per housemate during save.
+    private readonly Dictionary<Guid, AttendanceStatus> _optimisticOverrides = new();
+    private readonly HashSet<Guid> _savingIds = new();
+    private Guid? _errorHousemateId;
+
+    private AttendanceStatus GetStatus(Guid housemateId)
+    {
+        if (_optimisticOverrides.TryGetValue(housemateId, out var overrideStatus))
+            return overrideStatus;
+
+        var item = Attendance.FirstOrDefault(x => x.HousemateId == housemateId);
+        return item?.Status ?? AttendanceStatus.Unknown;
+    }
+
+    private bool IsDisabled(Guid housemateId) => _savingIds.Contains(housemateId);
+
+    private async Task SetStatusAsync(Guid housemateId, AttendanceStatus newStatus)
+    {
+        var currentStatus = GetStatus(housemateId);
+        if (newStatus == currentStatus || _savingIds.Contains(housemateId))
+            return;
+
+        // Optimistic update.
+        _optimisticOverrides[housemateId] = newStatus;
+        _savingIds.Add(housemateId);
+        _errorHousemateId = null;
+
+        var response = await Http.PutAsJsonAsync(
+            $"days/{Date}/attendance/{housemateId}",
+            new UpdateAttendanceRequest(newStatus));
+
+        _savingIds.Remove(housemateId);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            // Rollback: remove the optimistic override so the original value shows.
+            _optimisticOverrides.Remove(housemateId);
+            _errorHousemateId = housemateId;
+        }
+        else
+        {
+            // Success: clear the override and notify the parent.
+            _optimisticOverrides.Remove(housemateId);
+            await OnStatusChanged.InvokeAsync((housemateId, newStatus));
+        }
+    }
+}

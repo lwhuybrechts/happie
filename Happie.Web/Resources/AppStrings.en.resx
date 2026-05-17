@@ -88,6 +88,24 @@
   <data name="DayPlan_Title" xml:space="preserve">
     <value>Day Plan</value>
   </data>
+  <data name="DateNav_Today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="DateNav_Yesterday" xml:space="preserve">
+    <value>Yesterday</value>
+  </data>
+  <data name="DateNav_Tomorrow" xml:space="preserve">
+    <value>Tomorrow</value>
+  </data>
+  <data name="Time_JustNow" xml:space="preserve">
+    <value>just now</value>
+  </data>
+  <data name="Time_MinAgo" xml:space="preserve">
+    <value>min ago</value>
+  </data>
+  <data name="Time_HoursAgo" xml:space="preserve">
+    <value>hours ago</value>
+  </data>
   <data name="DayPlan_NoAttendance" xml:space="preserve">
     <value>No attendance recorded</value>
   </data>
@@ -139,54 +157,7 @@
   <data name="DayHistory_Empty" xml:space="preserve">
     <value>No changes recorded yet.</value>
   </data>
-  <data name="NudgeDialog_Title" xml:space="preserve">
-    <value>Send nudge</value>
-  </data>
-  <data name="NudgeDialog_NoRecipients" xml:space="preserve">
-    <value>Everyone has already filled in their attendance.</value>
-  </data>
-  <data name="NudgeDialog_RecipientsLabel" xml:space="preserve">
-    <value>Recipients</value>
-  </data>
-  <data name="NudgeDialog_MessageLabel" xml:space="preserve">
-    <value>Message</value>
-  </data>
-  <data name="NudgeDialog_PredefinedMessage" xml:space="preserve">
-    <value>Predefined message</value>
-  </data>
-  <data name="NudgeDialog_PredefinedMessageAriaLabel" xml:space="preserve">
-    <value>Select predefined message</value>
-  </data>
-  <data name="NudgeDialog_CustomMessage" xml:space="preserve">
-    <value>Custom message</value>
-  </data>
-  <data name="NudgeDialog_CustomMessagePlaceholder" xml:space="preserve">
-    <value>Max 20 characters</value>
-  </data>
-  <data name="NudgeDialog_CustomMessageAriaLabel" xml:space="preserve">
-    <value>Custom nudge message</value>
-  </data>
-  <data name="NudgeDialog_CustomMessageRequired" xml:space="preserve">
-    <value>Please enter a message.</value>
-  </data>
-  <data name="NudgeDialog_CustomMessageTooLong" xml:space="preserve">
-    <value>Message must be at most 20 characters.</value>
-  </data>
-  <data name="NudgeDialog_PartialFailure" xml:space="preserve">
-    <value>Could not deliver to some recipients:</value>
-  </data>
-  <data name="NudgeDialog_SendError" xml:space="preserve">
-    <value>Failed to send nudge. Please try again.</value>
-  </data>
-  <data name="NudgeDialog_SendButton" xml:space="preserve">
-    <value>Send</value>
-  </data>
-  <data name="NudgeDialog_CancelButton" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
-  <data name="NudgeDialog_CloseButton" xml:space="preserve">
-    <value>Close</value>
-  </data>
+
   <data name="NudgeMessageKey_PleaseAddAttendance" xml:space="preserve">
     <value>Please add your attendance</value>
   </data>
@@ -244,24 +215,7 @@
   <data name="AttendanceToggle_SaveError" xml:space="preserve">
     <value>Failed to save attendance. Please try again.</value>
   </data>
-  <data name="DishEditor_AriaLabel" xml:space="preserve">
-    <value>Dish description</value>
-  </data>
-  <data name="DishEditor_EditAriaLabel" xml:space="preserve">
-    <value>Edit dish</value>
-  </data>
-  <data name="DishEditor_SaveButton" xml:space="preserve">
-    <value>Save dish</value>
-  </data>
-  <data name="DishEditor_CancelButton" xml:space="preserve">
-    <value>Cancel editing dish</value>
-  </data>
-  <data name="DishEditor_TooLong" xml:space="preserve">
-    <value>Dish description must be at most 100 characters.</value>
-  </data>
-  <data name="DishEditor_SaveError" xml:space="preserve">
-    <value>Failed to save dish. Please try again.</value>
-  </data>
+
   <data name="CommentEditor_AriaLabel" xml:space="preserve">
     <value>Comment for {0}</value>
   </data>
@@ -282,5 +236,59 @@
   </data>
   <data name="CommentEditor_SaveError" xml:space="preserve">
     <value>Failed to save comment. Please try again.</value>
+  </data>
+  <data name="Attendance_Title" xml:space="preserve">
+    <value>Attendance</value>
+  </data>
+  <data name="Attendance_Nudge" xml:space="preserve">
+    <value>Nudge</value>
+  </data>
+  <data name="Attendance_NudgeAriaLabel" xml:space="preserve">
+    <value>Send a reminder</value>
+  </data>
+  <data name="NudgeModal_SendANudge" xml:space="preserve">
+    <value>Send a nudge</value>
+  </data>
+  <data name="NudgeModal_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="NudgeModal_WhoShouldWeRemind" xml:space="preserve">
+    <value>Who should we remind?</value>
+  </data>
+  <data name="NudgeModal_Predefined" xml:space="preserve">
+    <value>Predefined</value>
+  </data>
+  <data name="NudgeModal_Custom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="NudgeModal_CustomPlaceholder" xml:space="preserve">
+    <value>Type a message...</value>
+  </data>
+  <data name="NudgeModal_CustomAriaLabel" xml:space="preserve">
+    <value>Custom nudge message</value>
+  </data>
+  <data name="NudgeModal_SendNudge" xml:space="preserve">
+    <value>Send Nudge</value>
+  </data>
+  <data name="DishPanel_OnTheMenu" xml:space="preserve">
+    <value>ON THE MENU</value>
+  </data>
+  <data name="DishPanel_Placeholder" xml:space="preserve">
+    <value>What are we eating?</value>
+  </data>
+  <data name="DishPanel_Edit" xml:space="preserve">
+    <value>Edit dish</value>
+  </data>
+  <data name="DishPanel_Accept" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="DishPanel_Discard" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="DishPanel_InputAriaLabel" xml:space="preserve">
+    <value>Dish description</value>
+  </data>
+  <data name="DishPanel_SaveError" xml:space="preserve">
+    <value>Failed to save dish. Please try again.</value>
   </data>
 </root>

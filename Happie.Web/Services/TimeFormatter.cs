@@ -6,18 +6,18 @@ namespace Happie.Web.Services;
 public static class TimeFormatter
 {
     /// <summary>Formats a dish edit timestamp as a relative or absolute time string.</summary>
-    public static string FormatDishTime(DateTimeOffset editedAt, DateTimeOffset now)
+    public static string FormatDishTime(DateTimeOffset editedAt, DateTimeOffset now, string justNow = "just now", string minAgo = "min ago", string hoursAgo = "hours ago")
     {
         var elapsed = now - editedAt;
 
         if (elapsed.TotalSeconds < 60)
-            return "just now";
+            return justNow;
 
         if (elapsed.TotalMinutes < 60)
-            return $"{(int)elapsed.TotalMinutes} min ago";
+            return $"{(int)elapsed.TotalMinutes} {minAgo}";
 
         if (elapsed.TotalHours < 3)
-            return $"{(int)elapsed.TotalHours} hours ago";
+            return $"{(int)elapsed.TotalHours} {hoursAgo}";
 
         if (editedAt.Date == now.Date)
             return editedAt.ToString("HH:mm", CultureInfo.InvariantCulture);

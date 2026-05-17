@@ -1,0 +1,161 @@
+/* Attendance section container. */
+.attendance-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Header row: title on the left, nudge button on the right. */
+.attendance-section__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Section title — uppercase muted text. */
+.attendance-section__title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #78909c;
+    letter-spacing: 0.05em;
+}
+
+/* Nudge button — green/teal text with bell icon. */
+.attendance-section__nudge-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #4CAF50;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.15s;
+}
+
+.attendance-section__nudge-btn:hover {
+    background-color: rgba(76, 175, 80, 0.08);
+}
+
+/* Housemate list. */
+.attendance-section__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Individual housemate row — rounded card with avatar+name on left, buttons on right. */
+.attendance-section__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+/* Housemate info: avatar + name. */
+.attendance-section__housemate {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+/* Housemate name — bold, truncated if too long. */
+.attendance-section__name {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Status button group. */
+.attendance-section__buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Individual status button — circular outline. */
+.attendance-section__btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #d1d5db;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #9ca3af;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.attendance-section__btn:hover:not(:disabled) {
+    border-color: #6b7280;
+    color: #6b7280;
+}
+
+.attendance-section__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* EatingIn active state — green filled. */
+.attendance-section__btn--eating-in {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+    color: #ffffff;
+}
+
+.attendance-section__btn--eating-in:hover:not(:disabled) {
+    background-color: #43A047;
+    border-color: #43A047;
+    color: #ffffff;
+}
+
+/* Unknown active state — dark circle outline, no color fill. */
+.attendance-section__btn--unknown {
+    border-color: #374151;
+    color: #374151;
+    background: none;
+}
+
+.attendance-section__btn--unknown:hover:not(:disabled) {
+    border-color: #374151;
+    color: #374151;
+}
+
+/* NotEatingIn active state — red filled. */
+.attendance-section__btn--not-eating-in {
+    background-color: #F44336;
+    border-color: #F44336;
+    color: #ffffff;
+}
+
+.attendance-section__btn--not-eating-in:hover:not(:disabled) {
+    background-color: #E53935;
+    border-color: #E53935;
+    color: #ffffff;
+}
+
+/* Error toast. */
+.attendance-section__toast {
+    background-color: #FEE2E2;
+    color: #991B1B;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    margin-top: 8px;
+}

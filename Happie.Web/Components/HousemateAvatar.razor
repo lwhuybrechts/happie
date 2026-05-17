@@ -1,7 +1,7 @@
 <div class="avatar @(ShowHoverEffect ? "avatar--hoverable" : "")"
      style="background-color: @Color;"
      @onclick="OnClick"
-     role="button"
+     role="@(OnClick.HasDelegate ? "button" : null)"
      aria-label="@Name">
     <span class="avatar__initial">@(string.IsNullOrEmpty(Name) ? "" : Name[..1].ToUpperInvariant())</span>
 </div>

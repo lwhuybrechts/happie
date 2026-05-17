@@ -37,11 +37,11 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Date format: `d MMM yyyy` using provided CultureInfo for locale-aware month abbreviation
     - _Requirements: 10.4, 10.5, 10.6, 10.7, 10.8, 10.9_
 
-  - [ ]* 2.2 Write property test for DateLabelService contextual title correctness
+  - [x]* 2.2 Write property test for DateLabelService contextual title correctness
     - **Property 1: Date label contextual title correctness**
     - **Validates: Requirements 10.4, 10.5, 10.6, 10.7, 10.8**
 
-  - [ ]* 2.3 Write property test for DateLabelService locale-aware month abbreviation
+  - [x]* 2.3 Write property test for DateLabelService locale-aware month abbreviation
     - **Property 2: Date label formatted date uses locale-aware month abbreviation**
     - **Validates: Requirements 10.9**
 
@@ -50,11 +50,11 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Implement `FormatHistoryTime(DateTimeOffset changedAt, DateTimeOffset now)` with rules: same day → HH:mm, different day same year → "d MMM HH:mm", previous year → "d MMM yyyy HH:mm"
     - _Requirements: 11.5, 15.4, 15.5, 15.6_
 
-  - [ ]* 2.5 Write property test for TimeFormatter.FormatDishTime
+  - [x]* 2.5 Write property test for TimeFormatter.FormatDishTime
     - **Property 3: Dish relative time formatting**
     - **Validates: Requirements 11.5**
 
-  - [ ]* 2.6 Write property test for TimeFormatter.FormatHistoryTime
+  - [x]* 2.6 Write property test for TimeFormatter.FormatHistoryTime
     - **Property 4: History timestamp formatting**
     - **Validates: Requirements 15.4, 15.5, 15.6**
 
@@ -112,11 +112,11 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Remove or replace `NavMenu.razor` and `NavMenu.razor.css`
     - _Requirements: 5.1, 8.7, 9.1_
 
-- [ ] 5. Checkpoint - Ensure layout renders correctly
+- [x] 5. Checkpoint - Ensure layout renders correctly
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Implement Day Plan page sub-components
-  - [ ] 6.1 Create `DateNavigationPanel` component in `Happie.Web/Components/DateNavigationPanel.razor`
+- [x] 6. Implement Day Plan page sub-components
+  - [x] 6.1 Create `DateNavigationPanel` component in `Happie.Web/Components/DateNavigationPanel.razor`
     - Display left/right arrow buttons for previous/next day navigation
     - Use `DateLabelService` to compute contextual title and formatted date
     - Render as floating panel with rounded corners
@@ -124,7 +124,7 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Add scoped CSS file `DateNavigationPanel.razor.css`
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8, 10.9, 10.10_
 
-  - [ ] 6.2 Create `DishPanel` component in `Happie.Web/Components/DishPanel.razor`
+  - [x] 6.2 Create `DishPanel` component in `Happie.Web/Components/DishPanel.razor`
     - Display food icon and "on the menu" text
     - Display "What are we eating?" with edit icon when no dish is set
     - Display dish text, last editor name, and relative time (via `TimeFormatter`) when dish exists
@@ -133,7 +133,7 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Add scoped CSS file `DishPanel.razor.css`
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 12.1, 12.2, 12.3, 12.4, 12.5_
 
-  - [ ] 6.3 Create `AttendanceSection` component in `Happie.Web/Components/AttendanceSection.razor`
+  - [x] 6.3 Create `AttendanceSection` component in `Happie.Web/Components/AttendanceSection.razor`
     - Display "Attendance" header with nudge button on the same row (right-aligned)
     - List all housemates with avatar + name (same layout as login page housemate selection)
     - Display three option buttons per housemate: V (green), ? (neutral), X (red)
@@ -142,11 +142,11 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Add scoped CSS file `AttendanceSection.razor.css`
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8, 16.1, 16.2, 16.3_
 
-  - [ ]* 6.4 Write property test for attendance status button highlight mapping
+  - [x]* 6.4 Write property test for attendance status button highlight mapping
     - **Property 5: Attendance status button highlight mapping**
     - **Validates: Requirements 13.4, 13.5, 13.6**
 
-  - [ ] 6.5 Create `CommentsSection` component in `Happie.Web/Components/CommentsSection.razor`
+  - [x] 6.5 Create `CommentsSection` component in `Happie.Web/Components/CommentsSection.razor`
     - Display "Comments" header
     - Display placed comments ordered by `LastEditedAt` (most recent first)
     - Each comment shows avatar, name, and text
@@ -159,7 +159,7 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Add scoped CSS file `CommentsSection.razor.css`
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7, 14.8, 14.9, 14.10, 14.11_
 
-  - [ ] 6.6 Create `HistorySection` component in `Happie.Web/Components/HistorySection.razor`
+  - [x] 6.6 Create `HistorySection` component in `Happie.Web/Components/HistorySection.razor`
     - Display header with back-in-time icon and "History" text
     - Display entries in reverse-chronological order
     - Each entry shows avatar, name, grey clock icon, formatted timestamp (via `TimeFormatter`)
@@ -169,7 +169,7 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Add scoped CSS file `HistorySection.razor.css`
     - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8_
 
-  - [ ] 6.7 Create `NudgeModal` component in `Happie.Web/Components/NudgeModal.razor`
+  - [x] 6.7 Create `NudgeModal` component in `Happie.Web/Components/NudgeModal.razor`
     - Overlay with blurred background
     - Bell icon + "Send a nudge" text, X close button
     - Recipient list: housemates with Unknown status (excluding active), all pre-selected
@@ -182,19 +182,19 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Add scoped CSS file `NudgeModal.razor.css`
     - _Requirements: 17.1, 17.2, 17.3, 17.4, 17.5, 17.6, 17.7, 17.8, 17.9, 17.10_
 
-  - [ ]* 6.8 Write property test for nudge recipient filtering
+  - [x]* 6.8 Write property test for nudge recipient filtering
     - **Property 6: Nudge recipient filtering**
     - **Validates: Requirements 17.3**
 
-  - [ ]* 6.9 Write property test for nudge send button disabled state
+  - [x]* 6.9 Write property test for nudge send button disabled state
     - **Property 7: Nudge send button disabled state**
     - **Validates: Requirements 17.8**
 
-- [ ] 7. Checkpoint - Ensure all sub-components render correctly
+- [x] 7. Checkpoint - Ensure all sub-components render correctly
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Wire Day Plan page and content centering
-  - [ ] 8.1 Restructure `DayPlanPage.razor` to use new sub-components
+- [x] 8. Wire Day Plan page and content centering
+  - [x] 8.1 Restructure `DayPlanPage.razor` to use new sub-components
     - Replace existing inline sections with `DateNavigationPanel`, `DishPanel`, `AttendanceSection`, `CommentsSection`, `HistorySection`
     - Wire `NudgeModal` with `Open()` method triggered from `AttendanceSection` nudge button
     - Handle navigation callbacks (prev/next day)
@@ -202,14 +202,14 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Remove old component references (`DishEditor`, `DayHistoryLog`, `NudgeDialog`, `AttendanceToggle`, `CommentEditor`)
     - _Requirements: 10.1, 10.2, 10.3, 11.1, 12.1, 13.1, 14.1, 15.1, 16.1, 17.1_
 
-  - [ ] 8.2 Implement content centering for Day Plan page
+  - [x] 8.2 Implement content centering for Day Plan page
     - Desktop (≥641px): center content within available space (viewport minus sidebar), max-width 600px, equal margins
     - Mobile (<641px): full viewport width with 16px horizontal padding
     - Add/update scoped CSS in `DayPlanPage.razor.css`
     - _Requirements: 18.1, 18.2, 18.3_
 
-- [ ] 9. Clean up removed components
-  - [ ] 9.1 Remove old components that have been replaced
+- [x] 9. Clean up removed components
+  - [x] 9.1 Remove old components that have been replaced
     - Delete `Happie.Web/Components/DishEditor.razor` (replaced by `DishPanel`)
     - Delete `Happie.Web/Components/DayHistoryLog.razor` (replaced by `HistorySection`)
     - Delete `Happie.Web/Components/NudgeDialog.razor` (replaced by `NudgeModal`)
@@ -217,7 +217,7 @@ This plan implements the visual and structural redesign of the Happie PWA's main
     - Remove any remaining references to deleted components
     - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 10. Final checkpoint - Ensure all tests pass
+- [x] 10. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

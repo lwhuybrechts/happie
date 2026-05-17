@@ -1,0 +1,62 @@
+@using Happie.Shared.Contracts
+
+<div class="history-section">
+    <h3 class="history-section__header">
+        <svg class="history-section__header-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+            <path d="M12 7v5l4 2" />
+        </svg>
+        <span>HISTORY</span>
+    </h3>
+
+    @if (!History.Any())
+    {
+        <p class="history-section__empty">No changes recorded.</p>
+    }
+    else
+    {
+        <div class="history-section__list">
+            @foreach (var entry in History)
+            {
+                <div class="history-section__entry">
+                    <HousemateAvatar Name="@entry.ChangedByHousemateName"
+                                     Color="@ResolveColor(entry.ChangedByHousemateId)" />
+                    <div class="history-section__entry-content">
+                        <div class="history-section__entry-header">
+                            <span class="history-section__name">@entry.ChangedByHousemateName</span>
+                            <svg class="history-section__clock-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            <span class="history-section__time">@TimeFormatter.FormatHistoryTime(entry.ChangedAt, DateTimeOffset.Now)</span>
+                        </div>
+                        <span class="history-section__description">@entry.Description</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The fallback color used for soft-deleted housemates not in the attendance list.</summary>
+    private const string FallbackColor = "#9E9E9E";
+
+    /// <summary>History entries for the day, expected in reverse-chronological order from the API.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<HistoryEntryDto> History { get; set; } = [];
+
+    /// <summary>The attendance list used to resolve housemate colors for avatars.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<AttendanceDto> Attendance { get; set; } = [];
+
+    /// <summary>Resolves the housemate color from the attendance list, falling back to grey for soft-deleted housemates.</summary>
+    private string ResolveColor(Guid housemateId)
+    {
+        var housemate = Attendance.FirstOrDefault(x => x.HousemateId == housemateId);
+        return housemate?.Color ?? FallbackColor;
+    }
+}

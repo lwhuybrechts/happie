@@ -1,0 +1,196 @@
+@using Happie.Shared.Contracts
+@inject HttpClient Http
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="dish-panel">
+    <div class="dish-panel__header">
+        <div class="dish-panel__header-left">
+            <span class="dish-panel__food-icon-bg">
+                <svg class="dish-panel__food-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+                    <path d="M7 2v20" />
+                    <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+                </svg>
+            </span>
+            <span class="dish-panel__label">@Localizer["DishPanel_OnTheMenu"]</span>
+        </div>
+
+        <div class="dish-panel__header-right">
+            @if (_isEditing)
+            {
+                <button class="dish-panel__action-btn dish-panel__action-btn--accept"
+                        @onclick="SaveAsync"
+                        disabled="@_isSaving"
+                        aria-label="@Localizer["DishPanel_Accept"]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="m9 12 2 2 4-4" />
+                    </svg>
+                </button>
+                <button class="dish-panel__action-btn dish-panel__action-btn--discard"
+                        @onclick="DiscardEdit"
+                        disabled="@_isSaving"
+                        aria-label="@Localizer["DishPanel_Discard"]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="m15 9-6 6" />
+                        <path d="m9 9 6 6" />
+                    </svg>
+                </button>
+            }
+            else
+            {
+                <button class="dish-panel__edit-btn" @onclick="StartEdit" aria-label="@Localizer["DishPanel_Edit"]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                        <path d="m15 5 4 4" />
+                    </svg>
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="dish-panel__body">
+        @if (_isEditing)
+        {
+            <input class="dish-panel__input"
+                   type="text"
+                   maxlength="100"
+                   placeholder="@Localizer["DishPanel_Placeholder"]"
+                   @bind="_editValue"
+                   @bind:event="oninput"
+                   @onkeydown="HandleKeyDownAsync"
+                   disabled="@_isSaving"
+                   aria-label="@Localizer["DishPanel_InputAriaLabel"]" />
+        }
+        else if (!string.IsNullOrWhiteSpace(_committedValue))
+        {
+            <span class="dish-panel__dish-text">@_committedValue</span>
+            @if (_lastEditorName is not null && Dish?.LastChangedAt is not null)
+            {
+                <span class="dish-panel__meta" title="@Dish.LastChangedAt.Value.ToLocalTime().ToString("HH:mm")">
+                    <svg class="dish-panel__meta-clock" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    @_lastEditorName · @TimeFormatter.FormatDishTime(Dish.LastChangedAt.Value, DateTimeOffset.Now, Localizer["Time_JustNow"], Localizer["Time_MinAgo"], Localizer["Time_HoursAgo"])
+                </span>
+            }
+        }
+        else
+        {
+            <span class="dish-panel__empty-text">@Localizer["DishPanel_Placeholder"]</span>
+        }
+    </div>
+</div>
+
+@if (_showError)
+{
+    <div class="dish-panel__toast" role="alert">
+        @Localizer["DishPanel_SaveError"]
+    </div>
+}
+
+@code {
+    /// <summary>The date for which the dish is displayed, in yyyy-MM-dd format.</summary>
+    [Parameter, EditorRequired]
+    public string Date { get; set; } = string.Empty;
+
+    /// <summary>The current dish data, or null when no dish has been set.</summary>
+    [Parameter]
+    public DishDto? Dish { get; set; }
+
+    /// <summary>The list of attendance records used to resolve the last editor's name.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<AttendanceDto> Attendance { get; set; } = [];
+
+    /// <summary>Callback invoked after a dish save, passing the new description (or null if cleared).</summary>
+    [Parameter]
+    public EventCallback<string?> OnDishChanged { get; set; }
+
+    private string _committedValue = string.Empty;
+    private string _editValue = string.Empty;
+    private string? _lastEditorName;
+    private bool _isEditing;
+    private bool _isSaving;
+    private bool _showError;
+
+    protected override void OnParametersSet()
+    {
+        _committedValue = Dish?.Description ?? string.Empty;
+        _lastEditorName = ResolveEditorName();
+    }
+
+    private string? ResolveEditorName()
+    {
+        if (Dish?.LastChangedByHousemateId is null)
+            return null;
+
+        var editor = Attendance.FirstOrDefault(x => x.HousemateId == Dish.LastChangedByHousemateId);
+        return editor?.HousemateName;
+    }
+
+    private void StartEdit()
+    {
+        _editValue = _committedValue;
+        _showError = false;
+        _isEditing = true;
+    }
+
+    private void DiscardEdit()
+    {
+        _isEditing = false;
+    }
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+            await SaveAsync();
+        else if (args.Key == "Escape")
+            DiscardEdit();
+    }
+
+    private async Task SaveAsync()
+    {
+        var trimmed = _editValue.Trim();
+
+        // Optimistic update: commit the new value immediately.
+        var previousValue = _committedValue;
+        _committedValue = trimmed;
+        _showError = false;
+        _isSaving = true;
+        _isEditing = false;
+
+        HttpResponseMessage response;
+
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            // Clear the dish.
+            response = await Http.DeleteAsync($"days/{Date}/dish");
+        }
+        else
+        {
+            response = await Http.PutAsJsonAsync(
+                $"days/{Date}/dish",
+                new UpdateDishRequest(trimmed));
+        }
+
+        _isSaving = false;
+
+        if (!response.IsSuccessStatusCode)
+        {
+            // Rollback to the previous value on failure.
+            _committedValue = previousValue;
+            _showError = true;
+        }
+        else
+        {
+            await OnDishChanged.InvokeAsync(string.IsNullOrEmpty(trimmed) ? null : trimmed);
+        }
+    }
+}

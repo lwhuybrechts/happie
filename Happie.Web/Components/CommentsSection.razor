@@ -1,0 +1,233 @@
+@using Happie.Shared.Contracts
+@inject HttpClient Http
+
+<div class="comments-section">
+    <h3 class="comments-section__header">COMMENTS</h3>
+
+    <div class="comments-section__list">
+        @foreach (var comment in OrderedComments)
+        {
+            @if (_isEditing && IsActiveHousemate(comment.HousemateId))
+            {
+                continue;
+            }
+
+            <div class="comments-section__row @(IsActiveHousemate(comment.HousemateId) ? "comments-section__row--clickable" : "")"
+                 @onclick="() => EditExistingComment(comment)"
+                 role="@(IsActiveHousemate(comment.HousemateId) ? "button" : null)"
+                 aria-label="@(IsActiveHousemate(comment.HousemateId) ? $"Edit comment by {comment.HousemateName}" : null)">
+                <HousemateAvatar Name="@comment.HousemateName" Color="@comment.Color" />
+                <div class="comments-section__bubble">
+                    <span class="comments-section__name">@comment.HousemateName.ToUpperInvariant()</span>
+                    <span class="comments-section__text">@comment.Text</span>
+                </div>
+            </div>
+        }
+
+        @if (_isEditing)
+        {
+            <div class="comments-section__row">
+                <HousemateAvatar Name="@ActiveHousemateName" Color="@ActiveHousemateColor" />
+                <div class="comments-section__bubble comments-section__bubble--editing">
+                    <span class="comments-section__name">@ActiveHousemateName.ToUpperInvariant()</span>
+                    <input @ref="_inputRef"
+                           class="comments-section__input"
+                           type="text"
+                           maxlength="200"
+                           placeholder="Add a comment..."
+                           @bind="_editText"
+                           @bind:event="oninput"
+                           @onkeydown="HandleKeyDownAsync"
+                           disabled="@_isSaving"
+                           aria-label="Comment text" />
+                </div>
+            </div>
+            <div class="comments-section__actions">
+                <button class="comments-section__action-btn comments-section__action-btn--accept"
+                        @onclick="SaveAsync"
+                        disabled="@_isSaving"
+                        aria-label="Save comment">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="m9 12 2 2 4-4" />
+                    </svg>
+                </button>
+                <button class="comments-section__action-btn comments-section__action-btn--discard"
+                        @onclick="Discard"
+                        disabled="@_isSaving"
+                        aria-label="Discard comment">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="m15 9-6 6" />
+                        <path d="m9 9 6 6" />
+                    </svg>
+                </button>
+            </div>
+        }
+        else if (!ActiveHousemateHasComment)
+        {
+            <div class="comments-section__row"
+                 @onclick="StartNewComment"
+                 role="button"
+                 aria-label="Add a comment">
+                <HousemateAvatar Name="@ActiveHousemateName" Color="@ActiveHousemateColor" />
+                <div class="comments-section__bubble comments-section__bubble--placeholder">
+                    <span class="comments-section__name">@ActiveHousemateName.ToUpperInvariant()</span>
+                    <span class="comments-section__placeholder-text">Add a comment...</span>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (_showError)
+    {
+        <div class="toast toast--error" role="alert">
+            Failed to save comment. Please try again.
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The date for which comments are displayed, in yyyy-MM-dd format.</summary>
+    [Parameter, EditorRequired]
+    public string Date { get; set; } = string.Empty;
+
+    /// <summary>The list of placed comments for the day.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<CommentDto> Comments { get; set; } = [];
+
+    /// <summary>The attendance list used to resolve housemate info.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<AttendanceDto> Attendance { get; set; } = [];
+
+    /// <summary>The ID of the currently active housemate.</summary>
+    [Parameter, EditorRequired]
+    public Guid ActiveHousemateId { get; set; }
+
+    /// <summary>Callback invoked after a successful comment save or delete. Passes (HousemateId, Text) where Text is null for deletion.</summary>
+    [Parameter]
+    public EventCallback<(Guid HousemateId, string? Text)> OnCommentChanged { get; set; }
+
+    private string _editText = string.Empty;
+    private bool _isEditing;
+    private bool _isSaving;
+    private bool _showError;
+    private string? _previousText;
+    private bool _shouldFocus;
+    private ElementReference _inputRef;
+
+    private IEnumerable<CommentDto> OrderedComments =>
+        Comments.OrderByDescending(x => x.LastEditedAt);
+
+    private bool ActiveHousemateHasComment =>
+        Comments.Any(x => x.HousemateId == ActiveHousemateId);
+
+    private string ActiveHousemateName =>
+        Attendance.FirstOrDefault(x => x.HousemateId == ActiveHousemateId)?.HousemateName ?? string.Empty;
+
+    private string ActiveHousemateColor =>
+        Attendance.FirstOrDefault(x => x.HousemateId == ActiveHousemateId)?.Color ?? "#888888";
+
+    private bool IsActiveHousemate(Guid housemateId) =>
+        housemateId == ActiveHousemateId;
+
+    private void StartNewComment()
+    {
+        _editText = string.Empty;
+        _previousText = null;
+        _showError = false;
+        _isEditing = true;
+        _shouldFocus = true;
+    }
+
+    private void EditExistingComment(CommentDto comment)
+    {
+        if (!IsActiveHousemate(comment.HousemateId))
+            return;
+
+        _editText = comment.Text;
+        _previousText = comment.Text;
+        _showError = false;
+        _isEditing = true;
+        _shouldFocus = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldFocus)
+        {
+            _shouldFocus = false;
+            await _inputRef.FocusAsync();
+        }
+    }
+
+    private void Discard()
+    {
+        _isEditing = false;
+        _showError = false;
+    }
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+            await SaveAsync();
+        else if (args.Key == "Escape")
+            Discard();
+    }
+
+    private async Task SaveAsync()
+    {
+        var trimmed = _editText.Trim();
+
+        // If trimmed is empty, treat as delete (null text).
+        string? newText = string.IsNullOrEmpty(trimmed) ? null : trimmed;
+
+        // No change — just close.
+        if (newText == _previousText)
+        {
+            _isEditing = false;
+            return;
+        }
+
+        _isSaving = true;
+        _showError = false;
+
+        bool success;
+
+        if (newText is null)
+            success = await DeleteCommentAsync();
+        else
+            success = await UpsertCommentAsync(newText);
+
+        _isSaving = false;
+
+        if (success)
+        {
+            _isEditing = false;
+            await OnCommentChanged.InvokeAsync((ActiveHousemateId, newText));
+        }
+        else
+        {
+            _showError = true;
+        }
+    }
+
+    private async Task<bool> UpsertCommentAsync(string text)
+    {
+        var response = await Http.PutAsJsonAsync(
+            $"days/{Date}/comments/{ActiveHousemateId}",
+            new UpdateCommentRequest(text));
+
+        return response.IsSuccessStatusCode;
+    }
+
+    private async Task<bool> DeleteCommentAsync()
+    {
+        var response = await Http.DeleteAsync(
+            $"days/{Date}/comments/{ActiveHousemateId}");
+
+        return response.IsSuccessStatusCode;
+    }
+}

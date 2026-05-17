@@ -55,6 +55,7 @@ All Table Storage entity classes MUST adhere to the following rules:
 - Set partition/row keys in the parameterized constructor for optimal Table Storage queries
 - Use nullable reference types (`?`) for optional properties
 - Use `= string.Empty` as default for required string properties
+- **NEVER use `DateTimeOffset?` (nullable) for entity properties** — the Azure.Data.Tables SDK does not serialize nullable `DateTimeOffset?` on strongly-typed `ITableEntity` classes. Use non-nullable `DateTimeOffset` instead, with `default` (`DateTimeOffset.MinValue`) as the sentinel for "not set". The mapper converts `default` back to `null` in the domain type.
 - Entity classes are internal to the repository layer — NEVER reference them outside `Happie.Api/Infrastructure/`
 
 ```csharp

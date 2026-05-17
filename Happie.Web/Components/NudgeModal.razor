@@ -1,0 +1,171 @@
+@using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@inject HttpClient Http
+@inject IStringLocalizer<AppStrings> Localizer
+
+@if (_isOpen)
+{
+    <div class="nudge-modal__overlay" @onclick="Close" aria-hidden="true"></div>
+
+    <div class="nudge-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="nudge-modal-title">
+
+        <div class="nudge-modal__header">
+            <div class="nudge-modal__header-left">
+                <span class="nudge-modal__bell-icon" aria-hidden="true">🔔</span>
+                <h2 id="nudge-modal-title" class="nudge-modal__title">@Localizer["NudgeModal_SendANudge"]</h2>
+            </div>
+            <button class="nudge-modal__close-btn"
+                    @onclick="Close"
+                    aria-label="@Localizer["NudgeModal_Close"]">
+                <span aria-hidden="true">✕</span>
+            </button>
+        </div>
+
+        <div class="nudge-modal__body">
+            <h3 class="nudge-modal__section-header">@Localizer["NudgeModal_WhoShouldWeRemind"]</h3>
+
+            <div class="nudge-modal__recipients">
+                @foreach (var recipient in _recipients)
+                {
+                    <button class="nudge-modal__recipient-chip @(_selectedIds.Contains(recipient.HousemateId) ? "nudge-modal__recipient-chip--selected" : "")"
+                            @onclick="@(() => ToggleRecipient(recipient.HousemateId))"
+                            aria-pressed="@(_selectedIds.Contains(recipient.HousemateId) ? "true" : "false")">
+                        <span class="nudge-modal__recipient-dot" style="background-color: @recipient.Color;" aria-hidden="true"></span>
+                        <span class="nudge-modal__recipient-name">@recipient.HousemateName</span>
+                        @if (_selectedIds.Contains(recipient.HousemateId))
+                        {
+                            <span class="nudge-modal__recipient-check" aria-hidden="true">✓</span>
+                        }
+                    </button>
+                }
+            </div>
+
+            <div class="nudge-modal__message-toggle">
+                <button class="nudge-modal__tab @(!_useCustomMessage ? "nudge-modal__tab--active" : "")"
+                        @onclick="@(() => _useCustomMessage = false)">
+                    @Localizer["NudgeModal_Predefined"]
+                </button>
+                <button class="nudge-modal__tab @(_useCustomMessage ? "nudge-modal__tab--active" : "")"
+                        @onclick="@(() => _useCustomMessage = true)">
+                    @Localizer["NudgeModal_Custom"]
+                </button>
+            </div>
+
+            @if (!_useCustomMessage)
+            {
+                <div class="nudge-modal__predefined-messages">
+                    <button class="nudge-modal__message-card @(_selectedMessageKey == NudgeMessageKey.PleaseAddAttendance ? "nudge-modal__message-card--selected" : "")"
+                            @onclick="@(() => _selectedMessageKey = NudgeMessageKey.PleaseAddAttendance)">
+                        @Localizer["NudgeMessageKey_PleaseAddAttendance"]
+                    </button>
+                    <button class="nudge-modal__message-card @(_selectedMessageKey == NudgeMessageKey.WhatWouldYouLikeToEat ? "nudge-modal__message-card--selected" : "")"
+                            @onclick="@(() => _selectedMessageKey = NudgeMessageKey.WhatWouldYouLikeToEat)">
+                        @Localizer["NudgeMessageKey_WhatWouldYouLikeToEat"]
+                    </button>
+                    <button class="nudge-modal__message-card @(_selectedMessageKey == NudgeMessageKey.DinnerSoonWhatsYourPlan ? "nudge-modal__message-card--selected" : "")"
+                            @onclick="@(() => _selectedMessageKey = NudgeMessageKey.DinnerSoonWhatsYourPlan)">
+                        @Localizer["NudgeMessageKey_DinnerSoonWhatsYourPlan"]
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="nudge-modal__custom-message">
+                    <input class="nudge-modal__custom-input"
+                           type="text"
+                           maxlength="20"
+                           @bind="_customMessage"
+                           @bind:event="oninput"
+                           placeholder="@Localizer["NudgeModal_CustomPlaceholder"]"
+                           aria-label="@Localizer["NudgeModal_CustomAriaLabel"]" />
+                </div>
+            }
+        </div>
+
+        <div class="nudge-modal__footer">
+            <button class="nudge-modal__send-btn"
+                    @onclick="SendAsync"
+                    disabled="@(_isSending || _selectedIds.Count == 0)"
+                    aria-label="@Localizer["NudgeModal_SendNudge"]">
+                <svg class="nudge-modal__send-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m22 2-7 20-4-9-9-4Z" />
+                    <path d="M22 2 11 13" />
+                </svg>
+                @Localizer["NudgeModal_SendNudge"]
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>All attendance entries for the day; the modal filters to Unknown status excluding the active housemate.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<AttendanceDto> Attendance { get; set; } = [];
+
+    /// <summary>The active housemate's ID, excluded from the recipient list.</summary>
+    [Parameter, EditorRequired]
+    public Guid ActiveHousemateId { get; set; }
+
+    /// <summary>The date for which the nudge is sent, in yyyy-MM-dd format.</summary>
+    [Parameter, EditorRequired]
+    public string Date { get; set; } = string.Empty;
+
+    private bool _isOpen;
+    private bool _isSending;
+    private bool _useCustomMessage;
+    private string _customMessage = string.Empty;
+    private NudgeMessageKey _selectedMessageKey = NudgeMessageKey.PleaseAddAttendance;
+    private List<AttendanceDto> _recipients = [];
+    private HashSet<Guid> _selectedIds = [];
+
+    /// <summary>Opens the modal, showing all housemates (excluding the active one) and pre-selecting those whose status is Unknown.</summary>
+    public void Open()
+    {
+        _recipients = Attendance
+            .Where(x => x.HousemateId != ActiveHousemateId)
+            .ToList();
+        _selectedIds = _recipients
+            .Where(x => x.Status == AttendanceStatus.Unknown)
+            .Select(x => x.HousemateId)
+            .ToHashSet();
+        _useCustomMessage = false;
+        _customMessage = string.Empty;
+        _selectedMessageKey = NudgeMessageKey.PleaseAddAttendance;
+        _isSending = false;
+        _isOpen = true;
+    }
+
+    private void Close()
+    {
+        _isOpen = false;
+    }
+
+    private void ToggleRecipient(Guid housemateId)
+    {
+        if (_selectedIds.Contains(housemateId))
+            _selectedIds.Remove(housemateId);
+        else
+            _selectedIds.Add(housemateId);
+    }
+
+    private async Task SendAsync()
+    {
+        if (_selectedIds.Count == 0)
+            return;
+
+        _isSending = true;
+
+        var request = _useCustomMessage
+            ? new NudgeRequest(_selectedIds.ToList(), null, _customMessage.Trim())
+            : new NudgeRequest(_selectedIds.ToList(), _selectedMessageKey, null);
+
+        await Http.PostAsJsonAsync($"days/{Date}/nudge", request);
+
+        _isSending = false;
+        Close();
+    }
+}

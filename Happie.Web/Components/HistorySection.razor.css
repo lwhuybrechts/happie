@@ -1,0 +1,75 @@
+.history-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.history-section__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #78909c;
+    margin: 0;
+}
+
+.history-section__header-icon {
+    font-size: 14px;
+}
+
+.history-section__empty {
+    font-size: 14px;
+    font-style: italic;
+    color: #78909c;
+    margin: 0;
+}
+
+.history-section__list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.history-section__entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.history-section__entry-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.history-section__entry-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.history-section__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.history-section__clock-icon {
+    color: #78909c;
+    flex-shrink: 0;
+}
+
+.history-section__time {
+    font-size: 12px;
+    color: #78909c;
+}
+
+.history-section__description {
+    font-size: 13px;
+    font-style: italic;
+    color: #607d8b;
+}

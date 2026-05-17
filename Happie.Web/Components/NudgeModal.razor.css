@@ -1,0 +1,228 @@
+.nudge-modal__overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+}
+
+.nudge-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 1001;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.nudge-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.nudge-modal__header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nudge-modal__bell-icon {
+    font-size: 20px;
+}
+
+.nudge-modal__title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    color: #1a1a1a;
+    text-transform: uppercase;
+}
+
+.nudge-modal__close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #666666;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.nudge-modal__close-btn:hover {
+    color: #333333;
+    background-color: #f0f0f0;
+}
+
+.nudge-modal__body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.nudge-modal__section-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: #888888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.nudge-modal__recipients {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.nudge-modal__recipient-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1.5px solid #e0e0e0;
+    background-color: #ffffff;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+    font-size: 14px;
+}
+
+.nudge-modal__recipient-chip--selected {
+    border-color: #4CAF50;
+    background-color: #f0faf0;
+}
+
+.nudge-modal__recipient-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.nudge-modal__recipient-name {
+    color: #2e7d32;
+    font-weight: 500;
+}
+
+.nudge-modal__recipient-check {
+    color: #4CAF50;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.nudge-modal__message-toggle {
+    display: flex;
+    gap: 16px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 0;
+}
+
+.nudge-modal__tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #888888;
+    text-transform: uppercase;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    margin-bottom: -1px;
+}
+
+.nudge-modal__tab--active {
+    color: #4CAF50;
+    border-bottom-color: #4CAF50;
+}
+
+.nudge-modal__predefined-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nudge-modal__message-card {
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1.5px solid #e0e0e0;
+    background-color: #ffffff;
+    text-align: left;
+    font-size: 14px;
+    color: #333333;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.nudge-modal__message-card:hover {
+    border-color: #a5d6a7;
+}
+
+.nudge-modal__message-card--selected {
+    border-color: #4CAF50;
+    background-color: #f0faf0;
+}
+
+.nudge-modal__custom-message {
+    display: flex;
+}
+
+.nudge-modal__custom-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1.5px solid #e0e0e0;
+    font-size: 14px;
+    color: #333333;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.nudge-modal__custom-input:focus {
+    border-color: #4CAF50;
+}
+
+.nudge-modal__footer {
+    margin-top: 20px;
+}
+
+.nudge-modal__send-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background-color: #4CAF50;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.nudge-modal__send-btn:hover:not(:disabled) {
+    background-color: #43a047;
+}
+
+.nudge-modal__send-btn:disabled {
+    background-color: #cccccc;
+    color: #888888;
+    cursor: not-allowed;
+}
+
+.nudge-modal__send-icon {
+    font-size: 16px;
+}
