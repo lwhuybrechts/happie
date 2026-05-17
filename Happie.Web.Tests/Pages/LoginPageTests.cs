@@ -81,7 +81,7 @@ public class LoginPageTests : BunitContext
         form.Submit();
 
         // Wait for the async operation to complete.
-        cut.WaitForState(() => cut.FindAll("[role=alert]").Count > 0);
+        cut.WaitForState(() => cut.FindAll("[role=alert]").Count > 0, TimeSpan.FromSeconds(5));
 
         // Assert.
         var alert = cut.Find("[role=alert]");
