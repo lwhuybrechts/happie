@@ -43,6 +43,8 @@ For local development, set `KeyVaultUri` in `local.settings.json` and authentica
 | CalendarPage | `/calendar` | Calendar overview with color indicators |
 | HousematesPage | `/housemates` | Housemate management (add, rename, remove, color) |
 
+The browser tab title MUST always be **Happie** on every page. Use `<PageTitle>Happie</PageTitle>` — do not append page-specific text or localized strings.
+
 ## Key Components
 
 | Component | Description |
