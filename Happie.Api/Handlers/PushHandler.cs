@@ -30,10 +30,19 @@ public class PushHandler : IPushHandler
     }
 
     /// <inheritdoc/>
-    public Task SubscribeAsync(Guid householdId, Guid housemateId, string endpoint, string p256dhKey, string authKey, Locale locale, CancellationToken ct = default)
+    public async Task SubscribeAsync(Guid householdId, Guid housemateId, string endpoint, string p256dhKey, string authKey, Locale locale, CancellationToken ct = default)
     {
+        // Remove any existing subscription with the same endpoint for a different housemate in this household.
+        // This ensures only the active housemate on a device receives push notifications.
+        var existingSubscriptions = await _pushSubscriptionRepository.GetAllAsync(householdId, ct);
+        foreach (var existing in existingSubscriptions)
+        {
+            if (existing.Endpoint == endpoint && existing.HousemateId != housemateId)
+                await _pushSubscriptionRepository.DeleteAsync(householdId, existing.HousemateId, ct);
+        }
+
         var subscription = new Domain.PushSubscription(housemateId, householdId, endpoint, p256dhKey, authKey, locale);
-        return _pushSubscriptionRepository.UpsertAsync(subscription, ct);
+        await _pushSubscriptionRepository.UpsertAsync(subscription, ct);
     }
 
     /// <inheritdoc/>
