@@ -1,4 +1,3 @@
-using ExpectedObjects;
 using Happie.Api.Handlers;
 using Happie.Api.Infrastructure.Repositories;
 using Happie.Api.Services;
@@ -14,7 +13,6 @@ namespace Happie.Api.Tests.Handlers;
 public class PushHandlerTests
 {
     private readonly Mock<IPushSubscriptionRepository> _pushSubscriptionRepositoryMock = new();
-    private readonly Mock<IAttendanceRepository> _attendanceRepositoryMock = new();
     private readonly Mock<IHousemateRepository> _housemateRepositoryMock = new();
     private readonly Mock<IPushNotificationService> _pushNotificationServiceMock = new();
     private readonly PushHandler _sut;
@@ -24,7 +22,6 @@ public class PushHandlerTests
     {
         _sut = new PushHandler(
             _pushSubscriptionRepositoryMock.Object,
-            _attendanceRepositoryMock.Object,
             _housemateRepositoryMock.Object,
             _pushNotificationServiceMock.Object,
             NullLogger<PushHandler>.Instance);
@@ -41,7 +38,6 @@ public class PushHandlerTests
         var date = new DateOnly(2025, 7, 15);
         var message = new string('A', 20);
 
-        SetupGetAttendanceByDate(householdId, date, new List<AttendanceRecord>());
         SetupGetHousemate(householdId, senderHousemateId, CreateHousemate(householdId, senderHousemateId, "Alice"));
         SetupGetSubscription(householdId, recipientId, null);
 
@@ -172,7 +168,6 @@ public class PushHandlerTests
         var successRecipientId = Guid.NewGuid();
         var date = new DateOnly(2025, 7, 15);
 
-        SetupGetAttendanceByDate(householdId, date, new List<AttendanceRecord>());
         SetupGetHousemate(householdId, senderHousemateId, CreateHousemate(householdId, senderHousemateId, "Alice"));
         SetupGetSubscription(householdId, failingRecipientId, CreateSubscription(householdId, failingRecipientId));
         SetupGetSubscription(householdId, successRecipientId, CreateSubscription(householdId, successRecipientId));
@@ -196,13 +191,6 @@ public class PushHandlerTests
         _pushNotificationServiceMock.Verify(
             x => x.SendAsync(It.Is<Domain.PushSubscription>(s => s.HousemateId == successRecipientId), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once);
-    }
-
-    private void SetupGetAttendanceByDate(Guid householdId, DateOnly date, List<AttendanceRecord> returns)
-    {
-        _attendanceRepositoryMock
-            .Setup(x => x.GetByDateAsync(householdId, date, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(returns);
     }
 
     private void SetupGetHousemate(Guid householdId, Guid housemateId, Housemate? returns)

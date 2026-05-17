@@ -336,6 +336,9 @@
   <data name="NudgeModal_PushHelpAriaLabel" xml:space="preserve">
     <value>Hulp bij pushmeldingen</value>
   </data>
+  <data name="NudgeModal_SendError" xml:space="preserve">
+    <value>Nudge kon niet worden verzonden. Probeer het opnieuw.</value>
+  </data>
   <data name="DishPanel_OnTheMenu" xml:space="preserve">
     <value>OP HET MENU</value>
   </data>

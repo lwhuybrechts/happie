@@ -246,3 +246,12 @@
 .nudge-modal__send-icon {
     font-size: 16px;
 }
+
+.nudge-modal__error {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background-color: #fdecea;
+    color: #c62828;
+    font-size: 13px;
+    font-weight: 500;
+}

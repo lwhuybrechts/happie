@@ -15,7 +15,6 @@ namespace Happie.Api.Tests.Handlers;
 public class PushHandlerPropertyTests
 {
     private readonly Mock<IPushSubscriptionRepository> _pushSubscriptionRepositoryMock = new();
-    private readonly Mock<IAttendanceRepository> _attendanceRepositoryMock = new();
     private readonly Mock<IHousemateRepository> _housemateRepositoryMock = new();
     private readonly Mock<IPushNotificationService> _pushNotificationServiceMock = new();
     private readonly PushHandler _sut;
@@ -25,7 +24,6 @@ public class PushHandlerPropertyTests
     {
         _sut = new PushHandler(
             _pushSubscriptionRepositoryMock.Object,
-            _attendanceRepositoryMock.Object,
             _housemateRepositoryMock.Object,
             _pushNotificationServiceMock.Object,
             NullLogger<PushHandler>.Instance);
@@ -52,7 +50,6 @@ public class PushHandlerPropertyTests
 
                 var capturedPayloads = new List<string>();
 
-                SetupGetAttendanceByDate(householdId, date, new List<AttendanceRecord>());
                 SetupGetHousemate(householdId, senderHousemateId, CreateHousemate(householdId, senderHousemateId, senderName));
                 SetupGetSubscription(householdId, recipientId, CreateSubscription(householdId, recipientId));
                 SetupPushSendCapture(capturedPayloads);
@@ -72,39 +69,6 @@ public class PushHandlerPropertyTests
 
                 return (payload.Contains(senderName) && payload.Contains(dateStr))
                     .Label($"Expected payload to contain sender '{senderName}' and date '{dateStr}'. Payload: {payload}");
-            });
-    }
-
-    // Feature: happie, Property 15: Nudge default recipients are housemates with unknown status
-    /// <summary>
-    /// For any set of housemates with mixed attendance statuses, the nudge must be rejected
-    /// when any specified recipient does not have Unknown status.
-    /// Validates: Requirements 7.4
-    /// </summary>
-    [Property(MaxTest = 100)]
-    public Property NudgeAsync_RecipientWithNonUnknownStatus_ReturnsNull()
-    {
-        return Prop.ForAll(
-            NonUnknownStatusArb(),
-            async status =>
-            {
-                // Arrange.
-                var householdId = Guid.NewGuid();
-                var senderHousemateId = Guid.NewGuid();
-                var recipientId = Guid.NewGuid();
-                var date = new DateOnly(2025, 7, 15);
-
-                SetupGetAttendanceByDate(householdId, date, new List<AttendanceRecord>
-                {
-                    new(householdId, recipientId, date, status),
-                });
-
-                // Act.
-                var result = await _sut.NudgeAsync(householdId, senderHousemateId, date, new[] { recipientId }, NudgeMessageKey.PleaseAddAttendance, null);
-
-                // Assert.
-                return (result == null)
-                    .Label($"Expected null when recipient has status {status}.");
             });
     }
 
@@ -231,13 +195,6 @@ public class PushHandlerPropertyTests
             });
     }
 
-    private void SetupGetAttendanceByDate(Guid householdId, DateOnly date, List<AttendanceRecord> returns)
-    {
-        _attendanceRepositoryMock
-            .Setup(x => x.GetByDateAsync(householdId, date, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(returns);
-    }
-
     private void SetupGetHousemate(Guid householdId, Guid housemateId, Housemate returns)
     {
         _housemateRepositoryMock
@@ -314,12 +271,6 @@ public class PushHandlerPropertyTests
                     .ArrayOf(len)
                     .Select(chars => new string(chars)));
 
-        return Arb.From(gen);
-    }
-
-    private static Arbitrary<AttendanceStatus> NonUnknownStatusArb()
-    {
-        var gen = Gen.Elements(AttendanceStatus.EatingIn, AttendanceStatus.NotEatingIn);
         return Arb.From(gen);
     }
 

@@ -86,6 +86,13 @@
             }
         </div>
 
+        @if (_showError)
+        {
+            <div class="nudge-modal__error" role="alert">
+                @Localizer["NudgeModal_SendError"]
+            </div>
+        }
+
         <div class="nudge-modal__footer">
             <button class="nudge-modal__send-btn"
                     @onclick="SendAsync"
@@ -117,6 +124,7 @@
 
     private bool _isOpen;
     private bool _isSending;
+    private bool _showError;
     private bool _useCustomMessage;
     private string _customMessage = string.Empty;
     private NudgeMessageKey _selectedMessageKey = NudgeMessageKey.PleaseAddAttendance;
@@ -137,6 +145,7 @@
         _customMessage = string.Empty;
         _selectedMessageKey = NudgeMessageKey.PleaseAddAttendance;
         _isSending = false;
+        _showError = false;
         _isOpen = true;
     }
 
@@ -159,12 +168,29 @@
             return;
 
         _isSending = true;
+        _showError = false;
 
         var request = _useCustomMessage
             ? new NudgeRequest(_selectedIds.ToList(), null, _customMessage.Trim())
             : new NudgeRequest(_selectedIds.ToList(), _selectedMessageKey, null);
 
-        await Http.PostAsJsonAsync($"days/{Date}/nudge", request);
+        try
+        {
+            var response = await Http.PostAsJsonAsync($"days/{Date}/nudge", request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _showError = true;
+                _isSending = false;
+                return;
+            }
+        }
+        catch
+        {
+            _showError = true;
+            _isSending = false;
+            return;
+        }
 
         _isSending = false;
         Close();

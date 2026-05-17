@@ -15,7 +15,7 @@ public interface IPushHandler
     /// <summary>
     /// Sends a nudge push notification to the specified recipients for the given date.
     /// Returns per-recipient failures; delivery to other recipients continues even when one fails.
-    /// Returns null when validation fails (invalid message or recipients not all Unknown).
+    /// Returns null when validation fails (invalid message combination or length).
     /// </summary>
     Task<NudgeResult?> NudgeAsync(Guid householdId, Guid senderHousemateId, DateOnly date, IReadOnlyList<Guid> recipientIds, NudgeMessageKey? predefinedMessageKey, string? message, CancellationToken ct = default);
 

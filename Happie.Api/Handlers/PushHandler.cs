@@ -12,7 +12,6 @@ namespace Happie.Api.Handlers;
 public class PushHandler : IPushHandler
 {
     private readonly IPushSubscriptionRepository _pushSubscriptionRepository;
-    private readonly IAttendanceRepository _attendanceRepository;
     private readonly IHousemateRepository _housemateRepository;
     private readonly IPushNotificationService _pushNotificationService;
     private readonly ILogger<PushHandler> _logger;
@@ -20,13 +19,11 @@ public class PushHandler : IPushHandler
     /// <summary>Initializes a new instance of <see cref="PushHandler"/>.</summary>
     public PushHandler(
         IPushSubscriptionRepository pushSubscriptionRepository,
-        IAttendanceRepository attendanceRepository,
         IHousemateRepository housemateRepository,
         IPushNotificationService pushNotificationService,
         ILogger<PushHandler> logger)
     {
         _pushSubscriptionRepository = pushSubscriptionRepository;
-        _attendanceRepository = attendanceRepository;
         _housemateRepository = housemateRepository;
         _pushNotificationService = pushNotificationService;
         _logger = logger;
@@ -64,16 +61,6 @@ public class PushHandler : IPushHandler
                 return null;
 
             message = trimmed;
-        }
-
-        // Validate all recipients have Unknown status.
-        var attendanceRecords = await _attendanceRepository.GetByDateAsync(householdId, date, ct);
-        var attendanceByHousemate = attendanceRecords.ToDictionary(x => x.HousemateId);
-
-        foreach (var recipientId in recipientIds)
-        {
-            if (attendanceByHousemate.TryGetValue(recipientId, out var record) && record.Status != AttendanceStatus.Unknown)
-                return null;
         }
 
         // Fetch sender name for the payload.
