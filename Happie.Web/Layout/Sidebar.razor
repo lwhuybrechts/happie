@@ -1,6 +1,7 @@
 @inject NavigationManager NavigationManager
 @inject ActiveHousemateService ActiveHousemateService
 @inject IStringLocalizer<AppStrings> Localizer
+@inject IConfiguration Configuration
 @implements IDisposable
 
 <aside class="sidebar" aria-label="Main navigation">
@@ -54,6 +55,8 @@
                              Color="@(ActiveHousemateService.Color ?? "#888888")"
                              ShowHoverEffect="true"
                              OnClick="NavigateToHousemates" />
+
+            <span class="sidebar__version">v@(Configuration["AppVersion"])</span>
 
             <LocaleSwitcher />
         </div>

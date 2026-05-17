@@ -120,11 +120,21 @@
     color: #555555;
 }
 
+.sidebar__version {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #aaaaaa;
+    font-family: monospace;
+}
+
 .sidebar__bottom-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 4px;
+    position: relative;
 }
 
 .sidebar__logout-btn {

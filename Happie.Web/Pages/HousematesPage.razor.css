@@ -356,3 +356,32 @@
 .housemates-page__logout-btn:hover svg {
     stroke: #F44336;
 }
+
+.housemates-page__version {
+    font-size: 11px;
+    color: #aaaaaa;
+    font-family: monospace;
+}
+
+.housemates-page__footer-row {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.housemates-page__footer-row .housemates-page__version {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.housemates-page__footer-row .housemates-page__logout-btn {
+    margin-left: auto;
+    align-self: auto;
+}
+
+@media (min-width: 641px) {
+    .housemates-page__version {
+        display: none;
+    }
+}
