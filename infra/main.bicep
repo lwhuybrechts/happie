@@ -108,6 +108,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
       cors: {
         allowedOrigins: [
           'https://${staticWebApp.properties.defaultHostname}'
+          'https://happie.dev'
           'http://localhost:5195'
         ]
         supportCredentials: true
@@ -135,6 +136,13 @@ resource staticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
     name: 'Free'
     tier: 'Free'
   }
+  properties: {}
+}
+
+// Custom domain — requires DNS CNAME to be configured in Cloudflare first.
+resource customDomain 'Microsoft.Web/staticSites/customDomains@2023-12-01' = {
+  parent: staticWebApp
+  name: 'happie.dev'
   properties: {}
 }
 
