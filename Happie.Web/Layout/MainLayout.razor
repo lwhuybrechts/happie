@@ -2,6 +2,7 @@
 @inject PushNotificationService PushNotificationService
 @inject ActiveHousemateService ActiveHousemateService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
 @inject IStringLocalizer<AppStrings> Localizer
 @implements IDisposable
 
@@ -54,7 +55,14 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && ActiveHousemateService.Id.HasValue)
+        {
             await PushNotificationService.CheckPermissionStateAsync();
+
+            // Check if the app was launched from a notification click with a deep link.
+            var pendingUrl = await JsRuntime.InvokeAsync<string?>("happie.checkPendingNavigation");
+            if (!string.IsNullOrWhiteSpace(pendingUrl) && pendingUrl != NavigationManager.ToBaseRelativePath(NavigationManager.Uri))
+                NavigationManager.NavigateTo(pendingUrl);
+        }
     }
 
     private async Task EnablePush()

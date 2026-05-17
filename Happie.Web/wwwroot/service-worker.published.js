@@ -84,19 +84,51 @@ async function onPush(event) {
 async function onNotificationClick(event) {
     event.notification.close();
     const url = event.notification.data?.url || '/';
+    const fullUrl = new URL(url, self.location.origin).href;
 
     const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
 
-    // Try to focus an existing window.
+    // Try to focus an existing window and navigate it.
     for (const client of windowClients) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-            client.navigate(url);
+            // Post the target URL to the client so it can navigate via Blazor's router.
+            client.postMessage({ type: 'navigate', url: url });
             return client.focus();
         }
     }
 
-    // No existing window — open a new one.
-    return clients.openWindow(url);
+    // No existing window — open a new one with the full URL.
+    // On iOS PWAs, openWindow may not deep-link reliably, so also store the URL
+    // in IndexedDB for the app to pick up on launch.
+    await storePendingNavigation(url);
+    return clients.openWindow(fullUrl);
+}
+
+// Store a pending navigation URL in IndexedDB for the app to pick up on launch.
+// This is needed because iOS PWAs don't reliably deep-link via clients.openWindow().
+async function storePendingNavigation(url) {
+    try {
+        const db = await new Promise((resolve, reject) => {
+            const request = indexedDB.open('happie-push', 1);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('credentials'))
+                    db.createObjectStore('credentials');
+            };
+            request.onsuccess = (e) => resolve(e.target.result);
+            request.onerror = (e) => reject(e.target.error);
+        });
+        const tx = db.transaction('credentials', 'readwrite');
+        const store = tx.objectStore('credentials');
+        store.put(url, 'pendingNavigation');
+        await new Promise((resolve, reject) => {
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+    } catch (error) {
+        console.error('Service worker: Failed to store pending navigation:', error);
+    }
 }
 
 // Convert a URL-safe base64 string to a Uint8Array for PushManager.subscribe().

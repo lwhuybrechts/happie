@@ -284,6 +284,44 @@
                 document.body.removeChild(entry.rightArrow);
             _swipeRegistry.delete(element);
         };
+
+        // Listen for navigation messages from the service worker (notification click while app is open).
+        navigator.serviceWorker.addEventListener('message', function (event) {
+            if (event.data && event.data.type === 'navigate' && event.data.url) {
+                window.location.href = event.data.url;
+            }
+        });
+
+        // Check IndexedDB for a pending navigation URL (notification click that launched the app).
+        happie.checkPendingNavigation = async function () {
+            try {
+                const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open('happie-push', 1);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('credentials'))
+                            db.createObjectStore('credentials');
+                    };
+                    request.onsuccess = (e) => resolve(e.target.result);
+                    request.onerror = (e) => reject(e.target.error);
+                });
+                const tx = db.transaction('credentials', 'readwrite');
+                const store = tx.objectStore('credentials');
+                const url = await new Promise((resolve) => {
+                    const req = store.get('pendingNavigation');
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => resolve(null);
+                });
+                // Clear the pending navigation so it doesn't fire again.
+                store.delete('pendingNavigation');
+                await new Promise((resolve) => { tx.oncomplete = resolve; });
+                db.close();
+                return url || null;
+            } catch (error) {
+                console.error('Failed to check pending navigation:', error);
+                return null;
+            }
+        };
     </script>
 </body>
 
