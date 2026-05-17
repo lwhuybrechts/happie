@@ -31,15 +31,12 @@
                         @onclick="() => OnDayClicked.InvokeAsync(cell.Date)"
                         aria-label="@cell.Date.ToString("d MMMM yyyy", culture)">
                     <span class="calendar-grid__cell-number">@cell.Date.Day</span>
-                    @if (colors.Count > 0)
-                    {
-                        <div class="calendar-grid__dots">
-                            @foreach (var color in colors)
-                            {
-                                <span class="calendar-grid__dot" style="background-color: @color;" aria-hidden="true"></span>
-                            }
-                        </div>
-                    }
+                    <div class="calendar-grid__dots">
+                        @foreach (var color in colors)
+                        {
+                            <span class="calendar-grid__dot" style="background-color: @color;" aria-hidden="true"></span>
+                        }
+                    </div>
                 </button>
             }
         }
