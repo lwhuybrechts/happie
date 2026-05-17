@@ -781,3 +781,40 @@ public class PushNotificationService
     }
 }
 ```
+
+---
+
+## Modal z-index Conventions (MUST follow)
+
+The mobile header (`.mobile-header`) and bottom nav (`.bottom-nav`) use `position: fixed` with `z-index: 1000`. All modal overlays and dialogs MUST use higher z-index values so they render above the header and bottom nav on mobile.
+
+| Element | z-index |
+|---|---|
+| Mobile header / bottom nav | `1000` |
+| Modal overlay (`__overlay`) | `1100` |
+| Modal dialog | `1101` |
+
+```css
+/* ✅ GOOD: modal overlay and dialog above mobile chrome. */
+.my-modal__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+}
+
+.my-modal {
+    position: fixed;
+    z-index: 1101;
+}
+```
+
+```css
+/* ❌ BAD: same z-index as header/nav — modal renders behind them on mobile. */
+.my-modal__overlay {
+    z-index: 1000;
+}
+
+.my-modal {
+    z-index: 1001;
+}
+```
