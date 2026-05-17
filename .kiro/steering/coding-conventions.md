@@ -818,3 +818,17 @@ The mobile header (`.mobile-header`) and bottom nav (`.bottom-nav`) use `positio
     z-index: 1001;
 }
 ```
+
+### Swipe navigation and modals
+
+Pages that register `happie.registerSwipe` set `will-change: transform` on the swipe element during touch interactions. This creates a new containing block that traps `position: fixed` children (modals) inside the element instead of positioning them relative to the viewport.
+
+The swipe handler in `index.html` guards against this by ignoring touches that originate inside a modal:
+
+```javascript
+if (e.target.closest('[role="dialog"], .nudge-modal__overlay, .color-modal__overlay')) return;
+```
+
+When adding a new modal that can appear on a swipe-enabled page, ensure:
+1. The modal dialog element has `role="dialog"` (already required for accessibility).
+2. If the overlay uses a class not yet listed in the `closest()` check, add it to the selector in `index.html`.

@@ -155,6 +155,8 @@
 
             const onTouchStart = (e) => {
                 if (state.animating) return;
+                // Ignore touches that originate inside a modal overlay or dialog.
+                if (e.target.closest('[role="dialog"], .nudge-modal__overlay, .color-modal__overlay')) return;
                 state.startX = e.touches[0].clientX;
                 state.startY = e.touches[0].clientY;
                 state.currentX = 0;

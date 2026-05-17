@@ -333,6 +333,9 @@
   <data name="NudgeModal_SendNudge" xml:space="preserve">
     <value>Stuur Nudge</value>
   </data>
+  <data name="NudgeModal_PushHelpAriaLabel" xml:space="preserve">
+    <value>Hulp bij pushmeldingen</value>
+  </data>
   <data name="DishPanel_OnTheMenu" xml:space="preserve">
     <value>OP HET MENU</value>
   </data>

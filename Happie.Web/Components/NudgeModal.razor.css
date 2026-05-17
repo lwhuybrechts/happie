@@ -47,6 +47,26 @@
     text-transform: uppercase;
 }
 
+.nudge-modal__help-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    color: #555;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    line-height: 1;
+}
+
+.nudge-modal__help-link:hover {
+    background-color: #ccc;
+    color: #333;
+}
+
 .nudge-modal__close-btn {
     background: none;
     border: none;
