@@ -48,7 +48,7 @@ jobs:
         run: dotnet test Happie.Api.IntegrationTests --configuration Release --no-build --verbosity normal
 
       - name: Publish Happie.Web
-        run: dotnet publish Happie.Web --configuration Release --no-build --output ./publish/web
+        run: dotnet publish Happie.Web --configuration Release --output ./publish/web
 
       - name: Publish Happie.Api
         run: dotnet publish Happie.Api --configuration Release --output ./publish/api
