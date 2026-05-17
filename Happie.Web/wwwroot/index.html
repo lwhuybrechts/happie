@@ -111,6 +111,9 @@
                     state.locked = true;
                 }
 
+                // Prevent vertical scrolling while horizontal swipe is active.
+                e.preventDefault();
+
                 state.currentX = deltaX;
                 const translated = rubberBand(deltaX);
                 element.style.transform = 'translateX(' + translated + 'px)';
@@ -183,7 +186,7 @@
             };
 
             element.addEventListener('touchstart', onTouchStart, { passive: true });
-            element.addEventListener('touchmove', onTouchMove, { passive: true });
+            element.addEventListener('touchmove', onTouchMove, { passive: false });
             element.addEventListener('touchend', onTouchEnd, { passive: true });
 
             _swipeRegistry.set(element, { onTouchStart, onTouchMove, onTouchEnd, dotNetRef, leftArrow, rightArrow });
