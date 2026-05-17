@@ -5,6 +5,7 @@
 @inject IStringLocalizer<AppStrings> Localizer
 @inject SessionService SessionService
 @inject ActiveHousemateService ActiveHousemateService
+@inject PushNotificationService PushNotificationService
 @inject IConfiguration Configuration
 
 <PageTitle>Happie</PageTitle>
@@ -388,6 +389,9 @@
 
         await ActiveHousemateService.SetActiveHousemateAsync(housemate.Id, housemate.Name, housemate.Color);
         _activeHousemateId = housemate.Id;
+
+        // Re-register push subscription under the new housemate.
+        await PushNotificationService.ReRegisterSubscriptionAsync();
     }
 
     // --- Rename ---

@@ -115,6 +115,25 @@ public class PushNotificationService
         }
     }
 
+    /// <summary>
+    /// Re-registers the push subscription with the backend. Call this when the active housemate
+    /// changes so the subscription is stored under the correct housemate ID.
+    /// </summary>
+    public async Task ReRegisterSubscriptionAsync()
+    {
+        try
+        {
+            var currentState = await _jsRuntime.InvokeAsync<string>("happie.getPushPermissionState");
+
+            if (currentState == "granted")
+                await SubscribeAndRegisterAsync();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Failed to re-register push subscription after housemate change.");
+        }
+    }
+
     private async Task SubscribeAndRegisterAsync()
     {
         var vapidPublicKey = _configuration["VapidPublicKey"];

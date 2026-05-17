@@ -47,15 +47,15 @@ jobs:
       - name: Run Integration tests
         run: dotnet test Happie.Api.IntegrationTests --configuration Release --no-build --verbosity normal
 
-      - name: Publish Happie.Web
-        run: dotnet publish Happie.Web --configuration Release --output ./publish/web
-
       - name: Stamp version in appsettings.json
         run: |
           BASE_VERSION=$(cat version.txt | tr -d '\n\r')
           VERSION="${BASE_VERSION}.${{ github.run_number }}"
-          sed -i "s/\"AppVersion\": \"1.0.0\"/\"AppVersion\": \"$VERSION\"/" ./publish/web/wwwroot/appsettings.json
+          sed -i "s/\"AppVersion\": \"1.0.0\"/\"AppVersion\": \"$VERSION\"/" Happie.Web/wwwroot/appsettings.json
           echo "App version: $VERSION"
+
+      - name: Publish Happie.Web
+        run: dotnet publish Happie.Web --configuration Release --output ./publish/web
 
       - name: Publish Happie.Api
         run: dotnet publish Happie.Api --configuration Release --output ./publish/api
