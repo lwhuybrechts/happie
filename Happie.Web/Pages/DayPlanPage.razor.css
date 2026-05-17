@@ -3,6 +3,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    position: relative;
 }
 
 /* Desktop (≥641px): center content within available space, max-width 600px. */

@@ -1,6 +1,7 @@
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     touch-action: pan-x pan-y;
+    overflow-x: hidden;
 }
 
 h1:focus {
@@ -113,4 +114,37 @@ code {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
+}
+
+/* Swipe navigation arrow indicators. */
+.swipe-arrow {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.06);
+    color: #333;
+    opacity: 0;
+    transition: opacity 0.1s ease, transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), background 0.2s ease;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.swipe-arrow--left {
+    left: 8px;
+}
+
+.swipe-arrow--right {
+    right: 8px;
+}
+
+.swipe-arrow--active {
+    background: rgba(0, 0, 0, 0.12);
+    color: #111;
+    transform: translateY(-50%) scale(1.15);
 }
