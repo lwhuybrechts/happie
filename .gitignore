@@ -88,3 +88,6 @@ __queuestorage__/
 __tablestorage__/
 azurite-debug.log
 AzuriteConfig
+
+# Bicep build output.
+infra/main.json
