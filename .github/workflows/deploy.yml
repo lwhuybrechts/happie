@@ -101,29 +101,8 @@ jobs:
           path: ./api
 
       - name: Deploy to Azure Functions
-        run: |
-          PROFILE='${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}'
-          USER=$(echo "$PROFILE" | grep -oP 'userName="\K[^"]+' | head -1)
-          PASS=$(echo "$PROFILE" | grep -oP 'userPWD="\K[^"]+' | head -1)
-          cd api
-          zip -r ../deploy.zip .
-          cd ..
-          # Deploy via Kudu zip deploy API (synchronous).
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-            "https://happie-func.scm.azurewebsites.net/api/zipdeploy?isAsync=false" \
-            -u "$USER:$PASS" \
-            -H "Content-Type: application/zip" \
-            --data-binary @deploy.zip)
-          echo "Zip deploy response: $HTTP_CODE"
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "Deployment failed with HTTP $HTTP_CODE"
-            exit 1
-          fi
-          # Wait for the app to restart and load.
-          sleep 30
-          # Sync triggers to register functions with the host.
-          curl -sf -X POST \
-            "https://happie-func.azurewebsites.net/admin/host/synctriggers" \
-            -u "$USER:$PASS" \
-            -H "Content-Type: application/json" \
-            -d '{}' || true
+        uses: Azure/functions-action@v1
+        with:
+          app-name: happie-func
+          package: ./api
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
