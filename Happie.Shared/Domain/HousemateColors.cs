@@ -4,11 +4,13 @@ namespace Happie.Shared.Domain;
 public static class HousemateColors
 {
     /// <summary>
-    /// Exactly 30 hex color values, balanced across the spectrum and including
+    /// Exactly 31 hex color values, balanced across the spectrum and including
     /// warm/feminine tones for easy distinction.
     /// </summary>
     public static readonly IReadOnlyList<string> Palette =
     [
+        // Reds.
+        "#FF0000",
         // Pinks & roses.
         "#F06292",
         "#E91E63",

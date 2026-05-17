@@ -25,20 +25,20 @@ housematesClient.CreateIfNotExists();
 var alice = new TableEntity(HouseholdId, "00000000-0000-0000-0000-000000000002")
 {
     ["Name"] = "Alice",
-    ["Color"] = "#EF4444",
+    ["Color"] = "#EF5350",
     ["IsDeleted"] = false
 };
 housematesClient.UpsertEntity(alice);
-Console.WriteLine("Upserted housemate: Alice (#EF4444)");
+Console.WriteLine("Upserted housemate: Alice (#EF5350)");
 
 var bob = new TableEntity(HouseholdId, "00000000-0000-0000-0000-000000000003")
 {
     ["Name"] = "Bob",
-    ["Color"] = "#3B82F6",
+    ["Color"] = "#1E88E5",
     ["IsDeleted"] = false
 };
 housematesClient.UpsertEntity(bob);
-Console.WriteLine("Upserted housemate: Bob (#3B82F6)");
+Console.WriteLine("Upserted housemate: Bob (#1E88E5)");
 
 Console.WriteLine();
 Console.WriteLine("Done. Login with password: happie");

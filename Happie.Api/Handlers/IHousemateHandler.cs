@@ -29,4 +29,9 @@ public interface IHousemateHandler
     /// Returns <see cref="DeleteHousemateOutcome.NotFound"/> if the housemate does not exist or is already deleted.
     /// </summary>
     Task<DeleteHousemateOutcome> DeleteHousemateAsync(Guid householdId, Guid housemateId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Reorders housemates by assigning sort order based on the provided list of IDs.
+    /// </summary>
+    Task ReorderHousematesAsync(Guid householdId, List<Guid> orderedIds, CancellationToken ct = default);
 }

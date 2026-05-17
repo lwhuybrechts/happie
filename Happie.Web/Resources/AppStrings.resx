@@ -182,6 +182,63 @@
   <data name="Housemates_AddButton" xml:space="preserve">
     <value>Huisgenoot toevoegen</value>
   </data>
+  <data name="Housemates_LoadError" xml:space="preserve">
+    <value>Huisgenoten laden mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="Housemates_SaveError" xml:space="preserve">
+    <value>Opslaan mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="Housemates_NamePlaceholder" xml:space="preserve">
+    <value>Naam nieuwe huisgenoot</value>
+  </data>
+  <data name="Housemates_ActiveBadge" xml:space="preserve">
+    <value>Actief</value>
+  </data>
+  <data name="Housemates_Switch" xml:space="preserve">
+    <value>Wissel</value>
+  </data>
+  <data name="Housemates_SwitchTo" xml:space="preserve">
+    <value>Wissel naar {0}</value>
+  </data>
+  <data name="Housemates_Rename" xml:space="preserve">
+    <value>Hernoem {0}</value>
+  </data>
+  <data name="Housemates_RenameAriaLabel" xml:space="preserve">
+    <value>Nieuwe naam voor {0}</value>
+  </data>
+  <data name="Housemates_SaveRename" xml:space="preserve">
+    <value>Naam opslaan</value>
+  </data>
+  <data name="Housemates_CancelRename" xml:space="preserve">
+    <value>Hernoemen annuleren</value>
+  </data>
+  <data name="Housemates_Remove" xml:space="preserve">
+    <value>Verwijder {0}</value>
+  </data>
+  <data name="Housemates_ChangeColor" xml:space="preserve">
+    <value>Kleur wijzigen voor {0}</value>
+  </data>
+  <data name="Housemates_MoveUp" xml:space="preserve">
+    <value>Verplaats {0} omhoog</value>
+  </data>
+  <data name="Housemates_MoveDown" xml:space="preserve">
+    <value>Verplaats {0} omlaag</value>
+  </data>
+  <data name="Housemates_RemoveConfirmTitle" xml:space="preserve">
+    <value>Huisgenoot verwijderen</value>
+  </data>
+  <data name="Housemates_RemoveConfirmMessage" xml:space="preserve">
+    <value>Weet je zeker dat je {0} wilt verwijderen?</value>
+  </data>
+  <data name="Housemates_RemoveLastWarning" xml:space="preserve">
+    <value>Je bent de laatste huisgenoot. Als je {0} verwijdert, worden alle gegevens van het huishouden verwijderd. Dit kan niet ongedaan worden gemaakt.</value>
+  </data>
+  <data name="Housemates_RemoveCancel" xml:space="preserve">
+    <value>Annuleren</value>
+  </data>
+  <data name="Housemates_RemoveConfirm" xml:space="preserve">
+    <value>Verwijderen</value>
+  </data>
   <data name="Nav_DayPlan" xml:space="preserve">
     <value>Vandaag</value>
   </data>
@@ -296,5 +353,14 @@
   </data>
   <data name="DishPanel_SaveError" xml:space="preserve">
     <value>Opslaan mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="ColorPicker_AriaLabel" xml:space="preserve">
+    <value>Kies een kleur</value>
+  </data>
+  <data name="ColorPicker_SelectColor" xml:space="preserve">
+    <value>Selecteer kleur {0}</value>
+  </data>
+  <data name="ColorPicker_ColorInUse" xml:space="preserve">
+    <value>Kleur {0} is al in gebruik</value>
   </data>
 </root>

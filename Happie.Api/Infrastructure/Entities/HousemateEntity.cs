@@ -23,4 +23,7 @@ public class HousemateEntity : MyTableEntity
 
     /// <summary>Indicates whether the housemate has been soft-deleted.</summary>
     public bool IsDeleted { get; set; }
+
+    /// <summary>Sort order for display purposes. Lower values appear first.</summary>
+    public int SortOrder { get; set; }
 }

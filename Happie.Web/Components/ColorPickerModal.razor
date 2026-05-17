@@ -1,0 +1,79 @@
+@using Happie.Shared.Domain
+@inject IStringLocalizer<AppStrings> Localizer
+
+@if (_isOpen)
+{
+    <div class="color-modal__overlay" @onclick="Close" aria-hidden="true"></div>
+
+    <div class="color-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="color-modal-title">
+
+        <div class="color-modal__header">
+            <h2 id="color-modal-title" class="color-modal__title">@Localizer["Housemates_ChangeColor", _housemateName]</h2>
+            <button class="color-modal__close-btn"
+                    @onclick="Close"
+                    aria-label="@Localizer["NudgeModal_Close"]">
+                <span aria-hidden="true">✕</span>
+            </button>
+        </div>
+
+        <div class="color-modal__grid">
+            @foreach (var color in HousemateColors.Palette)
+            {
+                var isCurrentColor = string.Equals(color, _selectedColor, StringComparison.OrdinalIgnoreCase);
+                var isInUse = !isCurrentColor && _colorsInUse.Contains(color);
+
+                @if (isInUse)
+                {
+                    <span class="color-modal__swatch color-modal__swatch--disabled"
+                          style="background-color: @color;"></span>
+                }
+                else if (isCurrentColor)
+                {
+                    <span class="color-modal__swatch color-modal__swatch--selected"
+                          style="background-color: @color;">✓</span>
+                }
+                else
+                {
+                    <button class="color-modal__swatch"
+                            style="background-color: @color;"
+                            @onclick="() => SelectColor(color)"></button>
+                }
+            }
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Callback invoked when the user selects a color.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnColorSelected { get; set; }
+
+    private bool _isOpen;
+    private string _housemateName = string.Empty;
+    private string _selectedColor = string.Empty;
+    private HashSet<string> _colorsInUse = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Opens the modal for the given housemate.</summary>
+    public void Open(string housemateName, string currentColor, IEnumerable<string> colorsInUse)
+    {
+        _housemateName = housemateName;
+        _selectedColor = currentColor;
+        _colorsInUse = colorsInUse.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        _isOpen = true;
+        StateHasChanged();
+    }
+
+    private void Close()
+    {
+        _isOpen = false;
+    }
+
+    private async Task SelectColor(string color)
+    {
+        _isOpen = false;
+        await OnColorSelected.InvokeAsync(color);
+    }
+}

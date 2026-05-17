@@ -11,8 +11,8 @@ public static class DateLabelService
         var offset = viewedDate.DayNumber - today.DayNumber;
         var formattedDate = viewedDate.ToString("d MMM yyyy", culture);
 
-        // 7+ days away (past or future) or 2–6 days in the past: no title, bold date only.
-        if (Math.Abs(offset) >= 7 || offset <= -2)
+        // 2+ days in the past or 7+ days in the future: no title, bold date only.
+        if (offset <= -2 || offset >= 7)
             return new DateLabel(null, formattedDate, TitleIsBold: false, DateIsBold: true);
 
         var title = offset switch

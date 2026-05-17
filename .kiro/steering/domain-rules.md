@@ -55,8 +55,9 @@
 
 ## Nudges (manual push reminders)
 
-- A Nudge targets only housemates whose `Attendance_Status` is `Unknown` on the specified day
-- The sender selects recipients from that pre-filtered list (can deselect)
+- The NudgeModal shows all housemates in the household (excluding the active housemate) as recipient chips
+- Housemates whose `Attendance_Status` is `Unknown` are pre-selected by default; others are shown but not selected
+- The sender can select/deselect any recipient before sending
 - The notification payload MUST include the sender's name and the target date
 - `predefinedMessageKey` and `message` are mutually exclusive; exactly one must be set
 - Custom message max 20 characters, trimmed

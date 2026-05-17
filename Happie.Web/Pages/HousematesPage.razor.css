@@ -1,24 +1,358 @@
-.logout-btn {
+/* Base layout: vertical stack, matching DayPlan/Calendar pages. */
+.housemates-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Desktop (≥641px): center content within available space, max-width 600px. */
+@media (min-width: 641px) {
+    .housemates-page {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 24px 16px;
+    }
+}
+
+/* Mobile (<641px): full viewport width with 16px horizontal padding. */
+@media (max-width: 640.98px) {
+    .housemates-page {
+        width: 100%;
+        padding: 16px;
+    }
+}
+
+/* Header: title + plus button. */
+.housemates-page__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.housemates-page__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.housemates-page__add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background-color: #4CAF50;
+    color: #ffffff;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.housemates-page__add-btn:hover {
+    background-color: #43A047;
+    transform: scale(1.05);
+}
+
+/* Add panel: input + V/X buttons. */
+.housemates-page__add-panel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Shared input style. */
+.housemates-page__input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 14px;
+    border: 2px solid #4CAF50;
+    border-radius: 12px;
+    font-size: 0.9375rem;
+    color: #333333;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.housemates-page__input:focus {
+    border-color: #388E3C;
+}
+
+/* V/X action buttons — same style as CommentsSection. */
+.housemates-page__action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease;
+}
+
+.housemates-page__action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.housemates-page__action-btn--accept {
+    color: #4CAF50;
+}
+
+.housemates-page__action-btn--accept:hover:not(:disabled) {
+    background-color: rgba(76, 175, 80, 0.15);
+}
+
+.housemates-page__action-btn--discard {
+    color: #F44336;
+}
+
+.housemates-page__action-btn--discard:hover:not(:disabled) {
+    background-color: rgba(244, 67, 54, 0.15);
+}
+
+/* Housemate list. */
+.housemates-page__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Individual housemate item. */
+.housemates-page__item {
+    background-color: #ffffff;
+    border: 2px solid transparent;
+    border-radius: 16px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.housemates-page__item:hover {
+    border-color: rgba(76, 175, 80, 0.3);
+}
+
+.housemates-page__item--active {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 1px rgba(76, 175, 80, 0.2), 0 2px 8px rgba(76, 175, 80, 0.1);
+    cursor: default;
+}
+
+.housemates-page__item--active:hover {
+    border-color: #4CAF50;
+}
+
+/* Display row: identity on left, actions on right. */
+.housemates-page__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.housemates-page__identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.housemates-page__name {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Action buttons row. */
+.housemates-page__actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* Icon buttons (edit, color, delete, move). */
+.housemates-page__icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #9ca3af;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.housemates-page__icon-btn:hover:not(:disabled) {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.housemates-page__icon-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.housemates-page__icon-btn--danger:hover:not(:disabled) {
+    background-color: rgba(244, 67, 54, 0.08);
+    color: #F44336;
+}
+
+/* Edit row (rename mode). */
+.housemates-page__edit-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Modal overlay — used by delete confirmation. */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+}
+
+/* Modal dialog — used by delete confirmation. */
+.modal-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 380px;
+    width: calc(100% - 32px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    z-index: 1001;
+}
+
+.modal-dialog h2 {
+    font-size: 1.125rem;
+    font-weight: bold;
+    margin: 0 0 16px 0;
+    color: #111827;
+}
+
+.modal-dialog p {
+    font-size: 0.9375rem;
+    color: #6b7280;
+    margin: 0 0 20px 0;
+    line-height: 1.5;
+}
+
+/* Modal action buttons. */
+.modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.modal-btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.15s ease;
+}
+
+.modal-btn--cancel {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.modal-btn--cancel:hover {
+    background-color: #e5e7eb;
+}
+
+.modal-btn--danger {
+    background-color: #F44336;
+    color: #ffffff;
+}
+
+.modal-btn--danger:hover {
+    background-color: #D32F2F;
+}
+
+/* Error toast. */
+.toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    z-index: 2000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: toast-in 0.2s ease-out;
+}
+
+.toast--error {
+    background-color: #F44336;
+    color: #ffffff;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Logout button. */
+.housemates-page__logout-btn {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 24px;
-    padding: 10px 16px;
+    padding: 12px 16px;
     background: none;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
     cursor: pointer;
-    font-size: 14px;
-    color: #555555;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
     transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    align-self: flex-end;
 }
 
-.logout-btn:hover {
+.housemates-page__logout-btn:hover {
     background-color: rgba(244, 67, 54, 0.06);
     border-color: #F44336;
     color: #F44336;
 }
 
-.logout-btn:hover svg {
+.housemates-page__logout-btn:hover svg {
     stroke: #F44336;
 }

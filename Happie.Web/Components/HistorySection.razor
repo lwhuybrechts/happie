@@ -1,4 +1,5 @@
 @using Happie.Shared.Contracts
+@inject IStringLocalizer<AppStrings> Localizer
 
 <div class="history-section">
     <h3 class="history-section__header">
@@ -8,12 +9,12 @@
             <path d="M3 3v5h5" />
             <path d="M12 7v5l4 2" />
         </svg>
-        <span>HISTORY</span>
+        <span>@Localizer["DayHistory_Heading"].Value.ToUpperInvariant()</span>
     </h3>
 
     @if (!History.Any())
     {
-        <p class="history-section__empty">No changes recorded.</p>
+        <p class="history-section__empty">@Localizer["DayHistory_Empty"]</p>
     }
     else
     {

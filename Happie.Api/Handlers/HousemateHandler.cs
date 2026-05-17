@@ -31,7 +31,9 @@ public class HousemateHandler : IHousemateHandler
 
         return housemates
             .Where(x => !x.IsDeleted)
-            .Select(x => new HousemateDto(x.Id, x.Name, x.Color))
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(x => new HousemateDto(x.Id, x.Name, x.Color, x.SortOrder))
             .ToList();
     }
 
@@ -44,19 +46,24 @@ public class HousemateHandler : IHousemateHandler
             return null;
 
         var existing = await _housemateRepository.GetAllAsync(householdId, ct);
-        var usedColors = existing
-            .Where(x => !x.IsDeleted)
+        var activeHousemates = existing.Where(x => !x.IsDeleted).ToList();
+
+        var usedColors = activeHousemates
             .Select(x => x.Color)
             .ToHashSet();
 
         var color = HousemateColors.Palette.FirstOrDefault(x => !usedColors.Contains(x))
             ?? HousemateColors.Palette[0];
 
-        var housemate = new Housemate(Guid.NewGuid(), householdId, trimmed, color, false);
+        var nextSortOrder = activeHousemates.Count > 0
+            ? activeHousemates.Max(x => x.SortOrder) + 1
+            : 0;
+
+        var housemate = new Housemate(Guid.NewGuid(), householdId, trimmed, color, false, nextSortOrder);
 
         await _housemateRepository.UpsertAsync(housemate, ct);
 
-        return new HousemateDto(housemate.Id, housemate.Name, housemate.Color);
+        return new HousemateDto(housemate.Id, housemate.Name, housemate.Color, housemate.SortOrder);
     }
 
     /// <inheritdoc/>
@@ -103,7 +110,7 @@ public class HousemateHandler : IHousemateHandler
 
         await _housemateRepository.UpsertAsync(updated, ct);
 
-        return new UpdateHousemateResult(UpdateHousemateOutcome.Success, Housemate: new HousemateDto(updated.Id, updated.Name, updated.Color));
+        return new UpdateHousemateResult(UpdateHousemateOutcome.Success, Housemate: new HousemateDto(updated.Id, updated.Name, updated.Color, updated.SortOrder));
     }
 
     /// <inheritdoc/>
@@ -136,5 +143,21 @@ public class HousemateHandler : IHousemateHandler
         await _housemateRepository.UpsertAsync(softDeleted, ct);
 
         return DeleteHousemateOutcome.Success;
+    }
+
+    /// <inheritdoc/>
+    public async Task ReorderHousematesAsync(Guid householdId, List<Guid> orderedIds, CancellationToken ct = default)
+    {
+        var housemates = await _housemateRepository.GetAllAsync(householdId, ct);
+
+        for (var i = 0; i < orderedIds.Count; i++)
+        {
+            var housemate = housemates.FirstOrDefault(x => x.Id == orderedIds[i]);
+            if (housemate is not null && housemate.SortOrder != i)
+            {
+                var updated = housemate with { SortOrder = i };
+                await _housemateRepository.UpsertAsync(updated, ct);
+            }
+        }
     }
 }

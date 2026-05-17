@@ -57,7 +57,7 @@ public class DateLabelServiceTests
     }
 
     [Fact]
-    public void GetLabel_ThreeDaysAgo_ReturnsDayName()
+    public void GetLabel_ThreeDaysAgo_ReturnsNullTitleWithBoldDate()
     {
         // Arrange.
         var today = new DateOnly(2025, 6, 18);
@@ -67,7 +67,7 @@ public class DateLabelServiceTests
         var result = DateLabelService.GetLabel(threeDaysAgo, today, EnglishCulture);
 
         // Assert.
-        new DateLabel("Sunday", "15 Jun 2025", TitleIsBold: true, DateIsBold: false)
+        new DateLabel(null, "15 Jun 2025", TitleIsBold: false, DateIsBold: true)
             .ToExpectedObject()
             .ShouldEqual(result);
     }
@@ -135,7 +135,7 @@ public class DateLabelServiceTests
     }
 
     [Fact]
-    public void GetLabel_DutchLocale_ThreeDaysAgo_UsesLocalizedDayName()
+    public void GetLabel_DutchLocale_ThreeDaysAgo_ReturnsNullTitle()
     {
         // Arrange.
         var today = new DateOnly(2025, 6, 18);
@@ -145,12 +145,11 @@ public class DateLabelServiceTests
         var result = DateLabelService.GetLabel(threeDaysAgo, today, DutchCulture);
 
         // Assert.
-        var expectedDayName = threeDaysAgo.ToString("dddd", DutchCulture);
-        Assert.Equal(expectedDayName, result.Title);
+        Assert.Null(result.Title);
     }
 
     [Fact]
-    public void GetLabel_TwoDaysAgo_ReturnsDayName()
+    public void GetLabel_TwoDaysAgo_ReturnsNullTitleWithBoldDate()
     {
         // Arrange.
         var today = new DateOnly(2025, 6, 18);
@@ -160,7 +159,7 @@ public class DateLabelServiceTests
         var result = DateLabelService.GetLabel(twoDaysAgo, today, EnglishCulture);
 
         // Assert.
-        new DateLabel("Monday", "16 Jun 2025", TitleIsBold: true, DateIsBold: false)
+        new DateLabel(null, "16 Jun 2025", TitleIsBold: false, DateIsBold: true)
             .ToExpectedObject()
             .ShouldEqual(result);
     }

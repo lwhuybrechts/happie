@@ -67,6 +67,12 @@
     {
         _currentUri = NavigationManager.Uri;
         NavigationManager.LocationChanged += OnLocationChanged;
+        ActiveHousemateService.OnChanged += OnActiveHousemateChanged;
+    }
+
+    private void OnActiveHousemateChanged()
+    {
+        InvokeAsync(StateHasChanged);
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs args)
@@ -112,5 +118,6 @@
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
+        ActiveHousemateService.OnChanged -= OnActiveHousemateChanged;
     }
 }

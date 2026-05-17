@@ -15,6 +15,9 @@ public class ActiveHousemateService
     public string? Name { get; private set; }
     public string? Color { get; private set; }
 
+    /// <summary>Raised when the active housemate changes so UI components can re-render.</summary>
+    public event Action? OnChanged;
+
     public ActiveHousemateService(IJSRuntime jsRuntime)
     {
         _jsRuntime = jsRuntime;
@@ -42,5 +45,7 @@ public class ActiveHousemateService
         Id = id;
         Name = name;
         Color = color;
+
+        OnChanged?.Invoke();
     }
 }

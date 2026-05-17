@@ -338,18 +338,18 @@ Incremental implementation of the Happie PWA: backend Azure Functions + Table St
     - CalendarPage is read-only; tapping a day navigates to `/day/{date}`
     - _Requirements: 13.1, 13.2, 13.3, 13.4_
 
-- [~] 15. Blazor WASM — HousematesPage
-  - [ ] 15.1 Implement `HousemateColorPicker` component
+- [x] 15. Blazor WASM — HousematesPage
+  - [x] 15.1 Implement `HousemateColorPicker` component
     - Display the 30-color predefined palette; highlight current color; disable colors in use by other housemates
     - _Requirements: 12.11, 12.12_
 
-  - [~] 15.2 Implement `HousematesPage` (`/housemates`)
+  - [x] 15.2 Implement `HousematesPage` (`/housemates`)
     - List active housemates; add / rename / remove / color-change actions
     - Active housemate switch without re-entering password
     - Show error toast on any save failure; leave list unchanged on failure
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.9, 12.10, 12.11, 12.12, 12.13, 12.14, 12.15_
 
-- [ ] 16. Checkpoint — Ensure all tests pass
+- [x] 16. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 17. Push notification permission and subscription — frontend

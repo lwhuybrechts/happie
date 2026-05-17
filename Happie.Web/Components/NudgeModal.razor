@@ -122,7 +122,7 @@
     private List<AttendanceDto> _recipients = [];
     private HashSet<Guid> _selectedIds = [];
 
-    /// <summary>Opens the modal, showing all housemates (excluding the active one) and pre-selecting those whose status is Unknown.</summary>
+    /// <summary>Opens the modal, showing all non-active housemates as recipient chips and pre-selecting those with Unknown status.</summary>
     public void Open()
     {
         _recipients = Attendance

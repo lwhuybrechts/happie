@@ -1,0 +1,50 @@
+@using Happie.Shared.Domain
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="color-picker" role="radiogroup" aria-label="@Localizer["ColorPicker_AriaLabel"]">
+    @foreach (var color in HousemateColors.Palette)
+    {
+        var isSelected = string.Equals(color, SelectedColor, StringComparison.OrdinalIgnoreCase);
+        var isDisabled = !isSelected && ColorsInUse.Contains(color);
+
+        <button class="color-swatch @(isSelected ? "color-swatch--selected" : "") @(isDisabled ? "color-swatch--disabled" : "")"
+                style="background-color: @color;"
+                @onclick="() => SelectColorAsync(color)"
+                disabled="@isDisabled"
+                role="radio"
+                aria-checked="@(isSelected ? "true" : "false")"
+                aria-disabled="@(isDisabled ? "true" : "false")"
+                aria-label="@(isDisabled ? Localizer["ColorPicker_ColorInUse", color] : Localizer["ColorPicker_SelectColor", color])"
+                title="@(isDisabled ? Localizer["ColorPicker_ColorInUse", color] : color)">
+            @if (isSelected)
+            {
+                <span class="color-swatch__check" aria-hidden="true">✓</span>
+            }
+        </button>
+    }
+</div>
+
+@code {
+    /// <summary>The currently selected color (hex code).</summary>
+    [Parameter, EditorRequired]
+    public string SelectedColor { get; set; } = string.Empty;
+
+    /// <summary>Set of colors already in use by other active housemates in the household.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlySet<string> ColorsInUse { get; set; } = new HashSet<string>();
+
+    /// <summary>Callback invoked when the user selects an available color.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnColorSelected { get; set; }
+
+    private async Task SelectColorAsync(string color)
+    {
+        if (string.Equals(color, SelectedColor, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        if (ColorsInUse.Contains(color))
+            return;
+
+        await OnColorSelected.InvokeAsync(color);
+    }
+}

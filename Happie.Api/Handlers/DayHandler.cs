@@ -58,6 +58,8 @@ public class DayHandler : IDayHandler
 
         var attendance = allHousemates
             .Where(x => !x.IsDeleted)
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
             .Select(x =>
             {
                 var status = attendanceByHousemateId.TryGetValue(x.Id, out var record)

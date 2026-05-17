@@ -522,7 +522,7 @@ The inverted timestamp (`DateTimeOffset.MaxValue.Ticks - entry.ChangedAt.Ticks`)
 
 ### Property 15: Nudge default recipients are housemates with unknown status
 
-*For any* set of housemates with mixed attendance statuses on a given day, the pre-selected nudge recipients should be exactly the subset whose status is "unknown".
+*For any* set of housemates with mixed attendance statuses on a given day, the NudgeModal should show all housemates (excluding the active one) as recipient chips, with the subset whose status is "unknown" pre-selected by default.
 
 **Validates: Requirements 7.4**
 

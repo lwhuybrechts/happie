@@ -1,8 +1,9 @@
 @using Happie.Shared.Contracts
 @inject HttpClient Http
+@inject IStringLocalizer<AppStrings> Localizer
 
 <div class="comments-section">
-    <h3 class="comments-section__header">COMMENTS</h3>
+    <h3 class="comments-section__header">@Localizer["DayPlan_CommentsHeading"].Value.ToUpperInvariant()</h3>
 
     <div class="comments-section__list">
         @foreach (var comment in OrderedComments)
@@ -15,7 +16,7 @@
             <div class="comments-section__row @(IsActiveHousemate(comment.HousemateId) ? "comments-section__row--clickable" : "")"
                  @onclick="() => EditExistingComment(comment)"
                  role="@(IsActiveHousemate(comment.HousemateId) ? "button" : null)"
-                 aria-label="@(IsActiveHousemate(comment.HousemateId) ? $"Edit comment by {comment.HousemateName}" : null)">
+                 aria-label="@(IsActiveHousemate(comment.HousemateId) ? Localizer["CommentEditor_EditAriaLabel", comment.HousemateName] : null)">
                 <HousemateAvatar Name="@comment.HousemateName" Color="@comment.Color" />
                 <div class="comments-section__bubble">
                     <span class="comments-section__name">@comment.HousemateName.ToUpperInvariant()</span>
@@ -34,12 +35,12 @@
                            class="comments-section__input"
                            type="text"
                            maxlength="200"
-                           placeholder="Add a comment..."
+                           placeholder="@Localizer["CommentEditor_Placeholder"]"
                            @bind="_editText"
                            @bind:event="oninput"
                            @onkeydown="HandleKeyDownAsync"
                            disabled="@_isSaving"
-                           aria-label="Comment text" />
+                           aria-label="@Localizer["CommentEditor_AriaLabel", ActiveHousemateName]" />
                 </div>
             </div>
             <div class="comments-section__actions">
@@ -71,11 +72,11 @@
             <div class="comments-section__row"
                  @onclick="StartNewComment"
                  role="button"
-                 aria-label="Add a comment">
+                 aria-label="@Localizer["CommentEditor_EditAriaLabel", ActiveHousemateName]">
                 <HousemateAvatar Name="@ActiveHousemateName" Color="@ActiveHousemateColor" />
                 <div class="comments-section__bubble comments-section__bubble--placeholder">
                     <span class="comments-section__name">@ActiveHousemateName.ToUpperInvariant()</span>
-                    <span class="comments-section__placeholder-text">Add a comment...</span>
+                    <span class="comments-section__placeholder-text">@Localizer["CommentEditor_Placeholder"]</span>
                 </div>
             </div>
         }
@@ -84,7 +85,7 @@
     @if (_showError)
     {
         <div class="toast toast--error" role="alert">
-            Failed to save comment. Please try again.
+            @Localizer["CommentEditor_SaveError"]
         </div>
     }
 </div>
@@ -118,8 +119,18 @@
     private bool _shouldFocus;
     private ElementReference _inputRef;
 
-    private IEnumerable<CommentDto> OrderedComments =>
-        Comments.OrderByDescending(x => x.LastEditedAt);
+    private IEnumerable<CommentDto> OrderedComments
+    {
+        get
+        {
+            // Order comments by housemate sort order (matching attendance list order).
+            var housemateOrder = Attendance
+                .Select((x, i) => (x.HousemateId, Index: i))
+                .ToDictionary(x => x.HousemateId, x => x.Index);
+
+            return Comments.OrderBy(x => housemateOrder.GetValueOrDefault(x.HousemateId, int.MaxValue));
+        }
+    }
 
     private bool ActiveHousemateHasComment =>
         Comments.Any(x => x.HousemateId == ActiveHousemateId);

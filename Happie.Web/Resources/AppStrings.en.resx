@@ -182,6 +182,63 @@
   <data name="Housemates_AddButton" xml:space="preserve">
     <value>Add housemate</value>
   </data>
+  <data name="Housemates_LoadError" xml:space="preserve">
+    <value>Failed to load housemates. Please try again.</value>
+  </data>
+  <data name="Housemates_SaveError" xml:space="preserve">
+    <value>Failed to save. Please try again.</value>
+  </data>
+  <data name="Housemates_NamePlaceholder" xml:space="preserve">
+    <value>New housemate name</value>
+  </data>
+  <data name="Housemates_ActiveBadge" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Housemates_Switch" xml:space="preserve">
+    <value>Switch</value>
+  </data>
+  <data name="Housemates_SwitchTo" xml:space="preserve">
+    <value>Switch to {0}</value>
+  </data>
+  <data name="Housemates_Rename" xml:space="preserve">
+    <value>Rename {0}</value>
+  </data>
+  <data name="Housemates_RenameAriaLabel" xml:space="preserve">
+    <value>New name for {0}</value>
+  </data>
+  <data name="Housemates_SaveRename" xml:space="preserve">
+    <value>Save name</value>
+  </data>
+  <data name="Housemates_CancelRename" xml:space="preserve">
+    <value>Cancel rename</value>
+  </data>
+  <data name="Housemates_Remove" xml:space="preserve">
+    <value>Remove {0}</value>
+  </data>
+  <data name="Housemates_ChangeColor" xml:space="preserve">
+    <value>Change color for {0}</value>
+  </data>
+  <data name="Housemates_MoveUp" xml:space="preserve">
+    <value>Move {0} up</value>
+  </data>
+  <data name="Housemates_MoveDown" xml:space="preserve">
+    <value>Move {0} down</value>
+  </data>
+  <data name="Housemates_RemoveConfirmTitle" xml:space="preserve">
+    <value>Remove housemate</value>
+  </data>
+  <data name="Housemates_RemoveConfirmMessage" xml:space="preserve">
+    <value>Are you sure you want to remove {0}?</value>
+  </data>
+  <data name="Housemates_RemoveLastWarning" xml:space="preserve">
+    <value>You are the last housemate. Removing {0} will delete all household data. This cannot be undone.</value>
+  </data>
+  <data name="Housemates_RemoveCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Housemates_RemoveConfirm" xml:space="preserve">
+    <value>Remove</value>
+  </data>
   <data name="Nav_DayPlan" xml:space="preserve">
     <value>Today</value>
   </data>
@@ -296,5 +353,14 @@
   </data>
   <data name="DishPanel_SaveError" xml:space="preserve">
     <value>Failed to save dish. Please try again.</value>
+  </data>
+  <data name="ColorPicker_AriaLabel" xml:space="preserve">
+    <value>Choose a color</value>
+  </data>
+  <data name="ColorPicker_SelectColor" xml:space="preserve">
+    <value>Select color {0}</value>
+  </data>
+  <data name="ColorPicker_ColorInUse" xml:space="preserve">
+    <value>Color {0} is already in use</value>
   </data>
 </root>

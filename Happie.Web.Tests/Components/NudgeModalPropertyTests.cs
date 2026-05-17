@@ -49,7 +49,7 @@ public class NudgeModalPropertyTests
     // Feature: day-plan-redesign, Property 6: Nudge recipient filtering
     // Validates: Requirements 17.3
     [Property(MaxTest = 100)]
-    public Property Open_RecipientList_ContainsOnlyUnknownExcludingActiveHousemate()
+    public Property Open_RecipientList_ContainsAllNonActiveHousematesWithUnknownPreSelected()
     {
         return Prop.ForAll(
             RecipientFilterArb,
@@ -73,21 +73,21 @@ public class NudgeModalPropertyTests
                     .Select(x => x.QuerySelector(".nudge-modal__recipient-name")?.TextContent.Trim())
                     .ToList();
 
-                // Expected recipients: Unknown status, not the active housemate.
+                // Expected recipients: all housemates except the active one.
                 var expectedRecipients = attendance
-                    .Where(x => x.Status == AttendanceStatus.Unknown && x.HousemateId != activeHousemateId)
-                    .Select(x => x.HousemateName)
+                    .Where(x => x.HousemateId != activeHousemateId)
                     .ToList();
 
                 var countMatches = recipientNames.Count == expectedRecipients.Count;
-                var allExpectedPresent = expectedRecipients.All(x => recipientNames.Contains(x));
+                var allExpectedPresent = expectedRecipients.All(x => recipientNames.Contains(x.HousemateName));
 
-                // All should be pre-selected (have the --selected class).
-                var allPreSelected = recipientChips.All(x =>
-                    x.ClassList.Contains("nudge-modal__recipient-chip--selected"));
+                // Only Unknown housemates should be pre-selected.
+                var selectedChips = cut.FindAll(".nudge-modal__recipient-chip--selected");
+                var expectedSelectedCount = expectedRecipients.Count(x => x.Status == AttendanceStatus.Unknown);
+                var selectedCountMatches = selectedChips.Count == expectedSelectedCount;
 
-                return (countMatches && allExpectedPresent && allPreSelected).Label(
-                    $"Expected {expectedRecipients.Count} pre-selected recipients, got {recipientNames.Count} chips");
+                return (countMatches && allExpectedPresent && selectedCountMatches).Label(
+                    $"Expected {expectedRecipients.Count} chips ({expectedSelectedCount} pre-selected), got {recipientNames.Count} chips ({selectedChips.Count} selected)");
             });
     }
 

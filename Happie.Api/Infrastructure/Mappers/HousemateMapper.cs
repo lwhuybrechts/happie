@@ -9,7 +9,7 @@ public class HousemateMapper : IHousemateMapper
 {
     /// <inheritdoc/>
     public Housemate ToModel(Guid householdId, HousemateEntity entity) =>
-        new(Guid.Parse(entity.RowKey), householdId, entity.Name, entity.Color, entity.IsDeleted);
+        new(Guid.Parse(entity.RowKey), householdId, entity.Name, entity.Color, entity.IsDeleted, entity.SortOrder);
 
     /// <inheritdoc/>
     public HousemateEntity ToEntity(Housemate housemate)
@@ -18,6 +18,7 @@ public class HousemateMapper : IHousemateMapper
         entity.Name = housemate.Name;
         entity.Color = housemate.Color;
         entity.IsDeleted = housemate.IsDeleted;
+        entity.SortOrder = housemate.SortOrder;
         return entity;
     }
 }

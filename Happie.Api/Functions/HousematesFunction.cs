@@ -106,4 +106,22 @@ public class HousematesFunction
             _ => throw new InvalidOperationException($"Unhandled {nameof(DeleteHousemateOutcome)}: {outcome}"),
         };
     }
+
+    /// <summary>Reorders housemates within the authenticated household.</summary>
+    [Function("ReorderHousemates")]
+    public async Task<IActionResult> ReorderAsync(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "housemates/order")] HttpRequest request,
+        FunctionContext context,
+        CancellationToken cancellationToken)
+    {
+        var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
+
+        var readResult = await RequestValidator.ReadAndValidateAsync<ReorderHousematesRequest>(request, cancellationToken);
+        if (!readResult.IsSuccess)
+            return readResult.Error;
+
+        await _housemateHandler.ReorderHousematesAsync(householdId, readResult.Body.OrderedIds, cancellationToken);
+
+        return new NoContentResult();
+    }
 }

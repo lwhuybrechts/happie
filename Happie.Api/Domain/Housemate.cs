@@ -7,5 +7,6 @@ public record Housemate(
     string Name,
     // Hex code from the predefined palette, e.g. "#E91E63".
     string Color,
-    bool IsDeleted
+    bool IsDeleted,
+    int SortOrder = 0
 );
