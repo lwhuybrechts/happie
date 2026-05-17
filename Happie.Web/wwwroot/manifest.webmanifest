@@ -1,11 +1,11 @@
 {
-  "name": "Happie.Web",
-  "short_name": "Happie.Web",
+  "name": "Happie",
+  "short_name": "Happie",
   "id": "./",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#03173d",
+  "background_color": "#4CAF50",
+  "theme_color": "#4CAF50",
   "prefer_related_applications": false,
   "icons": [
     {
