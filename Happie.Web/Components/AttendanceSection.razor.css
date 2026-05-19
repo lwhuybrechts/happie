@@ -125,16 +125,17 @@
     color: #ffffff;
 }
 
-/* Unknown active state — dark circle outline, no color fill. */
+/* Unknown active state — yellow filled. */
 .attendance-section__btn--unknown {
-    border-color: #374151;
-    color: #374151;
-    background: none;
+    background-color: #FFC107;
+    border-color: #FFC107;
+    color: #ffffff;
 }
 
 .attendance-section__btn--unknown:hover:not(:disabled) {
-    border-color: #374151;
-    color: #374151;
+    background-color: #FFB300;
+    border-color: #FFB300;
+    color: #ffffff;
 }
 
 /* NotEatingIn active state — red filled. */
