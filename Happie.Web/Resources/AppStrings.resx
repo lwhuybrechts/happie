@@ -435,4 +435,19 @@
   <data name="PushHelp_BackButton" xml:space="preserve">
     <value>Terug naar Happie</value>
   </data>
+  <data name="ChefToggle_AriaLabel" xml:space="preserve">
+    <value>Kookstatus voor {0}</value>
+  </data>
+  <data name="ChefToggle_SaveError" xml:space="preserve">
+    <value>Opslaan mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="DayHistory_ChefEnabled" xml:space="preserve">
+    <value>{0} is als kok ingesteld.</value>
+  </data>
+  <data name="DayHistory_ChefDisabled" xml:space="preserve">
+    <value>{0} is niet meer als kok ingesteld.</value>
+  </data>
+  <data name="DayHistory_AutoChefAssigned" xml:space="preserve">
+    <value>{0} is automatisch als kok ingesteld.</value>
+  </data>
 </root>

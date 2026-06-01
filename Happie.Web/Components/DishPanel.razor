@@ -109,6 +109,10 @@
     [Parameter, EditorRequired]
     public IReadOnlyList<AttendanceDto> Attendance { get; set; } = [];
 
+    /// <summary>The active housemate's ID, used for auto-chef assignment.</summary>
+    [Parameter, EditorRequired]
+    public Guid ActingHousemateId { get; set; }
+
     /// <summary>Callback invoked after a dish save, passing the new description (or null if cleared).</summary>
     [Parameter]
     public EventCallback<string?> OnDishChanged { get; set; }
@@ -191,6 +195,19 @@
         else
         {
             await OnDishChanged.InvokeAsync(string.IsNullOrEmpty(trimmed) ? null : trimmed);
+
+            // Auto-chef assignment: if a non-empty dish was saved and no one is chef yet,
+            // automatically assign the acting housemate as chef (best-effort, fire-and-forget).
+            if (!string.IsNullOrEmpty(trimmed))
+            {
+                var anyChef = Attendance.Any(x => x.IsChef);
+                if (!anyChef)
+                {
+                    _ = Http.PutAsJsonAsync(
+                        $"days/{Date}/chef/{ActingHousemateId}",
+                        new UpdateChefStatusRequest(true));
+                }
+            }
         }
     }
 }

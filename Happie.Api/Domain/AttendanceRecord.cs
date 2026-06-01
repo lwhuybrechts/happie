@@ -7,5 +7,6 @@ public record AttendanceRecord(
     Guid HouseholdId,
     Guid HousemateId,
     DateOnly Date,
-    AttendanceStatus Status
+    AttendanceStatus Status,
+    bool IsChef
 );

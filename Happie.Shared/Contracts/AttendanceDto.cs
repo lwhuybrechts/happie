@@ -8,4 +8,5 @@ public record AttendanceDto(
     [property: JsonPropertyName("housemateId")] Guid HousemateId,
     [property: JsonPropertyName("housemateName")] string HousemateName,
     [property: JsonPropertyName("color")] string Color,
-    [property: JsonPropertyName("status")] AttendanceStatus Status);
+    [property: JsonPropertyName("status")] AttendanceStatus Status,
+    [property: JsonPropertyName("isChef")] bool IsChef);

@@ -61,4 +61,27 @@ public class AttendanceRepository : BaseRepository<AttendanceRecordEntity>, IAtt
         var entities = await QueryByPartitionAsync(householdId.ToString(), ct);
         return entities.Select(x => _mapper.ToModel(householdId, x)).ToList();
     }
+
+    /// <inheritdoc/>
+    public async Task UpsertChefStatusAsync(Guid householdId, DateOnly date, Guid housemateId, bool isChef, CancellationToken cancellationToken = default)
+    {
+        var partitionKey = householdId.ToString();
+        var rowKey = $"{date:yyyy-MM-dd}_{housemateId}";
+
+        var existing = await GetAsync(partitionKey, rowKey, cancellationToken);
+
+        if (existing is not null)
+        {
+            existing.IsChef = isChef;
+            await UpsertAsync(existing, cancellationToken);
+        }
+        else
+        {
+            var entity = new AttendanceRecordEntity(householdId, date, housemateId);
+            entity.HousemateId = housemateId;
+            entity.Status = AttendanceStatus.Unknown;
+            entity.IsChef = isChef;
+            await UpsertAsync(entity, cancellationToken);
+        }
+    }
 }

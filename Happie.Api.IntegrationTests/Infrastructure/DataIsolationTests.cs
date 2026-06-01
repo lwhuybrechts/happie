@@ -95,7 +95,7 @@ public class DataIsolationTests
                 var (householdA, householdB, housemateId, date) = args;
 
                 // Arrange.
-                var record = new AttendanceRecord(householdA, housemateId, date, AttendanceStatus.EatingIn);
+                var record = new AttendanceRecord(householdA, housemateId, date, AttendanceStatus.EatingIn, false);
                 await _attendanceRepository.UpsertAsync(record);
 
                 // Act.

@@ -225,7 +225,7 @@ public class DayPropertyTests
 
                 for (var i = 0; i < housemates.Count; i++)
                 {
-                    var record = new AttendanceRecord(householdId, housemates[i].Id, date, attendanceStatuses[i]);
+                    var record = new AttendanceRecord(householdId, housemates[i].Id, date, attendanceStatuses[i], false);
                     await _attendanceRepository.UpsertAsync(record);
                 }
 
@@ -247,7 +247,7 @@ public class DayPropertyTests
                 // Clean up.
                 foreach (var housemate in housemates)
                 {
-                    await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemate.Id, date, AttendanceStatus.Unknown));
+                    await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemate.Id, date, AttendanceStatus.Unknown, false));
                     await _housemateRepository.DeleteAsync(householdId, housemate.Id);
                 }
 

@@ -31,12 +31,14 @@
         <DishPanel Date="@Date"
                    Dish="@_dayPlan.Dish"
                    Attendance="@_dayPlan.Attendance"
+                   ActingHousemateId="@_activeHousemateId"
                    OnDishChanged="OnDishChangedAsync" />
 
         <AttendanceSection Date="@Date"
                            Attendance="@_dayPlan.Attendance"
                            OnNudgeClicked="OpenNudgeModal"
-                           OnStatusChanged="OnAttendanceChangedAsync" />
+                           OnStatusChanged="OnAttendanceChangedAsync"
+                           OnChefChanged="OnChefChangedAsync" />
 
         <CommentsSection Date="@Date"
                          Comments="@_dayPlan.Comments"
@@ -144,6 +146,12 @@
     }
 
     private async Task OnAttendanceChangedAsync((Guid HousemateId, AttendanceStatus Status) change)
+    {
+        // Refresh the day plan data from the API to get updated state.
+        await LoadDayPlanAsync();
+    }
+
+    private async Task OnChefChangedAsync((Guid HousemateId, bool IsChef) change)
     {
         // Refresh the day plan data from the API to get updated state.
         await LoadDayPlanAsync();

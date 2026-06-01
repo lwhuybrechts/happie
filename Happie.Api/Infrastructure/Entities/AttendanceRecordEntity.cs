@@ -22,4 +22,7 @@ public class AttendanceRecordEntity : MyTableEntity
 
     /// <summary>The attendance status of the housemate for this day.</summary>
     public AttendanceStatus Status { get; set; }
+
+    /// <summary>Whether the housemate is marked as chef for this day.</summary>
+    public bool IsChef { get; set; }
 }

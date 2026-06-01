@@ -38,6 +38,12 @@ public interface IDayHandler
     Task<bool> DeleteCommentAsync(Guid householdId, DateOnly date, Guid housemateId, Guid actingHousemateId, CancellationToken ct = default);
 
     /// <summary>
+    /// Upserts the chef status for a housemate on a given date and writes a history entry.
+    /// Returns <c>false</c> if the housemate does not exist or is soft-deleted.
+    /// </summary>
+    Task<bool> UpsertChefStatusAsync(Guid householdId, DateOnly date, Guid housemateId, bool isChef, Guid actingHousemateId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Returns attendance summaries (housemate color + status) for all days in the given date range.
     /// Only housemates with <c>EatingIn</c> status contribute a color to each day's summary.
     /// </summary>

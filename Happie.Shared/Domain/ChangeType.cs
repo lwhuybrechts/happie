@@ -6,4 +6,5 @@ public enum ChangeType
     Attendance,
     Dish,
     Comment,
+    ChefStatusChanged,
 }

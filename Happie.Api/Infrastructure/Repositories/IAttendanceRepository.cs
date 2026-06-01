@@ -20,4 +20,7 @@ public interface IAttendanceRepository
 
     /// <summary>Gets all attendance records for a household across all dates.</summary>
     Task<IReadOnlyList<AttendanceRecord>> GetAllByHouseholdAsync(Guid householdId, CancellationToken ct = default);
+
+    /// <summary>Upserts only the IsChef field for a housemate on a given date, preserving existing attendance status.</summary>
+    Task UpsertChefStatusAsync(Guid householdId, DateOnly date, Guid housemateId, bool isChef, CancellationToken cancellationToken = default);
 }

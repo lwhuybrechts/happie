@@ -160,3 +160,41 @@
     font-size: 0.8125rem;
     margin-top: 8px;
 }
+
+/* Chef toggle button — inactive state (muted). */
+.attendance-section__chef-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #d1d5db;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.attendance-section__chef-btn:hover:not(:disabled) {
+    border-color: #6b7280;
+    color: #6b7280;
+}
+
+.attendance-section__chef-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Chef toggle button — active state (blue filled). */
+.attendance-section__chef-btn--active {
+    background-color: #42A5F5;
+    border-color: #42A5F5;
+    color: #ffffff;
+}
+
+.attendance-section__chef-btn--active:hover:not(:disabled) {
+    background-color: #1E88E5;
+    border-color: #1E88E5;
+    color: #ffffff;
+}

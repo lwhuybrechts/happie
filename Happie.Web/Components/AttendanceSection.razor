@@ -25,6 +25,16 @@
                     <span class="attendance-section__name">@item.HousemateName</span>
                 </div>
                 <div class="attendance-section__buttons">
+                    <button class="attendance-section__chef-btn @(GetIsChef(item.HousemateId) ? "attendance-section__chef-btn--active" : "")"
+                            @onclick="() => ToggleChefAsync(item.HousemateId)"
+                            disabled="@(_chefSavingIds.Contains(item.HousemateId))"
+                            aria-pressed="@(GetIsChef(item.HousemateId) ? "true" : "false")"
+                            aria-label="@(string.Format(Localizer["ChefToggle_AriaLabel"], item.HousemateName))">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path stroke-width="1.8" d="M11 2.5c-1.1 0-2.1.5-2.7 1.2C7.6 3.2 6.6 2.8 5.5 3.2 3.9 3.8 3.2 5.5 3.2 6.8c0 1.8.9 3.2 2.3 4.1v2.6h11v-2.6c1.4-.9 2.3-2.3 2.3-4.1 0-1.3-.7-3-2.3-3.6-1.1-.4-2.1 0-2.8.5C13.1 3 12.1 2.5 11 2.5z"/>
+                            <rect stroke-width="1.4" x="5.5" y="14.5" width="11" height="4" rx="1"/>
+                        </svg>
+                    </button>
                     <button class="attendance-section__btn @(GetStatus(item.HousemateId) == AttendanceStatus.EatingIn ? "attendance-section__btn--eating-in" : "")"
                             @onclick="() => SetStatusAsync(item.HousemateId, AttendanceStatus.EatingIn)"
                             disabled="@IsDisabled(item.HousemateId)"
@@ -76,10 +86,18 @@
     [Parameter]
     public EventCallback<(Guid HousemateId, AttendanceStatus Status)> OnStatusChanged { get; set; }
 
+    /// <summary>Callback invoked when a housemate's chef status is toggled.</summary>
+    [Parameter]
+    public EventCallback<(Guid HousemateId, bool IsChef)> OnChefChanged { get; set; }
+
     // Tracks optimistic overrides per housemate during save.
     private readonly Dictionary<Guid, AttendanceStatus> _optimisticOverrides = new();
     private readonly HashSet<Guid> _savingIds = new();
     private Guid? _errorHousemateId;
+
+    // Chef toggle optimistic UI state.
+    private readonly Dictionary<Guid, bool> _chefOverrides = new();
+    private readonly HashSet<Guid> _chefSavingIds = new();
 
     private AttendanceStatus GetStatus(Guid housemateId)
     {
@@ -120,6 +138,46 @@
             // Success: clear the override and notify the parent.
             _optimisticOverrides.Remove(housemateId);
             await OnStatusChanged.InvokeAsync((housemateId, newStatus));
+        }
+    }
+
+    private bool GetIsChef(Guid housemateId)
+    {
+        if (_chefOverrides.TryGetValue(housemateId, out var overrideValue))
+            return overrideValue;
+        var item = Attendance.FirstOrDefault(x => x.HousemateId == housemateId);
+        return item?.IsChef ?? false;
+    }
+
+    private async Task ToggleChefAsync(Guid housemateId)
+    {
+        if (_chefSavingIds.Contains(housemateId))
+            return;
+
+        var currentIsChef = GetIsChef(housemateId);
+        var newIsChef = !currentIsChef;
+
+        // Optimistic update.
+        _chefOverrides[housemateId] = newIsChef;
+        _chefSavingIds.Add(housemateId);
+
+        var response = await Http.PutAsJsonAsync(
+            $"days/{Date}/chef/{housemateId}",
+            new UpdateChefStatusRequest(newIsChef));
+
+        _chefSavingIds.Remove(housemateId);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            // Rollback.
+            _chefOverrides.Remove(housemateId);
+            _errorHousemateId = housemateId;
+        }
+        else
+        {
+            // Success: clear override and notify the parent.
+            _chefOverrides.Remove(housemateId);
+            await OnChefChanged.InvokeAsync((housemateId, newIsChef));
         }
     }
 }

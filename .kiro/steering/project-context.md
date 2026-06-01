@@ -131,24 +131,29 @@ PartitionKey is always `HouseholdId` (string) so all records for a household are
 - [Azurite](https://learn.microsoft.com/azure/storage/common/storage-use-azurite) running on default ports (Table: 10002)
 - `az login` is only required if `KeyVaultUri` is set in `local.settings.json`; if it is absent the app skips Key Vault entirely and reads secrets directly from `local.settings.json`
 
-### Start the API
+### Start the Full App
 
-```bash
-cd Happie.Api
-func start
-```
+When asked to "start the app" or "run locally", start **all three** processes in this order:
 
-The API starts on **http://localhost:7071**. All function endpoints are listed in the startup output.
+1. **Azurite** (Table Storage emulator — must be running before the API starts):
+   ```bash
+   azurite --silent
+   ```
+
+2. **API** (Azure Functions):
+   ```bash
+   cd Happie.Api
+   func start
+   ```
+   The API starts on **http://localhost:7071**. All function endpoints are listed in the startup output.
+
+3. **Frontend** (Blazor WASM):
+   ```bash
+   dotnet run --project Happie.Web --launch-profile http
+   ```
+   The frontend starts on **http://localhost:5195**.
 
 The `local.settings.json` includes a `Host.CORS` entry that allows requests from the Blazor dev server (`http://localhost:5195`). This is required because the browser enforces CORS when the frontend and API run on different ports locally.
-
-### Start the Frontend
-
-```bash
-dotnet run --project Happie.Web --launch-profile http
-```
-
-The frontend starts on **http://localhost:5195**.
 
 ### Applying Changes During Development
 

@@ -24,7 +24,7 @@ public class AttendanceSectionPropertyTests
         ArbMap.Default.GeneratorFor<Guid>()
             .SelectMany(id => StatusArb.Generator
                 .SelectMany(status => Gen.Elements(HousemateColors.Palette.ToArray())
-                    .Select(color => new AttendanceDto(id, $"Housemate-{id.ToString()[..8]}", color, status))))
+                    .Select(color => new AttendanceDto(id, $"Housemate-{id.ToString()[..8]}", color, status, false))))
             .ToArbitrary();
 
     // Feature: day-plan-redesign, Property 5: Attendance status button highlight mapping

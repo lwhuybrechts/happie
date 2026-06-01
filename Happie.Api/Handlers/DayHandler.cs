@@ -65,7 +65,10 @@ public class DayHandler : IDayHandler
                 var status = attendanceByHousemateId.TryGetValue(x.Id, out var record)
                     ? record.Status
                     : AttendanceStatus.Unknown;
-                return new AttendanceDto(x.Id, x.Name, x.Color, status);
+                var isChef = attendanceByHousemateId.TryGetValue(x.Id, out var chefRecord)
+                    ? chefRecord.IsChef
+                    : false;
+                return new AttendanceDto(x.Id, x.Name, x.Color, status, isChef);
             })
             .ToList();
 
@@ -104,7 +107,11 @@ public class DayHandler : IDayHandler
         if (housemate is null)
             return false;
 
-        var record = new AttendanceRecord(householdId, housemateId, date, status);
+        // Read existing record to preserve IsChef value (default to false if no record exists).
+        var existingRecord = await _attendanceRepository.GetAsync(householdId, date, housemateId, ct);
+        var isChef = existingRecord?.IsChef ?? false;
+
+        var record = new AttendanceRecord(householdId, housemateId, date, status, isChef);
         var historyEntry = new DayHistoryEntry(
             householdId,
             date,
@@ -194,6 +201,29 @@ public class DayHandler : IDayHandler
         // Send auto-notifications for today and tomorrow only; failures must not interrupt the save.
         if (IsTodayOrTomorrow(date))
             await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.Description, ct);
+
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> UpsertChefStatusAsync(Guid householdId, DateOnly date, Guid housemateId, bool isChef, Guid actingHousemateId, CancellationToken cancellationToken = default)
+    {
+        var housemate = await _housemateRepository.GetAsync(householdId, housemateId, cancellationToken);
+        if (housemate is null || housemate.IsDeleted)
+            return false;
+
+        var statusDescription = isChef ? "enabled" : "disabled";
+        var historyEntry = new DayHistoryEntry(
+            householdId,
+            date,
+            DateTimeOffset.UtcNow,
+            actingHousemateId,
+            ChangeType.ChefStatusChanged,
+            $"{housemate.Name}'s chef status {statusDescription}.");
+
+        await Task.WhenAll(
+            _attendanceRepository.UpsertChefStatusAsync(householdId, date, housemateId, isChef, cancellationToken),
+            _dayHistoryRepository.AddAsync(historyEntry, cancellationToken));
 
         return true;
     }

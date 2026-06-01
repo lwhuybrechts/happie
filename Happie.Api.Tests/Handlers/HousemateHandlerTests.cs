@@ -59,7 +59,7 @@ public class HousemateHandlerTests
         SetupGetHousemate(householdId, housemateId, CreateHousemate(householdId, housemateId));
         SetupGetAllAttendanceByHousehold(householdId, new List<AttendanceRecord>
         {
-            new(householdId, housemateId, DateOnly.FromDateTime(DateTime.Today), AttendanceStatus.EatingIn),
+            new(householdId, housemateId, DateOnly.FromDateTime(DateTime.Today), AttendanceStatus.EatingIn, false),
         });
 
         // Act.

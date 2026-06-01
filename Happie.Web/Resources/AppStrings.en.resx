@@ -435,4 +435,19 @@
   <data name="PushHelp_BackButton" xml:space="preserve">
     <value>Back to Happie</value>
   </data>
+  <data name="ChefToggle_AriaLabel" xml:space="preserve">
+    <value>Chef status for {0}</value>
+  </data>
+  <data name="ChefToggle_SaveError" xml:space="preserve">
+    <value>Save failed. Please try again.</value>
+  </data>
+  <data name="DayHistory_ChefEnabled" xml:space="preserve">
+    <value>{0}'s chef status enabled.</value>
+  </data>
+  <data name="DayHistory_ChefDisabled" xml:space="preserve">
+    <value>{0}'s chef status disabled.</value>
+  </data>
+  <data name="DayHistory_AutoChefAssigned" xml:space="preserve">
+    <value>{0} was automatically assigned as chef.</value>
+  </data>
 </root>

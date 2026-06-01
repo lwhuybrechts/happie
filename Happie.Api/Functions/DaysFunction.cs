@@ -146,6 +146,36 @@ public class DaysFunction
         return new NoContentResult();
     }
 
+    /// <summary>Upserts the chef status for a housemate on the given date.</summary>
+    [Function("PutChefStatus")]
+    public async Task<IActionResult> PutChefStatusAsync(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "days/{date}/chef/{housemateId}")] HttpRequest request,
+        string date,
+        string housemateId,
+        FunctionContext context,
+        CancellationToken cancellationToken)
+    {
+        var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
+        var actingHousemateId = (Guid)context.Items[FunctionContextKeys.HousemateId];
+
+        if (!RouteParser.TryParseDate(date, out var parsedDate, out var dateError))
+            return dateError;
+
+        if (!RouteParser.TryParseGuid(housemateId, out var parsedHousemateId, out var guidError))
+            return guidError;
+
+        var readResult = await RequestValidator.ReadAndValidateAsync<UpdateChefStatusRequest>(request, cancellationToken);
+        if (!readResult.IsSuccess)
+            return readResult.Error;
+
+        var found = await _dayHandler.UpsertChefStatusAsync(householdId, parsedDate, parsedHousemateId, readResult.Body.IsChef, actingHousemateId, cancellationToken);
+
+        if (!found)
+            return new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound));
+
+        return new NoContentResult();
+    }
+
     /// <summary>Deletes the comment for a housemate on the given date.</summary>
     [Function("DeleteComment")]
     public async Task<IActionResult> DeleteCommentAsync(
