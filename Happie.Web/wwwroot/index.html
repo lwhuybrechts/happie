@@ -285,6 +285,42 @@
             _swipeRegistry.delete(element);
         };
 
+        // Calendar scroll: wheel events change the selected day.
+        const _calendarScrollRegistry = new Map();
+
+        happie.registerCalendarScroll = function (element, dotNetRef) {
+            if (!element) return;
+
+            // Accumulate small deltaY values before triggering a day change.
+            let accumulated = 0;
+            const STEP_THRESHOLD = 50;
+
+            const onWheel = (e) => {
+                e.preventDefault();
+                accumulated += e.deltaY;
+
+                if (Math.abs(accumulated) >= STEP_THRESHOLD) {
+                    const steps = Math.sign(accumulated);
+                    accumulated = 0;
+                    if (steps > 0)
+                        dotNetRef.invokeMethodAsync('ScrollNextDay');
+                    else
+                        dotNetRef.invokeMethodAsync('ScrollPreviousDay');
+                }
+            };
+
+            element.addEventListener('wheel', onWheel, { passive: false });
+            _calendarScrollRegistry.set(element, { onWheel, dotNetRef });
+        };
+
+        happie.unregisterCalendarScroll = function (element) {
+            if (!element) return;
+            const entry = _calendarScrollRegistry.get(element);
+            if (!entry) return;
+            element.removeEventListener('wheel', entry.onWheel);
+            _calendarScrollRegistry.delete(element);
+        };
+
         // Listen for navigation messages from the service worker (notification click while app is open).
         navigator.serviceWorker.addEventListener('message', function (event) {
             if (event.data && event.data.type === 'navigate' && event.data.url) {

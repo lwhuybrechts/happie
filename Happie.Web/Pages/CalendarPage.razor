@@ -5,8 +5,10 @@
 @using Happie.Shared.Domain
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
 @inject IStringLocalizer<AppStrings> Localizer
 @inject LocaleService LocaleService
+@implements IAsyncDisposable
 
 <PageTitle>Happie</PageTitle>
 
@@ -15,7 +17,7 @@
     var isOnTodaysMonth = _viewedMonth.Year == today.Year && _viewedMonth.Month == today.Month;
 }
 
-<div class="calendar-page">
+<div class="calendar-page" @ref="_calendarElement">
     @if (_selectedDate.HasValue && _selectedDate.Value.Year == _viewedMonth.Year && _selectedDate.Value.Month == _viewedMonth.Month)
     {
         <DateNavigationPanel ViewedDate="@GetViewedDate()"
@@ -62,6 +64,8 @@
     private DateOnly _viewedMonth;
     private DateOnly? _selectedDate;
     private bool _isLoading;
+    private ElementReference _calendarElement;
+    private DotNetObjectReference<CalendarPage>? _dotNetRef;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -78,6 +82,51 @@
         }
 
         await LoadAttendanceDataAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("happie.registerCalendarScroll", _calendarElement, _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task ScrollNextDay()
+    {
+        var current = _selectedDate ?? DateOnly.FromDateTime(DateTime.Today);
+        var next = current.AddDays(1);
+
+        _selectedDate = next;
+
+        // If the new date crosses into the next month, switch the viewed month.
+        if (next.Month != _viewedMonth.Month || next.Year != _viewedMonth.Year)
+        {
+            _viewedMonth = new DateOnly(next.Year, next.Month, 1);
+            await LoadAttendanceDataAsync();
+        }
+
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task ScrollPreviousDay()
+    {
+        var current = _selectedDate ?? DateOnly.FromDateTime(DateTime.Today);
+        var previous = current.AddDays(-1);
+
+        _selectedDate = previous;
+
+        // If the new date crosses into the previous month, switch the viewed month.
+        if (previous.Month != _viewedMonth.Month || previous.Year != _viewedMonth.Year)
+        {
+            _viewedMonth = new DateOnly(previous.Year, previous.Month, 1);
+            await LoadAttendanceDataAsync();
+        }
+
+        StateHasChanged();
     }
 
     private string GetMonthLabel()
@@ -147,5 +196,11 @@
     private static (DateOnly Start, DateOnly End) GetVisibleDateRange(DateOnly viewedMonth)
     {
         return CalendarGridService.GetVisibleDateRange(viewedMonth);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("happie.unregisterCalendarScroll", _calendarElement);
+        _dotNetRef?.Dispose();
     }
 }
