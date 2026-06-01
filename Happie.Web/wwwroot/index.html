@@ -296,6 +296,11 @@
             const STEP_THRESHOLD = 50;
 
             const onWheel = (e) => {
+                // Only intercept scroll when hovering over the calendar grid itself.
+                const grid = element.querySelector('.calendar-grid');
+                if (!grid || !grid.contains(e.target))
+                    return;
+
                 e.preventDefault();
                 accumulated += e.deltaY;
 
