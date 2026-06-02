@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Happie.Api.Domain;
 using Happie.Api.Infrastructure.Repositories;
 using Happie.Api.Results;
 using Happie.Api.Services;
@@ -120,13 +121,17 @@ public class PushHandler : IPushHandler
         // Exclude the actor from recipients.
         var recipients = subscriptions.Where(x => x.HousemateId != actorHousemateId).ToList();
 
-        // Fetch actor name for the payload.
-        var actor = await _housemateRepository.GetAsync(householdId, actorHousemateId, ct);
-        var actorName = actor?.Name ?? string.Empty;
+        // Fetch actor name and all housemates for resolving IDs in parameters.
+        var housemates = await _housemateRepository.GetAllAsync(householdId, ct);
+        var housemateById = housemates.ToDictionary(x => x.Id);
+        var actorName = housemateById.TryGetValue(actorHousemateId, out var actor) ? actor.Name : string.Empty;
+
+        // Resolve housemate IDs in parameters to current names before rendering notifications.
+        var resolvedParameters = ParameterNameResolver.Resolve(parameters, housemateById);
 
         foreach (var subscription in recipients)
         {
-            var body = _sharedStringResolver.Resolve(translationKey, parameters, subscription.Locale);
+            var body = _sharedStringResolver.Resolve(translationKey, resolvedParameters, subscription.Locale);
             var payload = BuildAutoNotificationPayload(actorName, date, body, householdId);
 
             try

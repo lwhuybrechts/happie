@@ -90,11 +90,13 @@ public class DayHandler : IDayHandler
             .ToList();
 
         // Build history entry DTOs — already in reverse-chronological order from the repository.
+        // Resolve housemate IDs in the parameters JSON to current names before sending to the client.
         var historyDtos = historyEntries
             .Select(x =>
             {
                 var name = ResolveHousemateName(housemateById, x.ChangedByHousemateId);
-                return new HistoryEntryDto(x.ChangedAt, x.ChangedByHousemateId, name, x.ChangeType, x.TranslationKey, x.Parameters);
+                var resolvedParameters = ParameterNameResolver.Resolve(x.Parameters, housemateById);
+                return new HistoryEntryDto(x.ChangedAt, x.ChangedByHousemateId, name, x.ChangeType, x.TranslationKey, resolvedParameters);
             })
             .ToList();
 
@@ -115,7 +117,7 @@ public class DayHandler : IDayHandler
         var record = new AttendanceRecord(householdId, housemateId, date, status, isChef);
         var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
         {
-            ["name"] = housemate.Name,
+            ["name"] = housemateId.ToString(),
             ["status"] = status.ToString()
         });
         var historyEntry = new DayHistoryEntry(
@@ -174,7 +176,7 @@ public class DayHandler : IDayHandler
         var comment = new Comment(householdId, housemateId, date, text, DateTimeOffset.UtcNow);
         var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
         {
-            ["name"] = housemate.Name,
+            ["name"] = housemateId.ToString(),
             ["text"] = text
         });
         var historyEntry = new DayHistoryEntry(
@@ -206,7 +208,7 @@ public class DayHandler : IDayHandler
 
         var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
         {
-            ["name"] = housemate.Name
+            ["name"] = housemateId.ToString(),
         });
         var historyEntry = new DayHistoryEntry(
             householdId,
@@ -237,7 +239,7 @@ public class DayHandler : IDayHandler
 
         var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
         {
-            ["name"] = housemate.Name,
+            ["name"] = housemateId.ToString(),
             ["enabled"] = isChef ? "true" : "false"
         });
         var historyEntry = new DayHistoryEntry(

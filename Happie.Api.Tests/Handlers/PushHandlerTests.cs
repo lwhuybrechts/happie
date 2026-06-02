@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Happie.Api.Handlers;
 using Happie.Api.Infrastructure.Repositories;
 using Happie.Api.Services;
@@ -117,7 +118,11 @@ public class PushHandlerTests
         var otherSubscription = CreateSubscription(householdId, otherHousemateId);
 
         SetupGetAllSubscriptions(householdId, new List<Domain.PushSubscription> { actorSubscription, otherSubscription });
-        SetupGetHousemate(householdId, actorId, CreateHousemate(householdId, actorId, "Alice"));
+        SetupGetAllHousemates(householdId, new List<Housemate>
+        {
+            CreateHousemate(householdId, actorId, "Alice"),
+            CreateHousemate(householdId, otherHousemateId, "Bob"),
+        });
         SetupPushSend();
 
         // Act.
@@ -145,7 +150,11 @@ public class PushHandlerTests
         var recipientSubscription = CreateSubscription(householdId, recipientId);
 
         SetupGetAllSubscriptions(householdId, new List<Domain.PushSubscription> { recipientSubscription });
-        SetupGetHousemate(householdId, actorId, CreateHousemate(householdId, actorId, "Alice"));
+        SetupGetAllHousemates(householdId, new List<Housemate>
+        {
+            CreateHousemate(householdId, actorId, "Alice"),
+            CreateHousemate(householdId, recipientId, "Bob"),
+        });
 
         _pushNotificationServiceMock
             .Setup(x => x.SendAsync(It.IsAny<Domain.PushSubscription>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -177,7 +186,12 @@ public class PushHandlerTests
         var englishSubscription = CreateSubscription(householdId, englishRecipientId, Locale.En);
 
         SetupGetAllSubscriptions(householdId, new List<Domain.PushSubscription> { dutchSubscription, englishSubscription });
-        SetupGetHousemate(householdId, actorId, CreateHousemate(householdId, actorId, "Alice"));
+        SetupGetAllHousemates(householdId, new List<Housemate>
+        {
+            CreateHousemate(householdId, actorId, "Alice"),
+            CreateHousemate(householdId, dutchRecipientId, "Bob"),
+            CreateHousemate(householdId, englishRecipientId, "Charlie"),
+        });
         SetupPushSend();
 
         var capturedPayloads = new Dictionary<Guid, string>();
@@ -193,6 +207,48 @@ public class PushHandlerTests
         // Assert.
         Assert.Contains("Mee-eten", capturedPayloads[dutchRecipientId]);
         Assert.Contains("Eating in", capturedPayloads[englishRecipientId]);
+    }
+
+    /// <summary>Auto-notifications resolve GUID-based "name" parameter to current housemate name in payload.</summary>
+    [Fact]
+    public async Task SendAutoNotificationsAsync_GuidNameParameter_ResolvesToCurrentName()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var actorId = Guid.NewGuid();
+        var subjectHousemateId = Guid.NewGuid();
+        var recipientId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var translationKey = TranslationKeys.HistoryAttendanceSet;
+        var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            ["name"] = subjectHousemateId.ToString(),
+            ["status"] = "EatingIn"
+        });
+
+        var recipientSubscription = CreateSubscription(householdId, recipientId, Locale.En);
+
+        SetupGetAllSubscriptions(householdId, new List<Domain.PushSubscription> { recipientSubscription });
+        SetupGetAllHousemates(householdId, new List<Housemate>
+        {
+            CreateHousemate(householdId, actorId, "Alice"),
+            CreateHousemate(householdId, subjectHousemateId, "Bob"),
+            CreateHousemate(householdId, recipientId, "Charlie"),
+        });
+
+        var capturedPayload = string.Empty;
+        _pushNotificationServiceMock
+            .Setup(x => x.SendAsync(It.IsAny<Domain.PushSubscription>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback<Domain.PushSubscription, string, CancellationToken>((_, payload, _) =>
+                capturedPayload = payload)
+            .Returns(Task.CompletedTask);
+
+        // Act.
+        await _sut.SendAutoNotificationsAsync(householdId, actorId, date, translationKey, parameters);
+
+        // Assert.
+        Assert.Contains("Bob", capturedPayload);
+        Assert.DoesNotContain(subjectHousemateId.ToString(), capturedPayload);
     }
 
     /// <summary>Auto-notification excludes the actor from recipients.</summary>
@@ -211,7 +267,11 @@ public class PushHandlerTests
         var recipientSubscription = CreateSubscription(householdId, recipientId, Locale.En);
 
         SetupGetAllSubscriptions(householdId, new List<Domain.PushSubscription> { actorSubscription, recipientSubscription });
-        SetupGetHousemate(householdId, actorId, CreateHousemate(householdId, actorId, "Bob"));
+        SetupGetAllHousemates(householdId, new List<Housemate>
+        {
+            CreateHousemate(householdId, actorId, "Bob"),
+            CreateHousemate(householdId, recipientId, "Charlie"),
+        });
         SetupPushSend();
 
         // Act.
@@ -337,6 +397,13 @@ public class PushHandlerTests
     private void SetupGetAllSubscriptions(Guid householdId, List<Domain.PushSubscription> returns)
     {
         _pushSubscriptionRepositoryMock
+            .Setup(x => x.GetAllAsync(householdId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(returns);
+    }
+
+    private void SetupGetAllHousemates(Guid householdId, List<Housemate> returns)
+    {
+        _housemateRepositoryMock
             .Setup(x => x.GetAllAsync(householdId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(returns);
     }

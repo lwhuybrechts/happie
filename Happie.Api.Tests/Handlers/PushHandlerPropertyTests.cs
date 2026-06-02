@@ -99,10 +99,15 @@ public class PushHandlerPropertyTests
                     .Append(CreateSubscription(householdId, actorId))
                     .ToList();
 
+                var allHousemates = otherIds
+                    .Select(x => CreateHousemate(householdId, x, "Other"))
+                    .Append(CreateHousemate(householdId, actorId, "Alice"))
+                    .ToList();
+
                 var notifiedIds = new List<Guid>();
 
                 SetupGetAllSubscriptions(householdId, allSubscriptions);
-                SetupGetHousemate(householdId, actorId, CreateHousemate(householdId, actorId, "Alice"));
+                SetupGetAllHousemates(householdId, allHousemates);
                 SetupPushSendTrack(notifiedIds);
 
                 // Act.
@@ -140,7 +145,11 @@ public class PushHandlerPropertyTests
                 var capturedPayloads = new List<string>();
 
                 SetupGetAllSubscriptions(householdId, new List<Domain.PushSubscription> { CreateSubscription(householdId, recipientId) });
-                SetupGetHousemate(householdId, actorId, CreateHousemate(householdId, actorId, actorName));
+                SetupGetAllHousemates(householdId, new List<Housemate>
+                {
+                    CreateHousemate(householdId, actorId, actorName),
+                    CreateHousemate(householdId, recipientId, "Recipient"),
+                });
                 SetupPushSendCapture(capturedPayloads);
 
                 // Act.
@@ -178,7 +187,11 @@ public class PushHandlerPropertyTests
                 var date = new DateOnly(2025, 7, 15);
 
                 SetupGetAllSubscriptions(householdId, new List<Domain.PushSubscription> { CreateSubscription(householdId, recipientId) });
-                SetupGetHousemate(householdId, actorId, CreateHousemate(householdId, actorId, "Alice"));
+                SetupGetAllHousemates(householdId, new List<Housemate>
+                {
+                    CreateHousemate(householdId, actorId, "Alice"),
+                    CreateHousemate(householdId, recipientId, "Bob"),
+                });
                 SetupPushSendThrows();
 
                 // Act.
@@ -215,6 +228,13 @@ public class PushHandlerPropertyTests
     private void SetupGetAllSubscriptions(Guid householdId, List<Domain.PushSubscription> returns)
     {
         _pushSubscriptionRepositoryMock
+            .Setup(x => x.GetAllAsync(householdId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(returns);
+    }
+
+    private void SetupGetAllHousemates(Guid householdId, List<Housemate> returns)
+    {
+        _housemateRepositoryMock
             .Setup(x => x.GetAllAsync(householdId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(returns);
     }

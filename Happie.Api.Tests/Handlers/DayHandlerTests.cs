@@ -215,7 +215,7 @@ public class DayHandlerTests
         Assert.NotNull(capturedEntry);
         Assert.Equal(TranslationKeys.HistoryAttendanceSet, capturedEntry.TranslationKey);
         var parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(capturedEntry.Parameters)!;
-        new Dictionary<string, string> { ["name"] = housemate.Name, ["status"] = "EatingIn" }
+        new Dictionary<string, string> { ["name"] = housemateId.ToString(), ["status"] = "EatingIn" }
             .ToExpectedObject()
             .ShouldEqual(parameters);
     }
@@ -272,7 +272,7 @@ public class DayHandlerTests
         Assert.NotNull(capturedEntry);
         Assert.Equal(TranslationKeys.HistoryCommentSet, capturedEntry.TranslationKey);
         var parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(capturedEntry.Parameters)!;
-        new Dictionary<string, string> { ["name"] = housemate.Name, ["text"] = text }
+        new Dictionary<string, string> { ["name"] = housemateId.ToString(), ["text"] = text }
             .ToExpectedObject()
             .ShouldEqual(parameters);
     }
@@ -301,7 +301,7 @@ public class DayHandlerTests
         Assert.NotNull(capturedEntry);
         Assert.Equal(TranslationKeys.HistoryCommentDeleted, capturedEntry.TranslationKey);
         var parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(capturedEntry.Parameters)!;
-        new Dictionary<string, string> { ["name"] = housemate.Name }
+        new Dictionary<string, string> { ["name"] = housemateId.ToString() }
             .ToExpectedObject()
             .ShouldEqual(parameters);
     }
@@ -331,7 +331,7 @@ public class DayHandlerTests
         Assert.NotNull(capturedEntry);
         Assert.Equal(TranslationKeys.HistoryChefStatusChanged, capturedEntry.TranslationKey);
         var parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(capturedEntry.Parameters)!;
-        new Dictionary<string, string> { ["name"] = housemate.Name, ["enabled"] = "true" }
+        new Dictionary<string, string> { ["name"] = housemateId.ToString(), ["enabled"] = "true" }
             .ToExpectedObject()
             .ShouldEqual(parameters);
     }
@@ -360,7 +360,7 @@ public class DayHandlerTests
         Assert.NotNull(capturedEntry);
         Assert.Equal(TranslationKeys.HistoryChefStatusChanged, capturedEntry.TranslationKey);
         var parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(capturedEntry.Parameters)!;
-        new Dictionary<string, string> { ["name"] = housemate.Name, ["enabled"] = "false" }
+        new Dictionary<string, string> { ["name"] = housemateId.ToString(), ["enabled"] = "false" }
             .ToExpectedObject()
             .ShouldEqual(parameters);
     }
@@ -398,6 +398,46 @@ public class DayHandlerTests
         var historyDto = Assert.Single(result.History);
         Assert.Equal(translationKey, historyDto.TranslationKey);
         Assert.Equal(parametersJson, historyDto.Parameters);
+    }
+
+    /// <summary>GetDayPlanAsync resolves GUID-based "name" parameter to the housemate's current name.</summary>
+    [Fact]
+    public async Task GetDayPlanAsync_HistoryWithGuidName_ResolvesToCurrentHousemateName()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var changedAt = new DateTimeOffset(2025, 7, 15, 10, 0, 0, TimeSpan.Zero);
+
+        var translationKey = TranslationKeys.HistoryAttendanceSet;
+        var parametersJson = JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            ["name"] = housemateId.ToString(),
+            ["status"] = "EatingIn"
+        });
+
+        var historyEntries = new List<DayHistoryEntry>
+        {
+            new(householdId, date, changedAt, housemateId, ChangeType.Attendance, translationKey, parametersJson),
+        };
+
+        var housemate = CreateHousemate(householdId, housemateId);
+
+        SetupGetAllHousemates(householdId, new List<Housemate> { housemate });
+        SetupGetAttendanceByDate(householdId, date, new List<AttendanceRecord>());
+        SetupGetDish(householdId, date, null);
+        SetupGetCommentsByDate(householdId, date, new List<Comment>());
+        SetupGetHistoryByDate(householdId, date, historyEntries);
+
+        // Act.
+        var result = await _sut.GetDayPlanAsync(householdId, date);
+
+        // Assert.
+        var historyDto = Assert.Single(result.History);
+        var resolvedParams = JsonSerializer.Deserialize<Dictionary<string, string>>(historyDto.Parameters)!;
+        Assert.Equal("Alice", resolvedParams["name"]);
+        Assert.Equal("EatingIn", resolvedParams["status"]);
     }
 
     private void SetupGetHousemate(Guid householdId, Guid housemateId, Housemate? returns)
