@@ -71,7 +71,7 @@
     <value>Opmerking van {name} is verwijderd.</value>
   </data>
   <data name="history_chef_status_changed" xml:space="preserve">
-    <value>Kookstatus van {name} is {enabled}.</value>
+    <value>Chef status van {name} is {enabled}.</value>
   </data>
   <data name="nudge_please_add_attendance" xml:space="preserve">
     <value>Vul je aanwezigheid in voor {date}.</value>
