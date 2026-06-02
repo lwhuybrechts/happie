@@ -8,6 +8,7 @@ public static class TimeFormatter
     /// <summary>Formats a dish edit timestamp as a relative or absolute time string.</summary>
     public static string FormatDishTime(DateTimeOffset editedAt, DateTimeOffset now, string justNow = "just now", string minAgo = "min ago", string hoursAgo = "hours ago")
     {
+        editedAt = editedAt.ToLocalTime();
         var elapsed = now - editedAt;
 
         if (elapsed.TotalSeconds < 60)
@@ -28,6 +29,8 @@ public static class TimeFormatter
     /// <summary>Formats a history entry timestamp based on calendar proximity.</summary>
     public static string FormatHistoryTime(DateTimeOffset changedAt, DateTimeOffset now)
     {
+        changedAt = changedAt.ToLocalTime();
+
         if (changedAt.Date == now.Date)
             return changedAt.ToString("HH:mm", CultureInfo.InvariantCulture);
 
