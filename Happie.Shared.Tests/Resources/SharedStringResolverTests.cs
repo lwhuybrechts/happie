@@ -137,7 +137,7 @@ public class SharedStringResolverTests
         var result = _sut.Resolve(TranslationKeys.HistoryChefStatusChanged, parameters, Locale.Nl);
 
         // Assert.
-        Assert.Equal("Kookstatus van Alice is ingeschakeld.", result);
+        Assert.Equal("Chef status van Alice is ingeschakeld.", result);
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public class SharedStringResolverTests
         var result = _sut.Resolve(TranslationKeys.HistoryChefStatusChanged, parameters, Locale.Nl);
 
         // Assert.
-        Assert.Equal("Kookstatus van Bob is uitgeschakeld.", result);
+        Assert.Equal("Chef status van Bob is uitgeschakeld.", result);
     }
 
     // --- History key × locale tests (pre-parsed Dictionary overload) ---

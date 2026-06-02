@@ -69,19 +69,28 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        DateOnly newViewedMonth;
+        DateOnly? newSelectedDate;
+
         if (DateOnly.TryParseExact(Date, "yyyy-MM-dd", out var parsedDate))
         {
-            _viewedMonth = new DateOnly(parsedDate.Year, parsedDate.Month, 1);
-            _selectedDate = parsedDate;
+            newViewedMonth = new DateOnly(parsedDate.Year, parsedDate.Month, 1);
+            newSelectedDate = parsedDate;
         }
         else
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            _viewedMonth = new DateOnly(today.Year, today.Month, 1);
-            _selectedDate = null;
+            newViewedMonth = new DateOnly(today.Year, today.Month, 1);
+            newSelectedDate = null;
         }
 
-        await LoadAttendanceDataAsync();
+        // Skip reload if the viewed month hasn't changed (e.g. scroll updated the URL within the same month).
+        var monthChanged = newViewedMonth != _viewedMonth;
+        _viewedMonth = newViewedMonth;
+        _selectedDate = newSelectedDate;
+
+        if (monthChanged || _days.Count == 0)
+            await LoadAttendanceDataAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -108,6 +117,8 @@
             await LoadAttendanceDataAsync();
         }
 
+        // Update the URL so other components (e.g. bottom nav) can read the selected date.
+        NavigationManager.NavigateTo($"/calendar/{next:yyyy-MM-dd}", replace: true);
         StateHasChanged();
     }
 
@@ -126,6 +137,8 @@
             await LoadAttendanceDataAsync();
         }
 
+        // Update the URL so other components (e.g. bottom nav) can read the selected date.
+        NavigationManager.NavigateTo($"/calendar/{previous:yyyy-MM-dd}", replace: true);
         StateHasChanged();
     }
 
@@ -170,6 +183,7 @@
         var today = DateOnly.FromDateTime(DateTime.Today);
         _viewedMonth = new DateOnly(today.Year, today.Month, 1);
         _selectedDate = today;
+        NavigationManager.NavigateTo($"/calendar/{today:yyyy-MM-dd}", replace: true);
         return LoadAttendanceDataAsync();
     }
 
