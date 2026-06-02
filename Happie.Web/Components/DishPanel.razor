@@ -194,20 +194,20 @@
         }
         else
         {
-            await OnDishChanged.InvokeAsync(string.IsNullOrEmpty(trimmed) ? null : trimmed);
-
             // Auto-chef assignment: if a non-empty dish was saved and no one is chef yet,
-            // automatically assign the acting housemate as chef (best-effort, fire-and-forget).
+            // automatically assign the acting housemate as chef.
             if (!string.IsNullOrEmpty(trimmed))
             {
                 var anyChef = Attendance.Any(x => x.IsChef);
                 if (!anyChef)
                 {
-                    _ = Http.PutAsJsonAsync(
+                    await Http.PutAsJsonAsync(
                         $"days/{Date}/chef/{ActingHousemateId}",
                         new UpdateChefStatusRequest(true));
                 }
             }
+
+            await OnDishChanged.InvokeAsync(string.IsNullOrEmpty(trimmed) ? null : trimmed);
         }
     }
 }
