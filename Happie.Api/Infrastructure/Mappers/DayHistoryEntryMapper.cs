@@ -9,7 +9,7 @@ public class DayHistoryEntryMapper : IDayHistoryEntryMapper
 {
     /// <inheritdoc/>
     public DayHistoryEntry ToModel(Guid householdId, DateOnly date, DayHistoryEntity entity) =>
-        new(householdId, date, entity.ChangedAt, entity.ChangedByHousemateId, entity.ChangeType, entity.Description);
+        new(householdId, date, entity.ChangedAt, entity.ChangedByHousemateId, entity.ChangeType, entity.TranslationKey, entity.Parameters);
 
     /// <inheritdoc/>
     public DayHistoryEntity ToEntity(DayHistoryEntry entry)
@@ -18,7 +18,8 @@ public class DayHistoryEntryMapper : IDayHistoryEntryMapper
         entity.ChangedAt = entry.ChangedAt;
         entity.ChangedByHousemateId = entry.ChangedByHousemateId;
         entity.ChangeType = entry.ChangeType;
-        entity.Description = entry.Description;
+        entity.TranslationKey = entry.TranslationKey;
+        entity.Parameters = entry.Parameters;
         return entity;
     }
 }

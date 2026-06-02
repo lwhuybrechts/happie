@@ -5,6 +5,7 @@ using Happie.Api.Handlers;
 using Happie.Api.Infrastructure.Repositories;
 using Happie.Api.Services;
 using Happie.Shared.Domain;
+using Happie.Shared.Resources;
 using Happie.Api.Domain;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -17,6 +18,7 @@ public class PushHandlerPropertyTests
     private readonly Mock<IPushSubscriptionRepository> _pushSubscriptionRepositoryMock = new();
     private readonly Mock<IHousemateRepository> _housemateRepositoryMock = new();
     private readonly Mock<IPushNotificationService> _pushNotificationServiceMock = new();
+    private readonly SharedStringResolver _sharedStringResolver = new();
     private readonly PushHandler _sut;
 
     /// <summary>Initializes a new instance of <see cref="PushHandlerPropertyTests"/> with mocked dependencies.</summary>
@@ -26,6 +28,7 @@ public class PushHandlerPropertyTests
             _pushSubscriptionRepositoryMock.Object,
             _housemateRepositoryMock.Object,
             _pushNotificationServiceMock.Object,
+            _sharedStringResolver,
             NullLogger<PushHandler>.Instance);
     }
 
@@ -103,7 +106,7 @@ public class PushHandlerPropertyTests
                 SetupPushSendTrack(notifiedIds);
 
                 // Act.
-                await _sut.SendAutoNotificationsAsync(householdId, actorId, date, "Alice's attendance set to EatingIn.");
+                await _sut.SendAutoNotificationsAsync(householdId, actorId, date, TranslationKeys.HistoryAttendanceSet, """{"name":"Alice","status":"EatingIn"}""");
 
                 // Assert.
                 var actorNotified = notifiedIds.Contains(actorId);
@@ -141,7 +144,7 @@ public class PushHandlerPropertyTests
                 SetupPushSendCapture(capturedPayloads);
 
                 // Act.
-                await _sut.SendAutoNotificationsAsync(householdId, actorId, date, changeDescription);
+                await _sut.SendAutoNotificationsAsync(householdId, actorId, date, changeDescription, string.Empty);
 
                 // Assert.
                 if (capturedPayloads.Count == 0)
@@ -182,7 +185,7 @@ public class PushHandlerPropertyTests
                 Exception? caughtException = null;
                 try
                 {
-                    await _sut.SendAutoNotificationsAsync(householdId, actorId, date, changeDescription);
+                    await _sut.SendAutoNotificationsAsync(householdId, actorId, date, changeDescription, string.Empty);
                 }
                 catch (Exception ex)
                 {

@@ -9,6 +9,6 @@ public record DayHistoryEntry(
     DateTimeOffset ChangedAt,
     Guid ChangedByHousemateId,
     ChangeType ChangeType,
-    // Human-readable summary of the change.
-    string Description
+    string TranslationKey,
+    string Parameters
 );

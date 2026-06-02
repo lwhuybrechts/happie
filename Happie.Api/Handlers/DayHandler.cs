@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Happie.Api.Infrastructure.Repositories;
 using Happie.Shared.Contracts;
 using Happie.Api.Domain;
@@ -93,7 +94,7 @@ public class DayHandler : IDayHandler
             .Select(x =>
             {
                 var name = ResolveHousemateName(housemateById, x.ChangedByHousemateId);
-                return new HistoryEntryDto(x.ChangedAt, x.ChangedByHousemateId, name, x.ChangeType, x.Description);
+                return new HistoryEntryDto(x.ChangedAt, x.ChangedByHousemateId, name, x.ChangeType, x.TranslationKey, x.Parameters);
             })
             .ToList();
 
@@ -112,13 +113,19 @@ public class DayHandler : IDayHandler
         var isChef = existingRecord?.IsChef ?? false;
 
         var record = new AttendanceRecord(householdId, housemateId, date, status, isChef);
+        var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            ["name"] = housemate.Name,
+            ["status"] = status.ToString()
+        });
         var historyEntry = new DayHistoryEntry(
             householdId,
             date,
             DateTimeOffset.UtcNow,
             actingHousemateId,
             ChangeType.Attendance,
-            $"{housemate.Name}'s attendance set to {status}.");
+            TranslationKeys.HistoryAttendanceSet,
+            parameters);
 
         await Task.WhenAll(
             _attendanceRepository.UpsertAsync(record, ct),
@@ -126,7 +133,7 @@ public class DayHandler : IDayHandler
 
         // Send auto-notifications for today and tomorrow only; failures must not interrupt the save.
         if (IsTodayOrTomorrow(date))
-            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.Description, ct);
+            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.TranslationKey, historyEntry.Parameters, ct);
 
         return true;
     }
@@ -135,13 +142,18 @@ public class DayHandler : IDayHandler
     public async Task UpsertDishAsync(Guid householdId, DateOnly date, string description, Guid actingHousemateId, CancellationToken ct = default)
     {
         var record = new DishRecord(householdId, date, description, actingHousemateId, DateTimeOffset.UtcNow);
+        var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            ["description"] = description
+        });
         var historyEntry = new DayHistoryEntry(
             householdId,
             date,
             DateTimeOffset.UtcNow,
             actingHousemateId,
             ChangeType.Dish,
-            $"Dish set to \"{description}\".");
+            TranslationKeys.HistoryDishSet,
+            parameters);
 
         await Task.WhenAll(
             _dishRepository.UpsertAsync(record, ct),
@@ -149,7 +161,7 @@ public class DayHandler : IDayHandler
 
         // Send auto-notifications for today and tomorrow only; failures must not interrupt the save.
         if (IsTodayOrTomorrow(date))
-            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.Description, ct);
+            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.TranslationKey, historyEntry.Parameters, ct);
     }
 
     /// <inheritdoc/>
@@ -160,13 +172,19 @@ public class DayHandler : IDayHandler
             return false;
 
         var comment = new Comment(householdId, housemateId, date, text, DateTimeOffset.UtcNow);
+        var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            ["name"] = housemate.Name,
+            ["text"] = text
+        });
         var historyEntry = new DayHistoryEntry(
             householdId,
             date,
             DateTimeOffset.UtcNow,
             actingHousemateId,
             ChangeType.Comment,
-            $"{housemate.Name}'s comment set to \"{text}\".");
+            TranslationKeys.HistoryCommentSet,
+            parameters);
 
         await Task.WhenAll(
             _commentRepository.UpsertAsync(comment, ct),
@@ -174,7 +192,7 @@ public class DayHandler : IDayHandler
 
         // Send auto-notifications for today and tomorrow only; failures must not interrupt the save.
         if (IsTodayOrTomorrow(date))
-            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.Description, ct);
+            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.TranslationKey, historyEntry.Parameters, ct);
 
         return true;
     }
@@ -186,13 +204,18 @@ public class DayHandler : IDayHandler
         if (housemate is null)
             return false;
 
+        var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            ["name"] = housemate.Name
+        });
         var historyEntry = new DayHistoryEntry(
             householdId,
             date,
             DateTimeOffset.UtcNow,
             actingHousemateId,
             ChangeType.Comment,
-            $"{housemate.Name}'s comment was deleted.");
+            TranslationKeys.HistoryCommentDeleted,
+            parameters);
 
         await Task.WhenAll(
             _commentRepository.DeleteAsync(householdId, date, housemateId, ct),
@@ -200,7 +223,7 @@ public class DayHandler : IDayHandler
 
         // Send auto-notifications for today and tomorrow only; failures must not interrupt the save.
         if (IsTodayOrTomorrow(date))
-            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.Description, ct);
+            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.TranslationKey, historyEntry.Parameters, ct);
 
         return true;
     }
@@ -212,14 +235,19 @@ public class DayHandler : IDayHandler
         if (housemate is null || housemate.IsDeleted)
             return false;
 
-        var statusDescription = isChef ? "enabled" : "disabled";
+        var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            ["name"] = housemate.Name,
+            ["enabled"] = isChef ? "true" : "false"
+        });
         var historyEntry = new DayHistoryEntry(
             householdId,
             date,
             DateTimeOffset.UtcNow,
             actingHousemateId,
             ChangeType.ChefStatusChanged,
-            $"{housemate.Name}'s chef status {statusDescription}.");
+            TranslationKeys.HistoryChefStatusChanged,
+            parameters);
 
         await Task.WhenAll(
             _attendanceRepository.UpsertChefStatusAsync(householdId, date, housemateId, isChef, cancellationToken),

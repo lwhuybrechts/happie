@@ -4,6 +4,7 @@ using Happie.Api.Services;
 using Happie.Shared.Contracts;
 using Happie.Api.Domain;
 using Happie.Shared.Domain;
+using Happie.Shared.Resources;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -15,6 +16,7 @@ public class PushHandlerTests
     private readonly Mock<IPushSubscriptionRepository> _pushSubscriptionRepositoryMock = new();
     private readonly Mock<IHousemateRepository> _housemateRepositoryMock = new();
     private readonly Mock<IPushNotificationService> _pushNotificationServiceMock = new();
+    private readonly SharedStringResolver _sharedStringResolver = new();
     private readonly PushHandler _sut;
 
     /// <summary>Initializes a new instance of <see cref="PushHandlerTests"/> with mocked dependencies.</summary>
@@ -24,6 +26,7 @@ public class PushHandlerTests
             _pushSubscriptionRepositoryMock.Object,
             _housemateRepositoryMock.Object,
             _pushNotificationServiceMock.Object,
+            _sharedStringResolver,
             NullLogger<PushHandler>.Instance);
     }
 
@@ -118,7 +121,7 @@ public class PushHandlerTests
         SetupPushSend();
 
         // Act.
-        await _sut.SendAutoNotificationsAsync(householdId, actorId, date, "Alice's attendance set to EatingIn.");
+        await _sut.SendAutoNotificationsAsync(householdId, actorId, date, TranslationKeys.HistoryAttendanceSet, """{"name":"Alice","status":"EatingIn"}""");
 
         // Assert.
         _pushNotificationServiceMock.Verify(
@@ -151,10 +154,134 @@ public class PushHandlerTests
         // Act.
         // Should not throw even though push service fails.
         var exception = await Record.ExceptionAsync(() =>
-            _sut.SendAutoNotificationsAsync(householdId, actorId, date, "Alice's attendance set to EatingIn."));
+            _sut.SendAutoNotificationsAsync(householdId, actorId, date, TranslationKeys.HistoryAttendanceSet, """{"name":"Alice","status":"EatingIn"}"""));
 
         // Assert.
         Assert.Null(exception);
+    }
+
+    /// <summary>Auto-notifications resolve per-recipient locale using SharedStringResolver.</summary>
+    [Fact]
+    public async Task SendAutoNotificationsAsync_TwoRecipients_ResolvesPerRecipientLocale()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var actorId = Guid.NewGuid();
+        var dutchRecipientId = Guid.NewGuid();
+        var englishRecipientId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var translationKey = TranslationKeys.HistoryAttendanceSet;
+        var parameters = """{"name":"Alice","status":"EatingIn"}""";
+
+        var dutchSubscription = CreateSubscription(householdId, dutchRecipientId, Locale.Nl);
+        var englishSubscription = CreateSubscription(householdId, englishRecipientId, Locale.En);
+
+        SetupGetAllSubscriptions(householdId, new List<Domain.PushSubscription> { dutchSubscription, englishSubscription });
+        SetupGetHousemate(householdId, actorId, CreateHousemate(householdId, actorId, "Alice"));
+        SetupPushSend();
+
+        var capturedPayloads = new Dictionary<Guid, string>();
+        _pushNotificationServiceMock
+            .Setup(x => x.SendAsync(It.IsAny<Domain.PushSubscription>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback<Domain.PushSubscription, string, CancellationToken>((subscription, payload, _) =>
+                capturedPayloads[subscription.HousemateId] = payload)
+            .Returns(Task.CompletedTask);
+
+        // Act.
+        await _sut.SendAutoNotificationsAsync(householdId, actorId, date, translationKey, parameters);
+
+        // Assert.
+        Assert.Contains("Mee-eten", capturedPayloads[dutchRecipientId]);
+        Assert.Contains("Eating in", capturedPayloads[englishRecipientId]);
+    }
+
+    /// <summary>Auto-notification excludes the actor from recipients.</summary>
+    [Fact]
+    public async Task SendAutoNotificationsAsync_ExcludesActor_DoesNotSendToActor()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var actorId = Guid.NewGuid();
+        var recipientId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var translationKey = TranslationKeys.HistoryDishSet;
+        var parameters = """{"description":"Pizza"}""";
+
+        var actorSubscription = CreateSubscription(householdId, actorId, Locale.Nl);
+        var recipientSubscription = CreateSubscription(householdId, recipientId, Locale.En);
+
+        SetupGetAllSubscriptions(householdId, new List<Domain.PushSubscription> { actorSubscription, recipientSubscription });
+        SetupGetHousemate(householdId, actorId, CreateHousemate(householdId, actorId, "Bob"));
+        SetupPushSend();
+
+        // Act.
+        await _sut.SendAutoNotificationsAsync(householdId, actorId, date, translationKey, parameters);
+
+        // Assert.
+        _pushNotificationServiceMock.Verify(
+            x => x.SendAsync(It.Is<Domain.PushSubscription>(s => s.HousemateId == actorId), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _pushNotificationServiceMock.Verify(
+            x => x.SendAsync(It.Is<Domain.PushSubscription>(s => s.HousemateId == recipientId), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>Predefined nudge message resolves using SharedStringResolver per recipient locale.</summary>
+    [Fact]
+    public async Task NudgeAsync_PredefinedKey_ResolvesUsingSharedResolver()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var senderHousemateId = Guid.NewGuid();
+        var dutchRecipientId = Guid.NewGuid();
+        var englishRecipientId = Guid.NewGuid();
+        var date = new DateOnly(2025, 3, 15);
+
+        SetupGetHousemate(householdId, senderHousemateId, CreateHousemate(householdId, senderHousemateId, "Alice"));
+        SetupGetSubscription(householdId, dutchRecipientId, CreateSubscription(householdId, dutchRecipientId, Locale.Nl));
+        SetupGetSubscription(householdId, englishRecipientId, CreateSubscription(householdId, englishRecipientId, Locale.En));
+
+        var capturedPayloads = new Dictionary<Guid, string>();
+        _pushNotificationServiceMock
+            .Setup(x => x.SendAsync(It.IsAny<Domain.PushSubscription>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback<Domain.PushSubscription, string, CancellationToken>((subscription, payload, _) =>
+                capturedPayloads[subscription.HousemateId] = payload)
+            .Returns(Task.CompletedTask);
+
+        // Act.
+        await _sut.NudgeAsync(householdId, senderHousemateId, date, new[] { dutchRecipientId, englishRecipientId }, NudgeMessageKey.PleaseAddAttendance, null);
+
+        // Assert.
+        Assert.Contains("Vul je aanwezigheid in voor 15 maart", capturedPayloads[dutchRecipientId]);
+        Assert.Contains("Please add your attendance for March 15", capturedPayloads[englishRecipientId]);
+    }
+
+    /// <summary>Custom nudge message is sent as-is without resolution via SharedStringResolver.</summary>
+    [Fact]
+    public async Task NudgeAsync_CustomMessage_DoesNotResolveViaSharedResolver()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var senderHousemateId = Guid.NewGuid();
+        var recipientId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var customMessage = "Kom je eten?";
+
+        SetupGetHousemate(householdId, senderHousemateId, CreateHousemate(householdId, senderHousemateId, "Alice"));
+        SetupGetSubscription(householdId, recipientId, CreateSubscription(householdId, recipientId, Locale.En));
+
+        var capturedPayload = string.Empty;
+        _pushNotificationServiceMock
+            .Setup(x => x.SendAsync(It.IsAny<Domain.PushSubscription>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback<Domain.PushSubscription, string, CancellationToken>((_, payload, _) =>
+                capturedPayload = payload)
+            .Returns(Task.CompletedTask);
+
+        // Act.
+        await _sut.NudgeAsync(householdId, senderHousemateId, date, new[] { recipientId }, null, customMessage);
+
+        // Assert.
+        Assert.Contains("Kom je eten?", capturedPayload);
     }
 
     /// <summary>When push service throws during nudge, the failure is recorded but delivery continues to other recipients.</summary>
@@ -226,4 +353,7 @@ public class PushHandlerTests
 
     private static Domain.PushSubscription CreateSubscription(Guid householdId, Guid housemateId) =>
         new(housemateId, householdId, "https://push.example.com/endpoint", "p256dhKey", "authKey", Locale.Nl);
+
+    private static Domain.PushSubscription CreateSubscription(Guid householdId, Guid housemateId, Locale locale) =>
+        new(housemateId, householdId, "https://push.example.com/endpoint", "p256dhKey", "authKey", locale);
 }

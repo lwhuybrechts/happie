@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="history_attendance_set" xml:space="preserve">
+    <value>Aanwezigheid van {name} ingesteld op {status}.</value>
+  </data>
+  <data name="history_dish_set" xml:space="preserve">
+    <value>Gerecht ingesteld op "{description}".</value>
+  </data>
+  <data name="history_comment_set" xml:space="preserve">
+    <value>Opmerking van {name} ingesteld op "{text}".</value>
+  </data>
+  <data name="history_comment_deleted" xml:space="preserve">
+    <value>Opmerking van {name} is verwijderd.</value>
+  </data>
+  <data name="history_chef_status_changed" xml:space="preserve">
+    <value>Kookstatus van {name} is {enabled}.</value>
+  </data>
+  <data name="nudge_please_add_attendance" xml:space="preserve">
+    <value>Vul je aanwezigheid in voor {date}.</value>
+  </data>
+  <data name="nudge_what_would_you_like_to_eat" xml:space="preserve">
+    <value>Wat wil je vanavond eten?</value>
+  </data>
+  <data name="nudge_dinner_soon_whats_your_plan" xml:space="preserve">
+    <value>Het eten komt eraan — doe je mee?</value>
+  </data>
+  <data name="status_Unknown" xml:space="preserve">
+    <value>Onbekend</value>
+  </data>
+  <data name="status_EatingIn" xml:space="preserve">
+    <value>Mee-eten</value>
+  </data>
+  <data name="status_NotEatingIn" xml:space="preserve">
+    <value>Niet mee-eten</value>
+  </data>
+  <data name="enabled_true" xml:space="preserve">
+    <value>ingeschakeld</value>
+  </data>
+  <data name="enabled_false" xml:space="preserve">
+    <value>uitgeschakeld</value>
+  </data>
+</root>

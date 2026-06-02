@@ -3,6 +3,7 @@ using Azure.Identity;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Security.KeyVault.Secrets;
 using Happie.Api.Handlers;
+using Happie.Shared.Resources;
 using Happie.Api.Infrastructure;
 using Happie.Api.Infrastructure.Mappers;
 using Happie.Api.Infrastructure.Repositories;
@@ -86,6 +87,9 @@ builder.Services.AddSingleton<IHousemateHandler, HousemateHandler>();
 
 // Register day handlers.
 builder.Services.AddSingleton<IDayHandler, DayHandler>();
+
+// Register the shared string resolver for server-side history and nudge translation resolution.
+builder.Services.AddSingleton<SharedStringResolver>();
 
 // Register push notification services.
 builder.Services

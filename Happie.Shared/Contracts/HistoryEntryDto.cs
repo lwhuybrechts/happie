@@ -9,4 +9,5 @@ public record HistoryEntryDto(
     [property: JsonPropertyName("changedByHousemateId")] Guid ChangedByHousemateId,
     [property: JsonPropertyName("changedByHousemateName")] string ChangedByHousemateName,
     [property: JsonPropertyName("changeType")] ChangeType ChangeType,
-    [property: JsonPropertyName("description")] string Description);
+    [property: JsonPropertyName("translationKey")] string TranslationKey,
+    [property: JsonPropertyName("parameters")] string Parameters);

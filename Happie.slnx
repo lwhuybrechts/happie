@@ -3,6 +3,7 @@
   <Project Path="Happie.Api.Tests/Happie.Api.Tests.csproj" />
   <Project Path="Happie.Api.IntegrationTests/Happie.Api.IntegrationTests.csproj" />
   <Project Path="Happie.Shared/Happie.Shared.csproj" />
+  <Project Path="Happie.Shared.Tests/Happie.Shared.Tests.csproj" />
   <Project Path="Happie.Web/Happie.Web.csproj" />
   <Project Path="Happie.Web.Tests/Happie.Web.Tests.csproj" />
 </Solution>

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Happie.Shared.Domain;
+using Happie.Shared.Resources;
 using Happie.Web;
 using Happie.Web.Http;
 using Happie.Web.Services;
@@ -46,6 +47,9 @@ builder.Services.AddScoped(serviceProvider =>
 
 // Register localization services and resource files.
 builder.Services.AddLocalization();
+
+// Register the shared string resolver for client-side history and nudge translation resolution.
+builder.Services.AddSingleton<SharedStringResolver>();
 
 // Register the locale service as scoped so it is shared within a single render session.
 builder.Services.AddScoped<LocaleService>();

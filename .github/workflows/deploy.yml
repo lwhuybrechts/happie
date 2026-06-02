@@ -34,6 +34,9 @@ jobs:
       - name: Run API tests
         run: dotnet test Happie.Api.Tests --configuration Release --no-build --verbosity normal
 
+      - name: Run Shared tests
+        run: dotnet test Happie.Shared.Tests --configuration Release --no-build --verbosity normal
+
       - name: Run Web tests
         run: dotnet test Happie.Web.Tests --configuration Release --no-build --verbosity normal
 

@@ -17,6 +17,6 @@ internal class NoOpPushHandler : IPushHandler
         => Task.FromResult<NudgeResult?>(new NudgeResult(new List<NudgeFailureDto>()));
 
     /// <inheritdoc/>
-    public Task SendAutoNotificationsAsync(Guid householdId, Guid actorHousemateId, DateOnly date, string changeDescription, CancellationToken ct = default)
+    public Task SendAutoNotificationsAsync(Guid householdId, Guid actorHousemateId, DateOnly date, string translationKey, string parameters, CancellationToken ct = default)
         => Task.CompletedTask;
 }

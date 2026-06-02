@@ -24,5 +24,5 @@ public interface IPushHandler
     /// after a day plan change for today or tomorrow.
     /// Push failures are logged but do not interrupt the save.
     /// </summary>
-    Task SendAutoNotificationsAsync(Guid householdId, Guid actorHousemateId, DateOnly date, string changeDescription, CancellationToken ct = default);
+    Task SendAutoNotificationsAsync(Guid householdId, Guid actorHousemateId, DateOnly date, string translationKey, string parameters, CancellationToken ct = default);
 }

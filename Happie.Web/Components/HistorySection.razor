@@ -1,5 +1,9 @@
+@using System.Globalization
 @using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@using Happie.Shared.Resources
 @inject IStringLocalizer<AppStrings> Localizer
+@inject SharedStringResolver SharedResolver
 
 <div class="history-section">
     <h3 class="history-section__header">
@@ -34,7 +38,7 @@
                             </svg>
                             <span class="history-section__time">@TimeFormatter.FormatHistoryTime(entry.ChangedAt, DateTimeOffset.Now)</span>
                         </div>
-                        <span class="history-section__description">@entry.Description</span>
+                        <span class="history-section__description">@SharedResolver.Resolve(entry.TranslationKey, entry.Parameters, CurrentLocale)</span>
                     </div>
                 </div>
             }
@@ -45,6 +49,11 @@
 @code {
     /// <summary>The fallback color used for soft-deleted housemates not in the attendance list.</summary>
     private const string FallbackColor = "#9E9E9E";
+
+    /// <summary>The user's active locale derived from CultureInfo.CurrentUICulture.</summary>
+    private Locale CurrentLocale => CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase)
+        ? Locale.En
+        : Locale.Nl;
 
     /// <summary>History entries for the day, expected in reverse-chronological order from the API.</summary>
     [Parameter, EditorRequired]

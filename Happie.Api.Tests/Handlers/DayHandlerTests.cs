@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ExpectedObjects;
 using Happie.Api.Handlers;
 using Happie.Api.Infrastructure.Repositories;
@@ -23,7 +24,7 @@ public class DayHandlerTests
     public DayHandlerTests()
     {
         _pushHandlerMock
-            .Setup(x => x.SendAutoNotificationsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.SendAutoNotificationsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _sut = new DayHandler(
@@ -98,9 +99,9 @@ public class DayHandlerTests
         // Repository returns entries already in reverse-chronological order (most recent first).
         var historyEntries = new List<DayHistoryEntry>
         {
-            new(householdId, date, t3, housemateId, ChangeType.Comment, "Comment set."),
-            new(householdId, date, t2, housemateId, ChangeType.Dish, "Dish set."),
-            new(householdId, date, t1, housemateId, ChangeType.Attendance, "Attendance set."),
+            new(householdId, date, t3, housemateId, ChangeType.Comment, TranslationKeys.HistoryCommentSet, """{"name":"Alice","text":"Hello"}"""),
+            new(householdId, date, t2, housemateId, ChangeType.Dish, TranslationKeys.HistoryDishSet, """{"description":"Pasta"}"""),
+            new(householdId, date, t1, housemateId, ChangeType.Attendance, TranslationKeys.HistoryAttendanceSet, """{"name":"Alice","status":"EatingIn"}"""),
         };
 
         var housemate = CreateHousemate(householdId, housemateId);
@@ -117,9 +118,9 @@ public class DayHandlerTests
         // Assert.
         var expectedHistory = new List<HistoryEntryDto>
         {
-            new(t3, housemateId, housemate.Name, ChangeType.Comment, "Comment set."),
-            new(t2, housemateId, housemate.Name, ChangeType.Dish, "Dish set."),
-            new(t1, housemateId, housemate.Name, ChangeType.Attendance, "Attendance set."),
+            new(t3, housemateId, housemate.Name, ChangeType.Comment, TranslationKeys.HistoryCommentSet, """{"name":"Alice","text":"Hello"}"""),
+            new(t2, housemateId, housemate.Name, ChangeType.Dish, TranslationKeys.HistoryDishSet, """{"description":"Pasta"}"""),
+            new(t1, housemateId, housemate.Name, ChangeType.Attendance, TranslationKeys.HistoryAttendanceSet, """{"name":"Alice","status":"EatingIn"}"""),
         };
 
         expectedHistory.ToExpectedObject().ShouldEqual(result.History);
@@ -186,6 +187,217 @@ public class DayHandlerTests
         _dayHistoryRepositoryMock.Verify(
             x => x.AddAsync(It.IsAny<DayHistoryEntry>(), It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    /// <summary>UpsertAttendanceAsync stores the correct TranslationKey and Parameters.</summary>
+    [Fact]
+    public async Task UpsertAttendanceAsync_ValidInput_StoresCorrectTranslationKeyAndParameters()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var actingHousemateId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var status = AttendanceStatus.EatingIn;
+        var housemate = CreateHousemate(householdId, housemateId);
+
+        SetupGetHousemate(householdId, housemateId, housemate);
+        SetupGetAttendance(householdId, date, housemateId, null);
+        SetupAttendanceUpsert();
+
+        DayHistoryEntry? capturedEntry = null;
+        SetupHistoryAddWithCapture(entry => capturedEntry = entry);
+
+        // Act.
+        await _sut.UpsertAttendanceAsync(householdId, date, housemateId, status, actingHousemateId);
+
+        // Assert.
+        Assert.NotNull(capturedEntry);
+        Assert.Equal(TranslationKeys.HistoryAttendanceSet, capturedEntry.TranslationKey);
+        var parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(capturedEntry.Parameters)!;
+        new Dictionary<string, string> { ["name"] = housemate.Name, ["status"] = "EatingIn" }
+            .ToExpectedObject()
+            .ShouldEqual(parameters);
+    }
+
+    /// <summary>UpsertDishAsync stores the correct TranslationKey and Parameters.</summary>
+    [Fact]
+    public async Task UpsertDishAsync_ValidInput_StoresCorrectTranslationKeyAndParameters()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var actingHousemateId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var description = "Spaghetti Bolognese";
+
+        SetupDishUpsert();
+
+        DayHistoryEntry? capturedEntry = null;
+        SetupHistoryAddWithCapture(entry => capturedEntry = entry);
+
+        // Act.
+        await _sut.UpsertDishAsync(householdId, date, description, actingHousemateId);
+
+        // Assert.
+        Assert.NotNull(capturedEntry);
+        Assert.Equal(TranslationKeys.HistoryDishSet, capturedEntry.TranslationKey);
+        var parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(capturedEntry.Parameters)!;
+        new Dictionary<string, string> { ["description"] = description }
+            .ToExpectedObject()
+            .ShouldEqual(parameters);
+    }
+
+    /// <summary>UpsertCommentAsync stores the correct TranslationKey and Parameters.</summary>
+    [Fact]
+    public async Task UpsertCommentAsync_ValidInput_StoresCorrectTranslationKeyAndParameters()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var actingHousemateId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var text = "Looks delicious!";
+        var housemate = CreateHousemate(householdId, housemateId);
+
+        SetupGetHousemate(householdId, housemateId, housemate);
+        SetupCommentUpsert();
+
+        DayHistoryEntry? capturedEntry = null;
+        SetupHistoryAddWithCapture(entry => capturedEntry = entry);
+
+        // Act.
+        await _sut.UpsertCommentAsync(householdId, date, housemateId, text, actingHousemateId);
+
+        // Assert.
+        Assert.NotNull(capturedEntry);
+        Assert.Equal(TranslationKeys.HistoryCommentSet, capturedEntry.TranslationKey);
+        var parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(capturedEntry.Parameters)!;
+        new Dictionary<string, string> { ["name"] = housemate.Name, ["text"] = text }
+            .ToExpectedObject()
+            .ShouldEqual(parameters);
+    }
+
+    /// <summary>DeleteCommentAsync stores the correct TranslationKey and Parameters.</summary>
+    [Fact]
+    public async Task DeleteCommentAsync_ValidInput_StoresCorrectTranslationKeyAndParameters()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var actingHousemateId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var housemate = CreateHousemate(householdId, housemateId);
+
+        SetupGetHousemate(householdId, housemateId, housemate);
+        SetupCommentDelete();
+
+        DayHistoryEntry? capturedEntry = null;
+        SetupHistoryAddWithCapture(entry => capturedEntry = entry);
+
+        // Act.
+        await _sut.DeleteCommentAsync(householdId, date, housemateId, actingHousemateId);
+
+        // Assert.
+        Assert.NotNull(capturedEntry);
+        Assert.Equal(TranslationKeys.HistoryCommentDeleted, capturedEntry.TranslationKey);
+        var parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(capturedEntry.Parameters)!;
+        new Dictionary<string, string> { ["name"] = housemate.Name }
+            .ToExpectedObject()
+            .ShouldEqual(parameters);
+    }
+
+    /// <summary>UpsertChefStatusAsync stores the correct TranslationKey and Parameters.</summary>
+    [Fact]
+    public async Task UpsertChefStatusAsync_ValidInput_StoresCorrectTranslationKeyAndParameters()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var actingHousemateId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var isChef = true;
+        var housemate = CreateHousemate(householdId, housemateId);
+
+        SetupGetHousemate(householdId, housemateId, housemate);
+        SetupChefStatusUpsert();
+
+        DayHistoryEntry? capturedEntry = null;
+        SetupHistoryAddWithCapture(entry => capturedEntry = entry);
+
+        // Act.
+        await _sut.UpsertChefStatusAsync(householdId, date, housemateId, isChef, actingHousemateId);
+
+        // Assert.
+        Assert.NotNull(capturedEntry);
+        Assert.Equal(TranslationKeys.HistoryChefStatusChanged, capturedEntry.TranslationKey);
+        var parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(capturedEntry.Parameters)!;
+        new Dictionary<string, string> { ["name"] = housemate.Name, ["enabled"] = "true" }
+            .ToExpectedObject()
+            .ShouldEqual(parameters);
+    }
+
+    /// <summary>UpsertChefStatusAsync with isChef=false stores enabled parameter as "false".</summary>
+    [Fact]
+    public async Task UpsertChefStatusAsync_DisableChef_StoresEnabledFalse()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var actingHousemateId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var housemate = CreateHousemate(householdId, housemateId);
+
+        SetupGetHousemate(householdId, housemateId, housemate);
+        SetupChefStatusUpsert();
+
+        DayHistoryEntry? capturedEntry = null;
+        SetupHistoryAddWithCapture(entry => capturedEntry = entry);
+
+        // Act.
+        await _sut.UpsertChefStatusAsync(householdId, date, housemateId, false, actingHousemateId);
+
+        // Assert.
+        Assert.NotNull(capturedEntry);
+        Assert.Equal(TranslationKeys.HistoryChefStatusChanged, capturedEntry.TranslationKey);
+        var parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(capturedEntry.Parameters)!;
+        new Dictionary<string, string> { ["name"] = housemate.Name, ["enabled"] = "false" }
+            .ToExpectedObject()
+            .ShouldEqual(parameters);
+    }
+
+    /// <summary>GetDayPlanAsync returns raw TranslationKey and Parameters in HistoryEntryDto without resolution.</summary>
+    [Fact]
+    public async Task GetDayPlanAsync_HistoryEntries_ReturnsRawTranslationKeyAndParameters()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var changedAt = new DateTimeOffset(2025, 7, 15, 10, 0, 0, TimeSpan.Zero);
+
+        var translationKey = TranslationKeys.HistoryAttendanceSet;
+        var parametersJson = """{"name":"Alice","status":"EatingIn"}""";
+
+        var historyEntries = new List<DayHistoryEntry>
+        {
+            new(householdId, date, changedAt, housemateId, ChangeType.Attendance, translationKey, parametersJson),
+        };
+
+        var housemate = CreateHousemate(householdId, housemateId);
+
+        SetupGetAllHousemates(householdId, new List<Housemate> { housemate });
+        SetupGetAttendanceByDate(householdId, date, new List<AttendanceRecord>());
+        SetupGetDish(householdId, date, null);
+        SetupGetCommentsByDate(householdId, date, new List<Comment>());
+        SetupGetHistoryByDate(householdId, date, historyEntries);
+
+        // Act.
+        var result = await _sut.GetDayPlanAsync(householdId, date);
+
+        // Assert.
+        var historyDto = Assert.Single(result.History);
+        Assert.Equal(translationKey, historyDto.TranslationKey);
+        Assert.Equal(parametersJson, historyDto.Parameters);
     }
 
     private void SetupGetHousemate(Guid householdId, Guid housemateId, Housemate? returns)
@@ -255,6 +467,35 @@ public class DayHandlerTests
     {
         _dayHistoryRepositoryMock
             .Setup(x => x.AddAsync(It.IsAny<DayHistoryEntry>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+    }
+
+    private void SetupHistoryAddWithCapture(Action<DayHistoryEntry> capture)
+    {
+        _dayHistoryRepositoryMock
+            .Setup(x => x.AddAsync(It.IsAny<DayHistoryEntry>(), It.IsAny<CancellationToken>()))
+            .Callback<DayHistoryEntry, CancellationToken>((entry, _) => capture(entry))
+            .Returns(Task.CompletedTask);
+    }
+
+    private void SetupGetAttendance(Guid householdId, DateOnly date, Guid housemateId, AttendanceRecord? returns)
+    {
+        _attendanceRepositoryMock
+            .Setup(x => x.GetAsync(householdId, date, housemateId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(returns);
+    }
+
+    private void SetupAttendanceUpsert()
+    {
+        _attendanceRepositoryMock
+            .Setup(x => x.UpsertAsync(It.IsAny<AttendanceRecord>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+    }
+
+    private void SetupChefStatusUpsert()
+    {
+        _attendanceRepositoryMock
+            .Setup(x => x.UpsertChefStatusAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
     }
 

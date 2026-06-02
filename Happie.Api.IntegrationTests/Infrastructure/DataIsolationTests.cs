@@ -226,7 +226,8 @@ public class DataIsolationTests
                     DateTimeOffset.UtcNow,
                     housemateId,
                     ChangeType.Attendance,
-                    "Set attendance to EatingIn");
+                    TranslationKeys.HistoryAttendanceSet,
+                    """{"name":"Test","status":"EatingIn"}""");
                 await _dayHistoryRepository.AddAsync(entry);
 
                 // Act.

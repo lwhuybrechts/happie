@@ -784,6 +784,75 @@ public class PushNotificationService
 
 ---
 
+## Resource File Conventions (MUST follow)
+
+The app uses two separate sets of `.resx` resource files for different purposes. Mixing them up breaks server-side resolution.
+
+### SharedStrings (`Happie.Shared/Resources/`)
+
+| File | Purpose |
+|---|---|
+| `SharedStrings.resx` | Dutch (default) translations |
+| `SharedStrings.en.resx` | English translations |
+
+**Contains:** strings resolved at runtime by `SharedStringResolver` — used by both frontend and backend.
+
+- History keys (`history_*`): `history_attendance_set`, `history_dish_set`, `history_comment_set`, `history_comment_deleted`, `history_chef_status_changed`
+- Nudge keys (`nudge_*`): `nudge_please_add_attendance`, `nudge_what_would_you_like_to_eat`, `nudge_dinner_soon_whats_your_plan`
+- AttendanceStatus display name keys (`status_*`): `status_Unknown`, `status_EatingIn`, `status_NotEatingIn`
+- Enabled/disabled display name keys (`enabled_*`): `enabled_true`, `enabled_false`
+
+**NEVER add UI-only strings (labels, headings, button text) here.**
+
+### AppStrings (`Happie.Web/Resources/`)
+
+| File | Purpose |
+|---|---|
+| `AppStrings.resx` | Dutch (default) UI strings |
+| `AppStrings.en.resx` | English UI strings |
+
+**Contains:** UI-only strings resolved via `IStringLocalizer<AppStrings>` — labels, headings, button text, placeholders, error messages displayed in the UI.
+
+**NEVER add `history_*`, `nudge_*`, `status_*`, or `enabled_*` keys here.** These keys must live in SharedStrings so the backend can resolve them for push notifications.
+
+### SharedStringResolver usage
+
+`SharedStringResolver` is registered as a **singleton** in both `Happie.Web/Program.cs` and `Happie.Api/Program.cs`.
+
+**Method signatures:**
+```csharp
+string Resolve(string translationKey, string? parameters, Locale locale)
+string Resolve(string translationKey, Dictionary<string, string>? parameters, Locale locale)
+```
+
+**Frontend (Blazor components):**
+- Inject `SharedStringResolver` into the component
+- Resolve using the user's active locale from `CultureInfo.CurrentUICulture`
+
+```csharp
+@inject SharedStringResolver SharedStringResolver
+
+var locale = CultureInfo.CurrentUICulture.Name == "en" ? Locale.En : Locale.Nl;
+var resolved = SharedStringResolver.Resolve(entry.TranslationKey, entry.Parameters, locale);
+```
+
+**Backend (handlers/services):**
+- Inject `SharedStringResolver` into the handler
+- Resolve per-recipient using their stored locale from the push subscription record
+
+```csharp
+var resolved = _sharedStringResolver.Resolve(translationKey, parameters, recipientLocale);
+```
+
+**Special parameter handling:**
+- `status` parameter: raw enum value (e.g. `"EatingIn"`) is resolved to a localized display name via the `status_{enumValue}` key
+- `enabled` parameter: `"true"`/`"false"` is resolved to a localized display name via the `enabled_{value}` key
+- `date` parameter: formatted using locale convention (`"d MMMM"` for Dutch, `"MMMM d"` for English)
+- Unknown keys: returns the raw key as fallback
+- Null/empty parameters: returns the template without substitution
+
+---
+
 ## Modal z-index Conventions (MUST follow)
 
 The mobile header (`.mobile-header`) and bottom nav (`.bottom-nav`) use `position: fixed` with `z-index: 1000`. All modal overlays and dialogs MUST use higher z-index values so they render above the header and bottom nav on mobile.

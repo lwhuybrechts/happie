@@ -1,9 +1,11 @@
+using System.Globalization;
 using System.Text.Json;
 using Happie.Api.Infrastructure.Repositories;
 using Happie.Api.Results;
 using Happie.Api.Services;
 using Happie.Shared.Contracts;
 using Happie.Shared.Domain;
+using Happie.Shared.Resources;
 using Microsoft.Extensions.Logging;
 
 namespace Happie.Api.Handlers;
@@ -14,6 +16,7 @@ public class PushHandler : IPushHandler
     private readonly IPushSubscriptionRepository _pushSubscriptionRepository;
     private readonly IHousemateRepository _housemateRepository;
     private readonly IPushNotificationService _pushNotificationService;
+    private readonly SharedStringResolver _sharedStringResolver;
     private readonly ILogger<PushHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="PushHandler"/>.</summary>
@@ -21,11 +24,13 @@ public class PushHandler : IPushHandler
         IPushSubscriptionRepository pushSubscriptionRepository,
         IHousemateRepository housemateRepository,
         IPushNotificationService pushNotificationService,
+        SharedStringResolver sharedStringResolver,
         ILogger<PushHandler> logger)
     {
         _pushSubscriptionRepository = pushSubscriptionRepository;
         _housemateRepository = housemateRepository;
         _pushNotificationService = pushNotificationService;
+        _sharedStringResolver = sharedStringResolver;
         _logger = logger;
     }
 
@@ -89,7 +94,7 @@ public class PushHandler : IPushHandler
             // Resolve message text in the recipient's locale.
             var body = hasMessage
                 ? message!
-                : NudgeMessageResolver.Resolve(predefinedMessageKey!.Value, subscription.Locale, date);
+                : ResolveNudgeMessage(predefinedMessageKey!.Value, subscription.Locale, date);
 
             var payload = BuildNudgePayload(senderName, date, body, householdId);
 
@@ -108,7 +113,7 @@ public class PushHandler : IPushHandler
     }
 
     /// <inheritdoc/>
-    public async Task SendAutoNotificationsAsync(Guid householdId, Guid actorHousemateId, DateOnly date, string changeDescription, CancellationToken ct = default)
+    public async Task SendAutoNotificationsAsync(Guid householdId, Guid actorHousemateId, DateOnly date, string translationKey, string parameters, CancellationToken ct = default)
     {
         var subscriptions = await _pushSubscriptionRepository.GetAllAsync(householdId, ct);
 
@@ -121,7 +126,8 @@ public class PushHandler : IPushHandler
 
         foreach (var subscription in recipients)
         {
-            var payload = BuildAutoNotificationPayload(actorName, date, changeDescription, householdId);
+            var body = _sharedStringResolver.Resolve(translationKey, parameters, subscription.Locale);
+            var payload = BuildAutoNotificationPayload(actorName, date, body, householdId);
 
             try
             {
@@ -133,6 +139,34 @@ public class PushHandler : IPushHandler
             }
         }
     }
+
+    /// <summary>Resolves a predefined nudge message key to a localized string using the shared resolver.</summary>
+    private string ResolveNudgeMessage(NudgeMessageKey key, Locale locale, DateOnly date)
+    {
+        var nudgeKey = key switch
+        {
+            NudgeMessageKey.PleaseAddAttendance => TranslationKeys.NudgePleaseAddAttendance,
+            NudgeMessageKey.WhatWouldYouLikeToEat => TranslationKeys.NudgeWhatWouldYouLikeToEat,
+            NudgeMessageKey.DinnerSoonWhatsYourPlan => TranslationKeys.NudgeDinnerSoonWhatsYourPlan,
+            _ => throw new InvalidOperationException($"Unhandled {nameof(NudgeMessageKey)}: {key}"),
+        };
+
+        var parameters = new Dictionary<string, string>
+        {
+            ["date"] = FormatDateForLocale(date, locale)
+        };
+
+        return _sharedStringResolver.Resolve(nudgeKey, parameters, locale);
+    }
+
+    /// <summary>Formats a date according to the target locale convention.</summary>
+    private static string FormatDateForLocale(DateOnly date, Locale locale) =>
+        locale switch
+        {
+            Locale.Nl => date.ToString("d MMMM", new CultureInfo("nl-NL")),
+            Locale.En => date.ToString("MMMM d", new CultureInfo("en-US")),
+            _ => throw new InvalidOperationException($"Unhandled {nameof(Locale)}: {locale}"),
+        };
 
     /// <summary>Builds the JSON payload for a nudge push notification.</summary>
     private static string BuildNudgePayload(string senderName, DateOnly date, string body, Guid householdId)

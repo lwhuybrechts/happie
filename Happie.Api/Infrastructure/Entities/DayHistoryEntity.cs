@@ -1,5 +1,4 @@
 using Happie.Api.Infrastructure.Repositories;
-using Happie.Api.Domain;
 using Happie.Shared.Domain;
 
 namespace Happie.Api.Infrastructure.Entities;
@@ -30,6 +29,9 @@ public class DayHistoryEntity : MyTableEntity
     /// <summary>The type of change that was recorded.</summary>
     public ChangeType ChangeType { get; set; }
 
-    /// <summary>A human-readable summary of the change.</summary>
-    public string Description { get; set; } = string.Empty;
+    /// <summary>The translation key identifier for resolving the localized description.</summary>
+    public string TranslationKey { get; set; } = string.Empty;
+
+    /// <summary>JSON-serialized dictionary of named string values for template parameter substitution.</summary>
+    public string Parameters { get; set; } = string.Empty;
 }
