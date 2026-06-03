@@ -134,6 +134,19 @@
         _isLoading = false;
     }
 
+    /// <summary>
+    /// Silently re-fetches the day plan without showing a loading state.
+    /// Used after optimistic saves to pick up server-side changes (e.g. new history entries)
+    /// without disrupting the current UI.
+    /// </summary>
+    private async Task RefreshDayPlanAsync()
+    {
+        var response = await Http.GetAsync($"days/{Date}");
+
+        if (response.IsSuccessStatusCode)
+            _dayPlan = await response.Content.ReadFromJsonAsync<DayPlanResponse>();
+    }
+
     private void OpenNudgeModal()
     {
         _nudgeModal?.Open();
@@ -141,26 +154,26 @@
 
     private async Task OnDishChangedAsync(string? newDescription)
     {
-        // Refresh the day plan data from the API to get updated state.
-        await LoadDayPlanAsync();
+        // Silently refresh to pick up the new history entry.
+        await RefreshDayPlanAsync();
     }
 
     private async Task OnAttendanceChangedAsync((Guid HousemateId, AttendanceStatus Status) change)
     {
-        // Refresh the day plan data from the API to get updated state.
-        await LoadDayPlanAsync();
+        // Silently refresh to pick up the new history entry.
+        await RefreshDayPlanAsync();
     }
 
     private async Task OnChefChangedAsync((Guid HousemateId, bool IsChef) change)
     {
-        // Refresh the day plan data from the API to get updated state.
-        await LoadDayPlanAsync();
+        // Silently refresh to pick up the new history entry.
+        await RefreshDayPlanAsync();
     }
 
     private async Task OnCommentChangedAsync((Guid HousemateId, string? Text) change)
     {
-        // Refresh the day plan data from the API to get updated state.
-        await LoadDayPlanAsync();
+        // Silently refresh to pick up the new history entry.
+        await RefreshDayPlanAsync();
     }
 
     public async ValueTask DisposeAsync()

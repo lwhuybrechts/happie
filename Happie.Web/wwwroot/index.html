@@ -398,6 +398,51 @@
                 return null;
             }
         };
+
+        // Viewport width detection — registers a matchMedia listener for the mobile breakpoint.
+        // Returns the initial matches value (true = narrow viewport).
+        happie.registerViewportListener = function (dotNetRef) {
+            const mql = window.matchMedia('(max-width: 479.98px)');
+            happie._viewportMql = mql;
+            const handler = (e) => dotNetRef.invokeMethodAsync('HandleViewportChangeAsync', e.matches);
+            mql.addEventListener('change', handler);
+            happie._viewportHandler = handler;
+            return mql.matches;
+        };
+
+        // Removes the viewport matchMedia listener.
+        happie.unregisterViewportListener = function () {
+            if (happie._viewportMql && happie._viewportHandler)
+                happie._viewportMql.removeEventListener('change', happie._viewportHandler);
+            happie._viewportMql = null;
+            happie._viewportHandler = null;
+        };
+
+        // Pointer device detection — one-time check.
+        // Returns true if the primary input device supports hover (mouse/trackpad).
+        happie.hasPointerDevice = function () {
+            return window.matchMedia('(hover: hover)').matches;
+        };
+
+        // Outside-click detection — registers a document-level click listener.
+        // Invokes HandleOutsideClickAsync on the .NET reference when a click occurs
+        // outside the element with the given elementId.
+        happie.registerOutsideClick = function (dotNetRef, elementId) {
+            const handler = (e) => {
+                const element = document.getElementById(elementId);
+                if (element && !element.contains(e.target))
+                    dotNetRef.invokeMethodAsync('HandleOutsideClickAsync');
+            };
+            document.addEventListener('click', handler);
+            happie._outsideClickHandler = handler;
+        };
+
+        // Removes the outside-click document listener.
+        happie.unregisterOutsideClick = function () {
+            if (happie._outsideClickHandler)
+                document.removeEventListener('click', happie._outsideClickHandler);
+            happie._outsideClickHandler = null;
+        };
     </script>
 </body>
 

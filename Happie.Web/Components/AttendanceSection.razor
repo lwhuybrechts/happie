@@ -1,9 +1,12 @@
 @using Happie.Shared.Contracts
 @using Happie.Shared.Domain
+@using Happie.Web.Services
 @inject HttpClient Http
 @inject IStringLocalizer<AppStrings> Localizer
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
-<div class="attendance-section">
+<div class="attendance-section" @ref="_sectionRef" id="attendance-section">
     <div class="attendance-section__header">
         <span class="attendance-section__title">@Localizer["Attendance_Title"]</span>
         <button class="attendance-section__nudge-btn" @onclick="OnNudgeClicked" aria-label="@Localizer["Attendance_NudgeAriaLabel"]">
@@ -19,43 +22,47 @@
     <div class="attendance-section__list">
         @foreach (var item in Attendance)
         {
-            <div class="attendance-section__row">
+            var housemateId = item.HousemateId;
+            var isExpanded = _stateManager.IsCollapseEnabled && _stateManager.IsExpanded(housemateId);
+            var isCollapsed = _stateManager.IsCollapseEnabled && !_stateManager.IsExpanded(housemateId);
+            var currentStatus = GetStatus(housemateId);
+
+            <div class="attendance-section__row"
+                 @onmouseenter="() => HandleMouseEnterAsync(housemateId)"
+                 @onmouseleave="() => HandleMouseLeaveAsync(housemateId)">
                 <div class="attendance-section__housemate">
                     <HousemateAvatar Name="@item.HousemateName" Color="@item.Color" />
-                    <span class="attendance-section__name">@item.HousemateName</span>
+                    <span class="attendance-section__name @(isExpanded ? "attendance-section__name--truncated" : "")">@item.HousemateName</span>
                 </div>
                 <div class="attendance-section__buttons">
-                    <button class="attendance-section__chef-btn @(GetIsChef(item.HousemateId) ? "attendance-section__chef-btn--active" : "")"
-                            @onclick="() => ToggleChefAsync(item.HousemateId)"
-                            disabled="@(_chefSavingIds.Contains(item.HousemateId))"
-                            aria-pressed="@(GetIsChef(item.HousemateId) ? "true" : "false")"
+                    <button class="attendance-section__chef-btn @(GetIsChef(housemateId) ? "attendance-section__chef-btn--active" : "") @GetChefCollapseClass(housemateId)"
+                            @onclick="() => ToggleChefAsync(housemateId)"
+                            disabled="@(_chefSavingIds.Contains(housemateId))"
+                            aria-pressed="@(GetIsChef(housemateId) ? "true" : "false")"
                             aria-label="@(string.Format(Localizer["ChefToggle_AriaLabel"], item.HousemateName))">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path stroke-width="1.8" d="M11 2.5c-1.1 0-2.1.5-2.7 1.2C7.6 3.2 6.6 2.8 5.5 3.2 3.9 3.8 3.2 5.5 3.2 6.8c0 1.8.9 3.2 2.3 4.1v2.6h11v-2.6c1.4-.9 2.3-2.3 2.3-4.1 0-1.3-.7-3-2.3-3.6-1.1-.4-2.1 0-2.8.5C13.1 3 12.1 2.5 11 2.5z"/>
                             <rect stroke-width="1.4" x="5.5" y="14.5" width="11" height="4" rx="1"/>
                         </svg>
                     </button>
-                    <button class="attendance-section__btn @(GetStatus(item.HousemateId) == AttendanceStatus.EatingIn ? "attendance-section__btn--eating-in" : "")"
-                            @onclick="() => SetStatusAsync(item.HousemateId, AttendanceStatus.EatingIn)"
-                            disabled="@IsDisabled(item.HousemateId)"
-                            aria-pressed="@(GetStatus(item.HousemateId) == AttendanceStatus.EatingIn ? "true" : "false")"
-                            aria-label="@Localizer["AttendanceToggle_EatingIn"]">
-                        ✓
-                    </button>
-                    <button class="attendance-section__btn @(GetStatus(item.HousemateId) == AttendanceStatus.Unknown ? "attendance-section__btn--unknown" : "")"
-                            @onclick="() => SetStatusAsync(item.HousemateId, AttendanceStatus.Unknown)"
-                            disabled="@IsDisabled(item.HousemateId)"
-                            aria-pressed="@(GetStatus(item.HousemateId) == AttendanceStatus.Unknown ? "true" : "false")"
-                            aria-label="@Localizer["AttendanceToggle_Unknown"]">
-                        ?
-                    </button>
-                    <button class="attendance-section__btn @(GetStatus(item.HousemateId) == AttendanceStatus.NotEatingIn ? "attendance-section__btn--not-eating-in" : "")"
-                            @onclick="() => SetStatusAsync(item.HousemateId, AttendanceStatus.NotEatingIn)"
-                            disabled="@IsDisabled(item.HousemateId)"
-                            aria-pressed="@(GetStatus(item.HousemateId) == AttendanceStatus.NotEatingIn ? "true" : "false")"
-                            aria-label="@Localizer["AttendanceToggle_NotEatingIn"]">
-                        ✗
-                    </button>
+                    <div class="attendance-section__btn-group @GetBtnGroupClass(housemateId)">
+                        @foreach (var status in _statusOrder)
+                        {
+                            var isActive = currentStatus == status;
+                            var btnClass = GetStatusButtonClass(status, currentStatus);
+
+                            <button class="attendance-section__btn @btnClass @(isActive ? "attendance-section__btn--active" : "")"
+                                    @onclick="() => HandleButtonClickAsync(housemateId, status)"
+                                    disabled="@IsDisabled(housemateId)"
+                                    aria-pressed="@(isActive ? "true" : "false")"
+                                    aria-expanded="@(isActive ? (isExpanded ? "true" : "false") : null)"
+                                    aria-hidden="@(!isActive && isCollapsed ? "true" : null)"
+                                    tabindex="@(!isActive && isCollapsed ? -1 : (int?)null)"
+                                    aria-label="@GetStatusAriaLabel(status)">
+                                @GetStatusSymbol(status)
+                            </button>
+                        }
+                    </div>
                 </div>
             </div>
         }
@@ -90,6 +97,10 @@
     [Parameter]
     public EventCallback<(Guid HousemateId, bool IsChef)> OnChefChanged { get; set; }
 
+    // Status display order.
+    private static readonly AttendanceStatus[] _statusOrder =
+        [AttendanceStatus.EatingIn, AttendanceStatus.Unknown, AttendanceStatus.NotEatingIn];
+
     // Tracks optimistic overrides per housemate during save.
     private readonly Dictionary<Guid, AttendanceStatus> _optimisticOverrides = new();
     private readonly HashSet<Guid> _savingIds = new();
@@ -98,6 +109,239 @@
     // Chef toggle optimistic UI state.
     private readonly Dictionary<Guid, bool> _chefOverrides = new();
     private readonly HashSet<Guid> _chefSavingIds = new();
+
+    // State manager for collapse/expand behavior.
+    private AttendanceRowStateManager _stateManager = default!;
+    private DotNetObjectReference<AttendanceSection>? _dotNetRef;
+    private ElementReference _sectionRef;
+    private bool _hasPointerDevice;
+    private bool _isNarrowViewport;
+    private bool _outsideClickRegistered;
+
+    protected override void OnInitialized()
+    {
+        _stateManager = new AttendanceRowStateManager();
+        _stateManager.StateChanged += OnStateChanged;
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Clear optimistic overrides that are now reflected in the Attendance parameter.
+        if (_optimisticOverrides.Count > 0)
+        {
+            var keysToRemove = _optimisticOverrides
+                .Where(x =>
+                {
+                    var item = Attendance.FirstOrDefault(a => a.HousemateId == x.Key);
+                    return item is not null && item.Status == x.Value;
+                })
+                .Select(x => x.Key)
+                .ToList();
+
+            foreach (var key in keysToRemove)
+                _optimisticOverrides.Remove(key);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            _isNarrowViewport = await JS.InvokeAsync<bool>("happie.registerViewportListener", _dotNetRef);
+            _hasPointerDevice = await JS.InvokeAsync<bool>("happie.hasPointerDevice");
+            _stateManager.Configure(_isNarrowViewport, _hasPointerDevice);
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleViewportChangeAsync(bool isNarrow)
+    {
+        _isNarrowViewport = isNarrow;
+        await _stateManager.HandleViewportChangeAsync(isNarrow);
+
+        // Unregister outside click if we're no longer in narrow mode or nothing expanded.
+        if (!isNarrow && _outsideClickRegistered)
+        {
+            await JS.InvokeVoidAsync("happie.unregisterOutsideClick");
+            _outsideClickRegistered = false;
+        }
+
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task HandleOutsideClickAsync()
+    {
+        await _stateManager.HandleOutsideClickAsync();
+        await UpdateOutsideClickRegistrationAsync();
+        StateHasChanged();
+    }
+
+    private async Task HandleButtonClickAsync(Guid housemateId, AttendanceStatus clickedStatus)
+    {
+        var currentStatus = GetStatus(housemateId);
+        var isExpanded = _stateManager.IsExpanded(housemateId);
+
+        if (_stateManager.IsAnimating(housemateId))
+            return;
+
+        if (!_stateManager.IsCollapseEnabled)
+        {
+            // Wide viewport — direct status change (existing behavior).
+            await SetStatusAsync(housemateId, clickedStatus);
+            return;
+        }
+
+        if (!isExpanded)
+        {
+            // Collapsed state — active button click expands.
+            await _stateManager.HandleActiveButtonClickAsync(housemateId);
+            await UpdateOutsideClickRegistrationAsync();
+            StateHasChanged();
+            return;
+        }
+
+        // Expanded state — handle the clicked button.
+        // Step 1: Apply optimistic status change immediately so the clicked button
+        // becomes visually active while still in expanded position.
+        if (clickedStatus != currentStatus)
+        {
+            _optimisticOverrides[housemateId] = clickedStatus;
+            StateHasChanged();
+
+            // Step 2: Wait one frame so the browser paints the new active state
+            // while buttons are still in their expanded positions.
+            await Task.Delay(20);
+        }
+
+        // Step 3: Now collapse — the new active button is already on top (z-index: 2)
+        // so the old buttons slide behind it without flicker.
+        var result = await _stateManager.HandleExpandedButtonClickAsync(housemateId, currentStatus, clickedStatus);
+        await UpdateOutsideClickRegistrationAsync();
+
+        if (result.StatusChanged)
+        {
+            // The override is already applied and the row is collapsed.
+            // Don't add to _savingIds — the button isn't visible/interactive anyway,
+            // and the disabled state change would cause a visible flicker.
+            _errorHousemateId = null;
+
+            var response = await Http.PutAsJsonAsync(
+                $"days/{Date}/attendance/{housemateId}",
+                new UpdateAttendanceRequest(clickedStatus));
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _optimisticOverrides.Remove(housemateId);
+                _errorHousemateId = housemateId;
+            }
+            else
+            {
+                // Don't remove the override here — it stays until OnParametersSet
+                // receives the updated Attendance prop from the parent, preventing
+                // a brief flicker back to the old status.
+                await OnStatusChanged.InvokeAsync((housemateId, clickedStatus));
+            }
+        }
+        else
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleMouseEnterAsync(Guid housemateId)
+    {
+        if (!_hasPointerDevice || !_isNarrowViewport)
+            return;
+
+        await _stateManager.HandleMouseEnterAsync(housemateId);
+        await UpdateOutsideClickRegistrationAsync();
+        StateHasChanged();
+    }
+
+    private async Task HandleMouseLeaveAsync(Guid housemateId)
+    {
+        if (!_hasPointerDevice || !_isNarrowViewport)
+            return;
+
+        await _stateManager.HandleMouseLeaveAsync(housemateId);
+        await UpdateOutsideClickRegistrationAsync();
+        StateHasChanged();
+    }
+
+    private async Task UpdateOutsideClickRegistrationAsync()
+    {
+        var hasExpandedRow = _stateManager.IsCollapseEnabled &&
+            Attendance.Any(x => _stateManager.IsExpanded(x.HousemateId));
+
+        if (hasExpandedRow && !_outsideClickRegistered)
+        {
+            await JS.InvokeVoidAsync("happie.registerOutsideClick", _dotNetRef, "attendance-section");
+            _outsideClickRegistered = true;
+        }
+        else if (!hasExpandedRow && _outsideClickRegistered)
+        {
+            await JS.InvokeVoidAsync("happie.unregisterOutsideClick");
+            _outsideClickRegistered = false;
+        }
+    }
+
+    private void OnStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private string GetBtnGroupClass(Guid housemateId)
+    {
+        if (!_stateManager.IsCollapseEnabled)
+            return "";
+
+        return _stateManager.IsExpanded(housemateId)
+            ? "attendance-section__btn-group--expanded"
+            : "attendance-section__btn-group--collapsed";
+    }
+
+    private string GetChefCollapseClass(Guid housemateId)
+    {
+        if (!_stateManager.IsCollapseEnabled)
+            return "";
+
+        return _stateManager.IsExpanded(housemateId)
+            ? "attendance-section__chef-btn--expanded"
+            : "attendance-section__chef-btn--collapsed";
+    }
+
+    private static string GetStatusButtonClass(AttendanceStatus status, AttendanceStatus currentStatus)
+    {
+        if (status != currentStatus)
+            return "";
+
+        return status switch
+        {
+            AttendanceStatus.EatingIn => "attendance-section__btn--eating-in",
+            AttendanceStatus.Unknown => "attendance-section__btn--unknown",
+            AttendanceStatus.NotEatingIn => "attendance-section__btn--not-eating-in",
+            _ => ""
+        };
+    }
+
+    private static string GetStatusSymbol(AttendanceStatus status) => status switch
+    {
+        AttendanceStatus.EatingIn => "✓",
+        AttendanceStatus.Unknown => "?",
+        AttendanceStatus.NotEatingIn => "✗",
+        _ => ""
+    };
+
+    private string GetStatusAriaLabel(AttendanceStatus status) => status switch
+    {
+        AttendanceStatus.EatingIn => Localizer["AttendanceToggle_EatingIn"],
+        AttendanceStatus.Unknown => Localizer["AttendanceToggle_Unknown"],
+        AttendanceStatus.NotEatingIn => Localizer["AttendanceToggle_NotEatingIn"],
+        _ => ""
+    };
 
     private AttendanceStatus GetStatus(Guid housemateId)
     {
@@ -135,8 +379,7 @@
         }
         else
         {
-            // Success: clear the override and notify the parent.
-            _optimisticOverrides.Remove(housemateId);
+            // Success: keep the override until the parent passes updated Attendance.
             await OnStatusChanged.InvokeAsync((housemateId, newStatus));
         }
     }
@@ -179,5 +422,34 @@
             _chefOverrides.Remove(housemateId);
             await OnChefChanged.InvokeAsync((housemateId, newIsChef));
         }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _stateManager.StateChanged -= OnStateChanged;
+
+        try
+        {
+            await JS.InvokeVoidAsync("happie.unregisterViewportListener");
+        }
+        catch (JSDisconnectedException)
+        {
+            // Ignore — circuit already disconnected.
+        }
+
+        if (_outsideClickRegistered)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("happie.unregisterOutsideClick");
+            }
+            catch (JSDisconnectedException)
+            {
+                // Ignore — circuit already disconnected.
+            }
+        }
+
+        _dotNetRef?.Dispose();
+        _stateManager.Dispose();
     }
 }

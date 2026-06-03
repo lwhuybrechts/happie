@@ -65,6 +65,8 @@
     align-items: center;
     gap: 12px;
     min-width: 0;
+    flex: 1;
+    overflow: hidden;
 }
 
 /* Housemate name — bold, truncated if too long. */
@@ -197,4 +199,155 @@
     background-color: #1E88E5;
     border-color: #1E88E5;
     color: #ffffff;
+}
+
+/* Button group container. */
+.attendance-section__btn-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* === Mobile-only collapse/expand behavior (< 480px) === */
+@media (max-width: 479.98px) {
+    /*
+     * Remove parent gap on mobile so the btn-group handles all spacing.
+     * The chef button gets an explicit margin-right.
+     */
+    .attendance-section__buttons {
+        gap: 0;
+    }
+
+    .attendance-section__chef-btn {
+        margin-right: 8px;
+    }
+
+    /*
+     * Animation strategy: the btn-group container has a fixed height and animates
+     * its width between 32px (one button) and full width (all buttons + gaps).
+     * Buttons are position: absolute inside and animate their `left` property.
+     * overflow: hidden on the container clips inactive buttons as they slide
+     * behind the active button — creating a true "slide behind" effect where
+     * inactive buttons remain full-size throughout.
+     *
+     * Button positions (left-to-right): slot 0, slot 1, slot 2.
+     * Each slot = 32px button + 8px gap = 40px offset per slot.
+     * Expanded width = 3 * 32px + 2 * 8px = 112px.
+     * Collapsed width = 32px.
+     */
+
+    .attendance-section__btn-group {
+        position: relative;
+        height: 32px;
+        gap: 0;
+        overflow: hidden;
+        transition: width 250ms ease;
+    }
+
+    .attendance-section__btn-group--collapsed {
+        width: 32px;
+    }
+
+    .attendance-section__btn-group--expanded {
+        width: 112px;
+    }
+
+    /* All buttons are absolutely positioned within the container. */
+    .attendance-section__btn-group .attendance-section__btn {
+        position: absolute;
+        top: 0;
+        width: 32px;
+        height: 32px;
+        transition: left 250ms ease;
+    }
+
+    /* In collapsed state, the active button is on top so others slide behind it. */
+    .attendance-section__btn-group--collapsed .attendance-section__btn--active {
+        z-index: 3;
+    }
+
+    .attendance-section__btn-group--collapsed .attendance-section__btn:not(.attendance-section__btn--active) {
+        z-index: 1;
+    }
+
+    /* In expanded state, the active button is still slightly elevated so that when
+       the collapse starts in the same frame, it's already on top. */
+    .attendance-section__btn-group--expanded .attendance-section__btn--active {
+        z-index: 2;
+    }
+
+    .attendance-section__btn-group--expanded .attendance-section__btn:not(.attendance-section__btn--active) {
+        z-index: 1;
+    }
+
+    /* === EXPANDED positions: buttons at their natural slots. === */
+    .attendance-section__btn-group--expanded .attendance-section__btn:nth-child(1) {
+        left: 0;
+    }
+
+    .attendance-section__btn-group--expanded .attendance-section__btn:nth-child(2) {
+        left: 40px;
+    }
+
+    .attendance-section__btn-group--expanded .attendance-section__btn:nth-child(3) {
+        left: 80px;
+    }
+
+    /* === COLLAPSED positions: all buttons slide to left:0 (behind the active button). === */
+    .attendance-section__btn-group--collapsed .attendance-section__btn {
+        left: 0;
+    }
+
+    /* Inactive buttons in collapsed state are not interactive. */
+    .attendance-section__btn-group--collapsed .attendance-section__btn:not(.attendance-section__btn--active) {
+        pointer-events: none;
+    }
+
+    /* Chef button transitions — always keep 8px right margin on mobile. */
+    .attendance-section__chef-btn--collapsed {
+        transition: margin-right 250ms ease-in;
+        margin-right: 8px;
+    }
+
+    .attendance-section__chef-btn--expanded {
+        transition: margin-right 250ms ease-out;
+        margin-right: 8px;
+    }
+}
+
+/* === Wide viewport (≥ 480px) — always show all buttons in standard layout === */
+@media (min-width: 480px) {
+    .attendance-section__btn-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .attendance-section__btn-group .attendance-section__btn {
+        position: relative;
+        top: auto;
+        left: auto;
+    }
+
+    .attendance-section__chef-btn {
+        order: -1;
+    }
+}
+
+/* === Hover hint on pointer devices at mobile viewport === */
+@media (max-width: 479.98px) and (hover: hover) {
+    .attendance-section__btn-group--collapsed .attendance-section__btn--active {
+        cursor: pointer;
+    }
+}
+
+/* Name truncation when row is expanded — constrain width to leave room for buttons. */
+@media (max-width: 479.98px) {
+    .attendance-section__name--truncated {
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 }

@@ -50,6 +50,9 @@ public class TimeFormatterPropertyTests
             {
                 var (editedAt, now) = pair;
                 var result = TimeFormatter.FormatDishTime(editedAt, now);
+
+                // The formatter converts editedAt to local time before formatting.
+                var localEditedAt = editedAt.ToLocalTime();
                 var elapsed = now - editedAt;
 
                 bool formatCorrect;
@@ -72,15 +75,15 @@ public class TimeFormatterPropertyTests
                     formatCorrect = result == $"{expectedHours} hours ago";
                     expectedDescription = $"{expectedHours} hours ago";
                 }
-                else if (editedAt.Date == now.Date)
+                else if (localEditedAt.Date == now.Date)
                 {
-                    var expected = editedAt.ToString("HH:mm", CultureInfo.InvariantCulture);
+                    var expected = localEditedAt.ToString("HH:mm", CultureInfo.InvariantCulture);
                     formatCorrect = result == expected;
                     expectedDescription = expected;
                 }
                 else
                 {
-                    var expected = editedAt.ToString("d MMM HH:mm", CultureInfo.InvariantCulture);
+                    var expected = localEditedAt.ToString("d MMM HH:mm", CultureInfo.InvariantCulture);
                     formatCorrect = result == expected;
                     expectedDescription = expected;
                 }
@@ -102,24 +105,27 @@ public class TimeFormatterPropertyTests
                 var (changedAt, now) = pair;
                 var result = TimeFormatter.FormatHistoryTime(changedAt, now);
 
+                // The formatter converts changedAt to local time before formatting.
+                var localChangedAt = changedAt.ToLocalTime();
+
                 bool formatCorrect;
                 string expectedDescription;
 
-                if (changedAt.Date == now.Date)
+                if (localChangedAt.Date == now.Date)
                 {
-                    var expected = changedAt.ToString("HH:mm", CultureInfo.InvariantCulture);
+                    var expected = localChangedAt.ToString("HH:mm", CultureInfo.InvariantCulture);
                     formatCorrect = result == expected;
                     expectedDescription = expected;
                 }
-                else if (changedAt.Year == now.Year)
+                else if (localChangedAt.Year == now.Year)
                 {
-                    var expected = changedAt.ToString("d MMM HH:mm", CultureInfo.InvariantCulture);
+                    var expected = localChangedAt.ToString("d MMM HH:mm", CultureInfo.InvariantCulture);
                     formatCorrect = result == expected;
                     expectedDescription = expected;
                 }
                 else
                 {
-                    var expected = changedAt.ToString("d MMM yyyy HH:mm", CultureInfo.InvariantCulture);
+                    var expected = localChangedAt.ToString("d MMM yyyy HH:mm", CultureInfo.InvariantCulture);
                     formatCorrect = result == expected;
                     expectedDescription = expected;
                 }
