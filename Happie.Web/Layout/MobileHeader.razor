@@ -14,9 +14,26 @@
     </div>
 </header>
 
+@implements IDisposable
+
 @code {
+    protected override void OnInitialized()
+    {
+        ActiveHousemateService.OnChanged += OnActiveHousemateChanged;
+    }
+
+    private void OnActiveHousemateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     private void NavigateToHousemates()
     {
         NavigationManager.NavigateTo("/housemates");
+    }
+
+    public void Dispose()
+    {
+        ActiveHousemateService.OnChanged -= OnActiveHousemateChanged;
     }
 }
