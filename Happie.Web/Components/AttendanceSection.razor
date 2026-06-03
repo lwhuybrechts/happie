@@ -141,6 +141,22 @@
             foreach (var key in keysToRemove)
                 _optimisticOverrides.Remove(key);
         }
+
+        // Clear chef overrides that are now reflected in the Attendance parameter.
+        if (_chefOverrides.Count > 0)
+        {
+            var keysToRemove = _chefOverrides
+                .Where(x =>
+                {
+                    var item = Attendance.FirstOrDefault(a => a.HousemateId == x.Key);
+                    return item is not null && item.IsChef == x.Value;
+                })
+                .Select(x => x.Key)
+                .ToList();
+
+            foreach (var key in keysToRemove)
+                _chefOverrides.Remove(key);
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -418,8 +434,7 @@
         }
         else
         {
-            // Success: clear override and notify the parent.
-            _chefOverrides.Remove(housemateId);
+            // Success: keep the override until the parent passes updated Attendance.
             await OnChefChanged.InvokeAsync((housemateId, newIsChef));
         }
     }

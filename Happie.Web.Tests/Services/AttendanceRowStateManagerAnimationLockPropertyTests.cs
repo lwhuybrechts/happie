@@ -176,7 +176,7 @@ public class AttendanceRowStateManagerAnimationLockPropertyTests
             {
                 // Arrange: use a longer animation duration to prevent the race condition where
                 // Task.Delay(1) completes before the test can observe the animating state.
-                using var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 100);
+                using var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 20);
                 sut.Configure(isNarrowViewport: true, hasPointerDevice: false);
 
                 // Expand row A fully.
