@@ -41,7 +41,6 @@
     border-radius: 12px;
     background-color: #f5f5f5;
     border: 2px solid transparent;
-    transition: border-color 0.15s ease;
 }
 
 .comments-section__row--clickable .comments-section__bubble:hover {
@@ -86,21 +85,61 @@
 
 .comments-section__input {
     width: 100%;
-    padding: 8px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
     font-size: 14px;
     color: #333333;
     outline: none;
     box-sizing: border-box;
+    background: transparent;
 }
 
 .comments-section__input:focus {
-    border-color: #4CAF50;
+    border: none;
 }
 
 .comments-section__input:disabled {
     opacity: 0.6;
+}
+
+.comments-section__edit-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.comments-section__actions-wrapper {
+    overflow: hidden;
+    animation: slide-down 0.25s ease forwards;
+}
+
+.comments-section__actions-wrapper--closing {
+    animation: slide-up 0.25s ease-out forwards;
+}
+
+@keyframes slide-down {
+    from {
+        max-height: 0;
+        opacity: 0;
+    }
+    to {
+        max-height: 48px;
+        opacity: 1;
+    }
+}
+
+@keyframes slide-up {
+    from {
+        max-height: 48px;
+        margin-top: 0;
+        opacity: 1;
+    }
+    to {
+        max-height: 0;
+        margin-top: -4px;
+        opacity: 0;
+    }
 }
 
 .comments-section__actions {

@@ -8,8 +8,52 @@
     <div class="comments-section__list">
         @foreach (var comment in OrderedComments)
         {
-            @if (_isEditing && IsActiveHousemate(comment.HousemateId))
+            @if ((_isEditing || _isClosing) && _isEditingExisting && IsActiveHousemate(comment.HousemateId))
             {
+                @* Render the editing block inline, in the same position as the original comment. *@
+                <div class="comments-section__edit-block">
+                    <div class="comments-section__row">
+                        <HousemateAvatar Name="@ActiveHousemateName" Color="@ActiveHousemateColor" />
+                        <div class="comments-section__bubble comments-section__bubble--editing">
+                            <span class="comments-section__name">@ActiveHousemateName.ToUpperInvariant()</span>
+                            <input @ref="_inputRef"
+                                   class="comments-section__input"
+                                   type="text"
+                                   maxlength="200"
+                                   placeholder="@Localizer["CommentEditor_Placeholder"]"
+                                   @bind="_editText"
+                                   @bind:event="oninput"
+                                   @onkeydown="HandleKeyDownAsync"
+                                   disabled="@(_isSaving || _isClosing)"
+                                   aria-label="@Localizer["CommentEditor_AriaLabel", ActiveHousemateName]" />
+                        </div>
+                    </div>
+                    <div class="comments-section__actions-wrapper @(_isClosing ? "comments-section__actions-wrapper--closing" : "")">
+                        <div class="comments-section__actions">
+                            <button class="comments-section__action-btn comments-section__action-btn--accept"
+                                    @onclick="SaveAsync"
+                                    disabled="@IsSaveDisabled"
+                                    aria-label="Save comment">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="m9 12 2 2 4-4" />
+                                </svg>
+                            </button>
+                            <button class="comments-section__action-btn comments-section__action-btn--discard"
+                                    @onclick="Discard"
+                                    disabled="@(_isSaving || _isClosing)"
+                                    aria-label="Discard comment">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="m15 9-6 6" />
+                                    <path d="m9 9 6 6" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 continue;
             }
 
@@ -25,49 +69,54 @@
             </div>
         }
 
-        @if (_isEditing)
+        @if ((_isEditing || _isClosing) && !_isEditingExisting)
         {
-            <div class="comments-section__row">
-                <HousemateAvatar Name="@ActiveHousemateName" Color="@ActiveHousemateColor" />
-                <div class="comments-section__bubble comments-section__bubble--editing">
-                    <span class="comments-section__name">@ActiveHousemateName.ToUpperInvariant()</span>
-                    <input @ref="_inputRef"
-                           class="comments-section__input"
-                           type="text"
-                           maxlength="200"
-                           placeholder="@Localizer["CommentEditor_Placeholder"]"
-                           @bind="_editText"
-                           @bind:event="oninput"
-                           @onkeydown="HandleKeyDownAsync"
-                           disabled="@_isSaving"
-                           aria-label="@Localizer["CommentEditor_AriaLabel", ActiveHousemateName]" />
+            @* New comment — editing block at the bottom. *@
+            <div class="comments-section__edit-block">
+                <div class="comments-section__row">
+                    <HousemateAvatar Name="@ActiveHousemateName" Color="@ActiveHousemateColor" />
+                    <div class="comments-section__bubble comments-section__bubble--editing">
+                        <span class="comments-section__name">@ActiveHousemateName.ToUpperInvariant()</span>
+                        <input @ref="_inputRef"
+                               class="comments-section__input"
+                               type="text"
+                               maxlength="200"
+                               placeholder="@Localizer["CommentEditor_Placeholder"]"
+                               @bind="_editText"
+                               @bind:event="oninput"
+                               @onkeydown="HandleKeyDownAsync"
+                               disabled="@(_isSaving || _isClosing)"
+                               aria-label="@Localizer["CommentEditor_AriaLabel", ActiveHousemateName]" />
+                    </div>
+                </div>
+                <div class="comments-section__actions-wrapper @(_isClosing ? "comments-section__actions-wrapper--closing" : "")">
+                    <div class="comments-section__actions">
+                        <button class="comments-section__action-btn comments-section__action-btn--accept"
+                                @onclick="SaveAsync"
+                                disabled="@IsSaveDisabled"
+                                aria-label="Save comment">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="m9 12 2 2 4-4" />
+                            </svg>
+                        </button>
+                        <button class="comments-section__action-btn comments-section__action-btn--discard"
+                                @onclick="Discard"
+                                disabled="@(_isSaving || _isClosing)"
+                                aria-label="Discard comment">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="m15 9-6 6" />
+                                <path d="m9 9 6 6" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div class="comments-section__actions">
-                <button class="comments-section__action-btn comments-section__action-btn--accept"
-                        @onclick="SaveAsync"
-                        disabled="@_isSaving"
-                        aria-label="Save comment">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="m9 12 2 2 4-4" />
-                    </svg>
-                </button>
-                <button class="comments-section__action-btn comments-section__action-btn--discard"
-                        @onclick="Discard"
-                        disabled="@_isSaving"
-                        aria-label="Discard comment">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="m15 9-6 6" />
-                        <path d="m9 9 6 6" />
-                    </svg>
-                </button>
-            </div>
         }
-        else if (!ActiveHousemateHasComment)
+        else if (!(_isEditing || _isClosing) && !ActiveHousemateHasComment)
         {
             <div class="comments-section__row"
                  @onclick="StartNewComment"
@@ -113,11 +162,14 @@
 
     private string _editText = string.Empty;
     private bool _isEditing;
+    private bool _isClosing;
+    private bool _isEditingExisting;
     private bool _isSaving;
     private bool _showError;
     private string? _previousText;
     private bool _shouldFocus;
     private ElementReference _inputRef;
+    private (Guid HousemateId, string? Text)? _pendingChange;
 
     private IEnumerable<CommentDto> OrderedComments
     {
@@ -144,10 +196,23 @@
     private bool IsActiveHousemate(Guid housemateId) =>
         housemateId == ActiveHousemateId;
 
+    private bool IsSaveDisabled
+    {
+        get
+        {
+            if (_isSaving || _isClosing)
+                return true;
+            var trimmed = _editText.Trim();
+            string? currentText = string.IsNullOrEmpty(trimmed) ? null : trimmed;
+            return currentText == _previousText;
+        }
+    }
+
     private void StartNewComment()
     {
         _editText = string.Empty;
         _previousText = null;
+        _isEditingExisting = false;
         _showError = false;
         _isEditing = true;
         _shouldFocus = true;
@@ -160,6 +225,7 @@
 
         _editText = comment.Text;
         _previousText = comment.Text;
+        _isEditingExisting = true;
         _showError = false;
         _isEditing = true;
         _shouldFocus = true;
@@ -176,8 +242,22 @@
 
     private void Discard()
     {
-        _isEditing = false;
         _showError = false;
+        CloseEditorAsync();
+    }
+
+    private async void CloseEditorAsync()
+    {
+        _isClosing = true;
+        _isEditing = false;
+        StateHasChanged();
+        await Task.Delay(250);
+        _isClosing = false;
+        var pending = _pendingChange;
+        _pendingChange = null;
+        StateHasChanged();
+        if (pending.HasValue)
+            await OnCommentChanged.InvokeAsync(pending.Value);
     }
 
     private async Task HandleKeyDownAsync(KeyboardEventArgs args)
@@ -198,7 +278,7 @@
         // No change — just close.
         if (newText == _previousText)
         {
-            _isEditing = false;
+            CloseEditorAsync();
             return;
         }
 
@@ -216,8 +296,8 @@
 
         if (success)
         {
-            _isEditing = false;
-            await OnCommentChanged.InvokeAsync((ActiveHousemateId, newText));
+            _pendingChange = (ActiveHousemateId, newText);
+            CloseEditorAsync();
         }
         else
         {

@@ -172,6 +172,26 @@
 
     private async Task OnCommentChangedAsync((Guid HousemateId, string? Text) change)
     {
+        // Apply the change optimistically to avoid flashing the old value while the refresh loads.
+        if (_dayPlan is not null)
+        {
+            var updatedComments = change.Text is null
+                ? _dayPlan.Comments.Where(x => x.HousemateId != change.HousemateId).ToList()
+                : _dayPlan.Comments
+                    .Select(x => x.HousemateId == change.HousemateId ? x with { Text = change.Text } : x)
+                    .ToList();
+
+            // If it's a new comment (not yet in the list), add it.
+            if (change.Text is not null && !_dayPlan.Comments.Any(x => x.HousemateId == change.HousemateId))
+            {
+                var housemate = _dayPlan.Attendance.FirstOrDefault(x => x.HousemateId == change.HousemateId);
+                if (housemate is not null)
+                    updatedComments.Add(new CommentDto(change.HousemateId, housemate.HousemateName, housemate.Color, change.Text, DateTimeOffset.Now));
+            }
+
+            _dayPlan = _dayPlan with { Comments = updatedComments };
+        }
+
         // Silently refresh to pick up the new history entry.
         await RefreshDayPlanAsync();
     }
