@@ -48,10 +48,8 @@ public class DateLabelServicePropertyTests
                     titleCorrect = result.Title == "Yesterday";
                 else if (offset == 1)
                     titleCorrect = result.Title == "Tomorrow";
-                else if (offset >= 2 && offset <= 6)
-                    titleCorrect = result.Title == viewedDate.ToString("dddd", EnglishCulture);
                 else
-                    titleCorrect = result.Title == null;
+                    titleCorrect = result.Title == viewedDate.ToString("dddd", EnglishCulture);
 
                 return titleCorrect.Label(
                     $"Offset {offset}: expected title rule to hold, got Title=\"{result.Title}\"");
