@@ -82,7 +82,7 @@ public class DayHandlerPropertyTests
                 var (sut, capturedEntry) = CreateSutForDish();
 
                 // Act.
-                await sut.UpsertDishAsync(householdId, date, description, actingHousemateId);
+                await sut.UpsertDishAsync(householdId, date, description, null, 0, actingHousemateId);
 
                 // Assert.
                 var entry = capturedEntry();

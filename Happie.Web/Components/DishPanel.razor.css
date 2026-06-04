@@ -4,6 +4,16 @@
     padding: 16px 20px;
 }
 
+.dish-panel--animating {
+    overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dish-panel {
+        transition: none;
+    }
+}
+
 .dish-panel__header {
     display: flex;
     align-items: center;
@@ -105,6 +115,45 @@
     gap: 4px;
 }
 
+.dish-panel__body--has-time {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.dish-panel__text-column {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dish-panel__text-column .dish-panel__dish-text {
+    word-break: break-word;
+}
+
+.dish-panel__time-column {
+    max-width: 30%;
+    text-align: right;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.dish-panel__time-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.dish-panel__time-label {
+    font-size: 12px;
+    color: #718096;
+    text-align: right;
+}
+
 .dish-panel__dish-text {
     font-size: 20px;
     font-weight: 700;
@@ -158,6 +207,60 @@
 
 .dish-panel__input:disabled {
     opacity: 0.6;
+}
+
+.dish-panel__time-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.dish-panel__time-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: #a0aec0;
+}
+
+.dish-panel__time-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dish-panel__time-input {
+    flex: 1;
+}
+
+.dish-panel__clear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background-color: rgba(244, 67, 54, 0.15);
+    border-radius: 50%;
+    color: #F44336;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease;
+}
+
+.dish-panel__clear-btn:hover:not(:disabled) {
+    background-color: rgba(244, 67, 54, 0.3);
+}
+
+.dish-panel__clear-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dish-panel__validation-error {
+    font-size: 12px;
+    color: #F44336;
 }
 
 .dish-panel__toast {

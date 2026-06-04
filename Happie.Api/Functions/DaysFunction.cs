@@ -111,7 +111,27 @@ public class DaysFunction
         if (!readResult.IsSuccess)
             return readResult.Error;
 
-        await _dayHandler.UpsertDishAsync(householdId, parsedDate, readResult.Body.Description.Trim(), actingHousemateId, cancellationToken);
+        // Validate both-or-neither constraint on dinner time fields.
+        if (readResult.Body.DinnerTimeHour.HasValue != readResult.Body.DinnerTimeMinute.HasValue)
+            return new UnprocessableEntityObjectResult(new ApiErrorResponse("Both dinnerTimeHour and dinnerTimeMinute must be provided together or both must be null.", ApiErrorCodes.ValidationError));
+
+        // Validate hour and minute ranges when provided.
+        if (readResult.Body.DinnerTimeHour.HasValue)
+        {
+            if (readResult.Body.DinnerTimeHour.Value < 0 || readResult.Body.DinnerTimeHour.Value > 23)
+                return new UnprocessableEntityObjectResult(new ApiErrorResponse("dinnerTimeHour must be between 0 and 23.", ApiErrorCodes.ValidationError));
+
+            if (readResult.Body.DinnerTimeMinute!.Value < 0 || readResult.Body.DinnerTimeMinute.Value > 59)
+                return new UnprocessableEntityObjectResult(new ApiErrorResponse("dinnerTimeMinute must be between 0 and 59.", ApiErrorCodes.ValidationError));
+        }
+
+        // Convert validated ints to TimeOnly?.
+        TimeOnly? dinnerTime = readResult.Body.DinnerTimeHour.HasValue
+            ? new TimeOnly(readResult.Body.DinnerTimeHour.Value, readResult.Body.DinnerTimeMinute!.Value)
+            : null;
+
+        await _dayHandler.UpsertDishAsync(householdId, parsedDate, readResult.Body.Description.Trim(),
+            dinnerTime, readResult.Body.TimezoneOffsetMinutes, actingHousemateId, cancellationToken);
 
         return new NoContentResult();
     }

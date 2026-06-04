@@ -50,7 +50,7 @@ public class DayHandlerTests
         SetupHistoryAdd();
 
         // Act.
-        await _sut.UpsertDishAsync(householdId, date, description, actingHousemateId);
+        await _sut.UpsertDishAsync(householdId, date, description, null, 0, actingHousemateId);
 
         // Assert.
         _dishRepositoryMock.Verify(
@@ -236,7 +236,7 @@ public class DayHandlerTests
         SetupHistoryAddWithCapture(entry => capturedEntry = entry);
 
         // Act.
-        await _sut.UpsertDishAsync(householdId, date, description, actingHousemateId);
+        await _sut.UpsertDishAsync(householdId, date, description, null, 0, actingHousemateId);
 
         // Assert.
         Assert.NotNull(capturedEntry);

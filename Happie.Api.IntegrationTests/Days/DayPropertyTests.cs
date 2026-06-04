@@ -77,7 +77,7 @@ public class DayPropertyTests
                 await _housemateRepository.UpsertAsync(housemate);
 
                 // Act.
-                await _sut.UpsertDishAsync(householdId, date, description, housemateId);
+                await _sut.UpsertDishAsync(householdId, date, description, null, 0, housemateId);
                 var fetched = await _dishRepository.GetAsync(householdId, date);
 
                 // Clean up.

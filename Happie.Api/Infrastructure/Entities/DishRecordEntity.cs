@@ -23,4 +23,8 @@ public class DishRecordEntity : MyTableEntity
 
     /// <summary>The timestamp when this dish record was last changed.</summary>
     public DateTimeOffset LastChangedAt { get; set; }
+
+    // -1 sentinel means "not set" (Azure Table Storage cannot store nullable int or TimeOnly).
+    public int DinnerTimeHour { get; set; } = -1;
+    public int DinnerTimeMinute { get; set; } = -1;
 }

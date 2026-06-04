@@ -23,7 +23,7 @@ public interface IDayHandler
     /// <summary>
     /// Upserts the dish description for a household on a given date and writes a history entry.
     /// </summary>
-    Task UpsertDishAsync(Guid householdId, DateOnly date, string description, Guid actingHousemateId, CancellationToken ct = default);
+    Task UpsertDishAsync(Guid householdId, DateOnly date, string description, TimeOnly? dinnerTime, int timezoneOffsetMinutes, Guid actingHousemateId, CancellationToken ct = default);
 
     /// <summary>
     /// Upserts the comment for a housemate on a given date and writes a history entry.
