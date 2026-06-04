@@ -198,6 +198,8 @@
     border-radius: 12px;
     outline: none;
     transition: box-shadow 0.15s ease;
+    height: 48px;
+    box-sizing: border-box;
 }
 
 .dish-panel__input::placeholder {
@@ -261,10 +263,22 @@
 .dish-panel__time-input {
     flex: 1;
     text-align: center;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 48px;
+    box-sizing: border-box;
+}
+
+.dish-panel__time-input:focus {
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.4);
 }
 
 .dish-panel__time-input::-webkit-calendar-picker-indicator {
     display: none;
+}
+
+.dish-panel__time-input::-webkit-date-and-time-value {
+    text-align: center;
 }
 
 .dish-panel__validation-error {
