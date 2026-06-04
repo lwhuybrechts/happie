@@ -3,6 +3,7 @@ using FsCheck.Fluent;
 using FsCheck.Xunit;
 using Happie.Shared.Domain;
 using Happie.Web.Services;
+using Happie.Web.Tests.Helpers;
 
 namespace Happie.Web.Tests.Services;
 
@@ -23,7 +24,8 @@ public class AttendanceRowStateManagerTimerPropertyTests
             async housemateId =>
             {
                 // Arrange.
-                using var sut = CreateSut();
+                var (sut, _) = CreateSut();
+                using var disposable = sut;
 
                 // Act.
                 await sut.ExpandAsync(housemateId);
@@ -45,11 +47,9 @@ public class AttendanceRowStateManagerTimerPropertyTests
             async (housemateId, currentStatus) =>
             {
                 // Arrange.
-                using var sut = CreateSut();
+                var (sut, _) = CreateSut();
+                using var disposable = sut;
                 await sut.ExpandAsync(housemateId);
-
-                // Wait for animation lock to clear.
-                await Task.Delay(50);
 
                 // Pick a different status for the click.
                 var newStatus = currentStatus == AttendanceStatus.EatingIn
@@ -75,11 +75,9 @@ public class AttendanceRowStateManagerTimerPropertyTests
             async housemateId =>
             {
                 // Arrange.
-                using var sut = CreateSut();
+                var (sut, _) = CreateSut();
+                using var disposable = sut;
                 await sut.ExpandAsync(housemateId);
-
-                // Wait for animation lock to clear.
-                await Task.Delay(50);
 
                 // Act.
                 await sut.CollapseAsync(housemateId);
@@ -99,12 +97,13 @@ public class AttendanceRowStateManagerTimerPropertyTests
             ArbMap.Default.ArbFor<Guid>(),
             async housemateId =>
             {
-                // Arrange: use a short timer interval that fires shortly after animation completes.
-                using var sut = CreateSut(autoCollapseIntervalMs: 50);
+                // Arrange.
+                var (sut, fakeDelay) = CreateSut();
+                using var disposable = sut;
                 await sut.ExpandAsync(housemateId);
 
-                // Wait for timer to fire + buffer.
-                await Task.Delay(100);
+                // Act: trigger the timer deterministically.
+                await fakeDelay.TriggerTimerAsync();
 
                 // Assert.
                 return (!sut.IsExpanded(housemateId))
@@ -112,10 +111,11 @@ public class AttendanceRowStateManagerTimerPropertyTests
             });
     }
 
-    private static AttendanceRowStateManager CreateSut(int autoCollapseIntervalMs = 1000)
+    private static (AttendanceRowStateManager Sut, FakeDelayService FakeDelay) CreateSut()
     {
-        var sut = new AttendanceRowStateManager(autoCollapseIntervalMs, animationDurationMs: 1);
+        var fakeDelay = new FakeDelayService();
+        var sut = new AttendanceRowStateManager(fakeDelay);
         sut.Configure(isNarrowViewport: true, hasPointerDevice: false);
-        return sut;
+        return (sut, fakeDelay);
     }
 }

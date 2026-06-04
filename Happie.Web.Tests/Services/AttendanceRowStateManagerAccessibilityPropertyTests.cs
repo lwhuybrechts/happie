@@ -3,6 +3,7 @@ using FsCheck.Fluent;
 using FsCheck.Xunit;
 using Happie.Shared.Domain;
 using Happie.Web.Services;
+using Happie.Web.Tests.Helpers;
 
 namespace Happie.Web.Tests.Services;
 
@@ -32,7 +33,7 @@ public class AttendanceRowStateManagerAccessibilityPropertyTests
             (housemateId, currentStatus) =>
             {
                 // Arrange.
-                using var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 1);
+                using var sut = new AttendanceRowStateManager(new FakeDelayService());
                 sut.Configure(isNarrowViewport: true, hasPointerDevice: false);
 
                 // Act — row is collapsed by default.
@@ -68,7 +69,7 @@ public class AttendanceRowStateManagerAccessibilityPropertyTests
             async (housemateId, currentStatus) =>
             {
                 // Arrange.
-                using var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 1);
+                using var sut = new AttendanceRowStateManager(new FakeDelayService());
                 sut.Configure(isNarrowViewport: true, hasPointerDevice: false);
 
                 // Act — expand the row.
@@ -106,7 +107,7 @@ public class AttendanceRowStateManagerAccessibilityPropertyTests
             async (housemateId, currentStatus) =>
             {
                 // Arrange.
-                using var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 1);
+                using var sut = new AttendanceRowStateManager(new FakeDelayService());
                 sut.Configure(isNarrowViewport: true, hasPointerDevice: false);
 
                 // Expand first.

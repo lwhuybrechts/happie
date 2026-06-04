@@ -3,6 +3,7 @@ using FsCheck.Fluent;
 using FsCheck.Xunit;
 using Happie.Shared.Domain;
 using Happie.Web.Services;
+using Happie.Web.Tests.Helpers;
 
 namespace Happie.Web.Tests.Services;
 
@@ -29,7 +30,7 @@ public class AttendanceRowStateManagerCollapsePreservesStatusPropertyTests
             async (housemateId, currentStatus) =>
             {
                 // Arrange.
-                using var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 1);
+                using var sut = new AttendanceRowStateManager(new FakeDelayService());
                 sut.Configure(isNarrowViewport: true, hasPointerDevice: false);
 
                 // Expand the row (ExpandAsync awaits the 250ms animation lock internally).
@@ -59,7 +60,7 @@ public class AttendanceRowStateManagerCollapsePreservesStatusPropertyTests
             async (housemateId, currentStatus) =>
             {
                 // Arrange.
-                using var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 1);
+                using var sut = new AttendanceRowStateManager(new FakeDelayService());
                 sut.Configure(isNarrowViewport: true, hasPointerDevice: false);
 
                 // Expand the row (ExpandAsync awaits the 250ms animation lock internally).

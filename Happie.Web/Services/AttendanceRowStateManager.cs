@@ -7,21 +7,23 @@ public class AttendanceRowStateManager : IDisposable
 {
     private Guid? _expandedHousemateId;
     private readonly HashSet<Guid> _animatingIds = new();
-    private System.Timers.Timer? _autoCollapseTimer;
+    private ITimerHandle? _autoCollapseTimer;
     private bool _isNarrowViewport;
     private bool _hasPointerDevice;
     private bool _expandedViaHover;
     private readonly int _autoCollapseIntervalMs;
     private readonly int _animationDurationMs;
+    private readonly IDelayService _delayService;
 
     /// <summary>Creates a new instance with the default 5-second auto-collapse interval and 250ms animation duration.</summary>
-    public AttendanceRowStateManager() : this(5000, 250)
+    public AttendanceRowStateManager() : this(new RealDelayService(), 5000, 250)
     {
     }
 
-    /// <summary>Creates a new instance with custom timing intervals (for testing).</summary>
-    internal AttendanceRowStateManager(int autoCollapseIntervalMs, int animationDurationMs = 250)
+    /// <summary>Creates a new instance with custom timing and delay service (for testing).</summary>
+    public AttendanceRowStateManager(IDelayService delayService, int autoCollapseIntervalMs = 5000, int animationDurationMs = 250)
     {
+        _delayService = delayService;
         _autoCollapseIntervalMs = autoCollapseIntervalMs;
         _animationDurationMs = animationDurationMs;
     }
@@ -33,7 +35,7 @@ public class AttendanceRowStateManager : IDisposable
     public bool IsCollapseEnabled => _isNarrowViewport;
 
     /// <summary>Whether the auto-collapse timer is currently running.</summary>
-    public bool IsAutoCollapseTimerActive => _autoCollapseTimer is not null && _autoCollapseTimer.Enabled;
+    public bool IsAutoCollapseTimerActive => _autoCollapseTimer is not null && _autoCollapseTimer.IsActive;
 
     /// <summary>Determines if a housemate row is in expanded state.</summary>
     public bool IsExpanded(Guid housemateId) => _expandedHousemateId == housemateId;
@@ -222,9 +224,7 @@ public class AttendanceRowStateManager : IDisposable
     {
         CancelAutoCollapseTimer();
 
-        _autoCollapseTimer = new System.Timers.Timer(_autoCollapseIntervalMs);
-        _autoCollapseTimer.AutoReset = false;
-        _autoCollapseTimer.Elapsed += async (sender, args) =>
+        _autoCollapseTimer = _delayService.StartTimer(_autoCollapseIntervalMs, async () =>
         {
             if (_expandedHousemateId is not null && !_animatingIds.Contains(_expandedHousemateId.Value))
             {
@@ -235,20 +235,18 @@ public class AttendanceRowStateManager : IDisposable
                 StateChanged?.Invoke();
                 await ClearAnimationAfterDelayAsync(housemateId);
             }
-        };
-        _autoCollapseTimer.Start();
+        });
     }
 
     private void CancelAutoCollapseTimer()
     {
-        _autoCollapseTimer?.Stop();
-        _autoCollapseTimer?.Dispose();
+        _autoCollapseTimer?.Cancel();
         _autoCollapseTimer = null;
     }
 
     private async Task ClearAnimationAfterDelayAsync(Guid housemateId)
     {
-        await Task.Delay(_animationDurationMs);
+        await _delayService.DelayAsync(_animationDurationMs);
         _animatingIds.Remove(housemateId);
         StateChanged?.Invoke();
     }

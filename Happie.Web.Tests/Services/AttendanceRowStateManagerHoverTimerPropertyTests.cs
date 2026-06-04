@@ -2,6 +2,7 @@ using FsCheck;
 using FsCheck.Fluent;
 using FsCheck.Xunit;
 using Happie.Web.Services;
+using Happie.Web.Tests.Helpers;
 
 namespace Happie.Web.Tests.Services;
 
@@ -31,7 +32,7 @@ public class AttendanceRowStateManagerHoverTimerPropertyTests
 
     private static AttendanceRowStateManager CreateSut()
     {
-        var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 1);
+        var sut = new AttendanceRowStateManager(new FakeDelayService());
         sut.Configure(isNarrowViewport: true, hasPointerDevice: true);
         return sut;
     }

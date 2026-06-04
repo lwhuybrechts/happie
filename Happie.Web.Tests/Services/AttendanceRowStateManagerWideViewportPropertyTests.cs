@@ -3,6 +3,7 @@ using FsCheck.Fluent;
 using FsCheck.Xunit;
 using Happie.Shared.Domain;
 using Happie.Web.Services;
+using Happie.Web.Tests.Helpers;
 
 namespace Happie.Web.Tests.Services;
 
@@ -150,7 +151,7 @@ public class AttendanceRowStateManagerWideViewportPropertyTests
 
     private static AttendanceRowStateManager CreateWideViewportStateManager()
     {
-        var stateManager = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 1);
+        var stateManager = new AttendanceRowStateManager(new FakeDelayService());
         // Wide viewport (≥ 480px): isNarrow = false.
         stateManager.Configure(isNarrowViewport: false, hasPointerDevice: true);
         return stateManager;

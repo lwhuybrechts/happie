@@ -3,6 +3,7 @@ using FsCheck.Fluent;
 using FsCheck.Xunit;
 using Happie.Shared.Domain;
 using Happie.Web.Services;
+using Happie.Web.Tests.Helpers;
 
 namespace Happie.Web.Tests.Services;
 
@@ -29,16 +30,21 @@ public class AttendanceRowStateManagerAnimationLockPropertyTests
             TwoDistinctGuidArb,
             async guids =>
             {
-                // Arrange.
-                using var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 1);
+                // Arrange: use blocking delays so animation lock persists until released.
+                var fakeDelay = new FakeDelayService(blockDelays: true);
+                using var sut = new AttendanceRowStateManager(fakeDelay);
                 sut.Configure(isNarrowViewport: true, hasPointerDevice: false);
 
-                // Expand row A fully (animation completes after 250ms await).
-                await sut.ExpandAsync(guids.RowA);
+                // Expand row A — starts but blocks on animation delay.
+                var expandATask = sut.ExpandAsync(guids.RowA);
 
-                // Start expanding row B without awaiting — this synchronously puts row A
-                // into _animatingIds (single-row collapse) before yielding at Task.Delay.
-                var expandTask = sut.ExpandAsync(guids.RowB);
+                // Release row A's animation so it fully expands.
+                fakeDelay.ReleaseAllDelays();
+                await expandATask;
+
+                // Start expanding row B — this synchronously puts row A into _animatingIds
+                // (single-row collapse) and blocks on the delay for row A's collapse animation.
+                var expandBTask = sut.ExpandAsync(guids.RowB);
 
                 // Row A should be animating now.
                 var isAnimatingBeforeClick = sut.IsAnimating(guids.RowA);
@@ -50,7 +56,8 @@ public class AttendanceRowStateManagerAnimationLockPropertyTests
                 var rowANotExpanded = !sut.IsExpanded(guids.RowA);
                 var rowBStillExpanded = sut.IsExpanded(guids.RowB);
 
-                await expandTask;
+                fakeDelay.ReleaseAllDelays();
+                await expandBTask;
 
                 return (isAnimatingBeforeClick && rowANotExpanded && rowBStillExpanded)
                     .Label($"rowA={guids.RowA}, rowB={guids.RowB}: isAnimating={isAnimatingBeforeClick}, rowANotExpanded={rowANotExpanded}, rowBExpanded={rowBStillExpanded}");
@@ -67,15 +74,18 @@ public class AttendanceRowStateManagerAnimationLockPropertyTests
             StatusArb,
             async (guids, newStatus) =>
             {
-                // Arrange.
-                using var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 1);
+                // Arrange: use blocking delays so animation lock persists until released.
+                var fakeDelay = new FakeDelayService(blockDelays: true);
+                using var sut = new AttendanceRowStateManager(fakeDelay);
                 sut.Configure(isNarrowViewport: true, hasPointerDevice: false);
 
                 // Expand row A fully.
-                await sut.ExpandAsync(guids.RowA);
+                var expandATask = sut.ExpandAsync(guids.RowA);
+                fakeDelay.ReleaseAllDelays();
+                await expandATask;
 
                 // Start expanding row B — puts row A into animating state synchronously.
-                var expandTask = sut.ExpandAsync(guids.RowB);
+                var expandBTask = sut.ExpandAsync(guids.RowB);
 
                 var isAnimatingBeforeClick = sut.IsAnimating(guids.RowA);
                 var expandedBefore = sut.IsExpanded(guids.RowB);
@@ -88,7 +98,8 @@ public class AttendanceRowStateManagerAnimationLockPropertyTests
                 var statePreserved = expandedBefore == expandedAfter;
                 var rowANotExpanded = !sut.IsExpanded(guids.RowA);
 
-                await expandTask;
+                fakeDelay.ReleaseAllDelays();
+                await expandBTask;
 
                 return (isAnimatingBeforeClick && rowANotExpanded && statePreserved)
                     .Label($"rowA={guids.RowA}: isAnimating={isAnimatingBeforeClick}, rowANotExpanded={rowANotExpanded}, statePreserved={statePreserved}");
@@ -104,15 +115,18 @@ public class AttendanceRowStateManagerAnimationLockPropertyTests
             TwoDistinctGuidArb,
             async guids =>
             {
-                // Arrange.
-                using var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 1);
+                // Arrange: use blocking delays so animation lock persists until released.
+                var fakeDelay = new FakeDelayService(blockDelays: true);
+                using var sut = new AttendanceRowStateManager(fakeDelay);
                 sut.Configure(isNarrowViewport: true, hasPointerDevice: true);
 
                 // Expand row A fully.
-                await sut.ExpandAsync(guids.RowA);
+                var expandATask = sut.ExpandAsync(guids.RowA);
+                fakeDelay.ReleaseAllDelays();
+                await expandATask;
 
                 // Start expanding row B — puts row A into animating state.
-                var expandTask = sut.ExpandAsync(guids.RowB);
+                var expandBTask = sut.ExpandAsync(guids.RowB);
 
                 var isAnimatingBeforeHover = sut.IsAnimating(guids.RowA);
 
@@ -122,7 +136,8 @@ public class AttendanceRowStateManagerAnimationLockPropertyTests
                 // Assert: row A should not be expanded (animation lock prevented it).
                 var rowANotExpanded = !sut.IsExpanded(guids.RowA);
 
-                await expandTask;
+                fakeDelay.ReleaseAllDelays();
+                await expandBTask;
 
                 return (isAnimatingBeforeHover && rowANotExpanded)
                     .Label($"rowA={guids.RowA}: isAnimating={isAnimatingBeforeHover}, rowANotExpanded={rowANotExpanded}");
@@ -138,15 +153,18 @@ public class AttendanceRowStateManagerAnimationLockPropertyTests
             TwoDistinctGuidArb,
             async guids =>
             {
-                // Arrange.
-                using var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 1);
+                // Arrange: use blocking delays so animation lock persists until released.
+                var fakeDelay = new FakeDelayService(blockDelays: true);
+                using var sut = new AttendanceRowStateManager(fakeDelay);
                 sut.Configure(isNarrowViewport: true, hasPointerDevice: true);
 
                 // Expand row A via hover.
-                await sut.HandleMouseEnterAsync(guids.RowA);
+                var expandATask = sut.HandleMouseEnterAsync(guids.RowA);
+                fakeDelay.ReleaseAllDelays();
+                await expandATask;
 
                 // Start expanding row B — puts row A into animating state.
-                var expandTask = sut.ExpandAsync(guids.RowB);
+                var expandBTask = sut.ExpandAsync(guids.RowB);
 
                 var isAnimatingBeforeLeave = sut.IsAnimating(guids.RowA);
                 var expandedBefore = sut.IsExpanded(guids.RowB);
@@ -158,7 +176,8 @@ public class AttendanceRowStateManagerAnimationLockPropertyTests
                 var expandedAfter = sut.IsExpanded(guids.RowB);
                 var statePreserved = expandedBefore == expandedAfter;
 
-                await expandTask;
+                fakeDelay.ReleaseAllDelays();
+                await expandBTask;
 
                 return (isAnimatingBeforeLeave && statePreserved)
                     .Label($"rowA={guids.RowA}: isAnimating={isAnimatingBeforeLeave}, statePreserved={statePreserved}");
@@ -174,16 +193,18 @@ public class AttendanceRowStateManagerAnimationLockPropertyTests
             TwoDistinctGuidArb,
             async guids =>
             {
-                // Arrange: use a longer animation duration to prevent the race condition where
-                // Task.Delay(1) completes before the test can observe the animating state.
-                using var sut = new AttendanceRowStateManager(autoCollapseIntervalMs: 1000, animationDurationMs: 20);
+                // Arrange: use blocking delays so animation lock persists until released.
+                var fakeDelay = new FakeDelayService(blockDelays: true);
+                using var sut = new AttendanceRowStateManager(fakeDelay);
                 sut.Configure(isNarrowViewport: true, hasPointerDevice: false);
 
                 // Expand row A fully.
-                await sut.ExpandAsync(guids.RowA);
+                var expandATask = sut.ExpandAsync(guids.RowA);
+                fakeDelay.ReleaseAllDelays();
+                await expandATask;
 
-                // Start expanding row B — this sets row B as expanded and puts it into animating state.
-                var expandTask = sut.ExpandAsync(guids.RowB);
+                // Start expanding row B — sets row B as expanded and puts it into animating state.
+                var expandBTask = sut.ExpandAsync(guids.RowB);
 
                 // Row B is the currently expanded row and it's animating.
                 var isRowBAnimating = sut.IsAnimating(guids.RowB);
@@ -196,7 +217,8 @@ public class AttendanceRowStateManagerAnimationLockPropertyTests
                 var rowBExpandedAfter = sut.IsExpanded(guids.RowB);
                 var statePreserved = rowBExpandedBefore == rowBExpandedAfter;
 
-                await expandTask;
+                fakeDelay.ReleaseAllDelays();
+                await expandBTask;
 
                 return (isRowBAnimating && statePreserved)
                     .Label($"rowB={guids.RowB}: isAnimating={isRowBAnimating}, expandedBefore={rowBExpandedBefore}, expandedAfter={rowBExpandedAfter}");
