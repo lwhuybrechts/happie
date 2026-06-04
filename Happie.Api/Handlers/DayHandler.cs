@@ -76,7 +76,7 @@ public class DayHandler : IDayHandler
         // Build dish DTO.
         var DishDto = dish is null
             ? null
-            : new DishDto(dish.Description, dish.LastChangedByHousemateId, dish.LastChangedAt);
+            : new DishDto(dish.Description, dish.LastChangedByHousemateId, dish.LastChangedAt, dish.DinnerTime?.Hour, dish.DinnerTime?.Minute);
 
         // Build comment DTOs — include only housemates who have a comment.
         // Soft-deleted housemates are included if they have a comment; their name is formatted as "Name (deleted)".
@@ -141,29 +141,188 @@ public class DayHandler : IDayHandler
     }
 
     /// <inheritdoc/>
-    public async Task UpsertDishAsync(Guid householdId, DateOnly date, string description, Guid actingHousemateId, CancellationToken ct = default)
+    public async Task UpsertDishAsync(Guid householdId, DateOnly date, string description, TimeOnly? dinnerTime, int timezoneOffsetMinutes, Guid actingHousemateId, CancellationToken ct = default)
     {
-        var record = new DishRecord(householdId, date, description, actingHousemateId, DateTimeOffset.UtcNow);
-        var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
+        // Fetch existing record to compare old values.
+        var existingDish = await _dishRepository.GetAsync(householdId, date, ct);
+
+        var dishChanged = existingDish is null || existingDish.Description != description;
+        var dinnerTimeChanged = existingDish?.DinnerTime != dinnerTime;
+
+        var record = new DishRecord(householdId, date, description, actingHousemateId, DateTimeOffset.UtcNow, dinnerTime);
+        await _dishRepository.UpsertAsync(record, ct);
+
+        // Write a single history entry based on what changed.
+        if (dishChanged || dinnerTimeChanged)
         {
-            ["description"] = description
-        });
-        var historyEntry = new DayHistoryEntry(
+            var historyEntry = CreateDishHistoryEntry(householdId, date, actingHousemateId, description, dinnerTime, dishChanged, dinnerTimeChanged);
+
+            try
+            {
+                await _dayHistoryRepository.AddAsync(historyEntry, ct);
+            }
+            catch (Exception)
+            {
+                // History entry write failure must not roll back the dish save (Requirement 8.8).
+            }
+        }
+
+        // Consolidated push notification: at most one per save.
+        var dinnerTimeCleared = dinnerTimeChanged && dinnerTime is null;
+        var shouldNotifyDish = dishChanged && IsTodayOrTomorrow(date);
+        var shouldNotifyDinnerTime = dinnerTimeChanged && !dinnerTimeCleared
+            && IsDinnerTimeWithinWindow(date, dinnerTime!.Value, timezoneOffsetMinutes);
+
+        if (shouldNotifyDish || shouldNotifyDinnerTime)
+        {
+            var (notificationKey, notificationParameters) = GetNotificationKeyAndParameters(description, dinnerTime, shouldNotifyDish, shouldNotifyDinnerTime);
+            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, notificationKey, notificationParameters, ct);
+        }
+    }
+
+    /// <summary>Creates the appropriate history entry based on what changed in a dish save.</summary>
+    private static DayHistoryEntry CreateDishHistoryEntry(
+        Guid householdId,
+        DateOnly date,
+        Guid actingHousemateId,
+        string description,
+        TimeOnly? dinnerTime,
+        bool dishChanged,
+        bool dinnerTimeChanged)
+    {
+        ChangeType changeType;
+        string translationKey;
+        Dictionary<string, string> parameterDict;
+
+        if (dishChanged && dinnerTimeChanged)
+        {
+            // Both changed.
+            changeType = ChangeType.DishAndDinnerTime;
+            if (dinnerTime.HasValue)
+            {
+                translationKey = TranslationKeys.HistoryDishAndDinnerTimeSet;
+                parameterDict = new Dictionary<string, string>
+                {
+                    ["description"] = description,
+                    ["time"] = dinnerTime.Value.ToString("HH:mm")
+                };
+            }
+            else
+            {
+                translationKey = TranslationKeys.HistoryDishSetDinnerTimeCleared;
+                parameterDict = new Dictionary<string, string>
+                {
+                    ["description"] = description
+                };
+            }
+        }
+        else if (dinnerTimeChanged)
+        {
+            // Only dinner time changed.
+            changeType = ChangeType.DinnerTime;
+            if (dinnerTime.HasValue)
+            {
+                translationKey = TranslationKeys.HistoryDinnerTimeSet;
+                parameterDict = new Dictionary<string, string>
+                {
+                    ["time"] = dinnerTime.Value.ToString("HH:mm")
+                };
+            }
+            else
+            {
+                translationKey = TranslationKeys.HistoryDinnerTimeCleared;
+                parameterDict = new Dictionary<string, string>();
+            }
+        }
+        else
+        {
+            // Only dish changed.
+            changeType = ChangeType.Dish;
+            translationKey = TranslationKeys.HistoryDishSet;
+            parameterDict = new Dictionary<string, string>
+            {
+                ["description"] = description
+            };
+        }
+
+        var parameters = JsonSerializer.Serialize(parameterDict);
+        return new DayHistoryEntry(
             householdId,
             date,
             DateTimeOffset.UtcNow,
             actingHousemateId,
-            ChangeType.Dish,
-            TranslationKeys.HistoryDishSet,
+            changeType,
+            translationKey,
             parameters);
+    }
 
-        await Task.WhenAll(
-            _dishRepository.UpsertAsync(record, ct),
-            _dayHistoryRepository.AddAsync(historyEntry, ct));
+    /// <summary>
+    /// Returns true when the new dinner time is less than 6 hours away from the setter's local time.
+    /// The setter's local time is computed as UTC now + the client-provided timezone offset.
+    /// </summary>
+    private static bool IsDinnerTimeWithinWindow(DateOnly date, TimeOnly dinnerTime, int timezoneOffsetMinutes)
+    {
+        return IsDinnerTimeWithinWindow(date, dinnerTime, timezoneOffsetMinutes, DateTimeOffset.UtcNow);
+    }
 
-        // Send auto-notifications for today and tomorrow only; failures must not interrupt the save.
-        if (IsTodayOrTomorrow(date))
-            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.TranslationKey, historyEntry.Parameters, ct);
+    /// <summary>
+    /// Testable overload that accepts the current UTC time as a parameter.
+    /// Returns true when the new dinner time is less than 6 hours away from the setter's local time.
+    /// </summary>
+    internal static bool IsDinnerTimeWithinWindow(DateOnly date, TimeOnly dinnerTime, int timezoneOffsetMinutes, DateTimeOffset currentUtcTime)
+    {
+        var setterLocalNow = currentUtcTime.AddMinutes(timezoneOffsetMinutes);
+        var todayAtDinnerTime = new DateTime(date.Year, date.Month, date.Day, dinnerTime.Hour, dinnerTime.Minute, 0);
+        var difference = todayAtDinnerTime - setterLocalNow.DateTime;
+
+        return difference > TimeSpan.Zero && difference < TimeSpan.FromHours(6);
+    }
+
+    /// <summary>
+    /// Determines whether a dinner time change should trigger a push notification.
+    /// Returns true if and only if: (a) newDinnerTime is not null, AND (b) newDinnerTime differs
+    /// from previousDinnerTime, AND (c) the naive dinner DateTime is within the 6-hour notification window.
+    /// </summary>
+    internal static bool ShouldNotifyDinnerTimeChange(TimeOnly? previousDinnerTime, TimeOnly? newDinnerTime, DateTimeOffset currentUtcTime, int timezoneOffsetMinutes, DateOnly date)
+    {
+        if (newDinnerTime is null)
+            return false;
+
+        if (newDinnerTime == previousDinnerTime)
+            return false;
+
+        return IsDinnerTimeWithinWindow(date, newDinnerTime.Value, timezoneOffsetMinutes, currentUtcTime);
+    }
+
+    /// <summary>Selects the consolidated notification translation key and parameters based on what changed.</summary>
+    private static (string TranslationKey, string Parameters) GetNotificationKeyAndParameters(
+        string description, TimeOnly? dinnerTime, bool shouldNotifyDish, bool shouldNotifyDinnerTime)
+    {
+        if (shouldNotifyDish && shouldNotifyDinnerTime)
+        {
+            var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["description"] = description,
+                ["time"] = dinnerTime!.Value.ToString("HH:mm")
+            });
+            return (TranslationKeys.NotificationDishAndDinnerTimeChanged, parameters);
+        }
+
+        if (shouldNotifyDinnerTime)
+        {
+            var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["time"] = dinnerTime!.Value.ToString("HH:mm")
+            });
+            return (TranslationKeys.NotificationDinnerTimeChanged, parameters);
+        }
+
+        // Only dish changed.
+        var dishParameters = JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            ["description"] = description
+        });
+        return (TranslationKeys.HistoryDishSet, dishParameters);
     }
 
     /// <inheritdoc/>

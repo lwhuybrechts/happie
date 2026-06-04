@@ -9,6 +9,14 @@ public static class TranslationKeys
     public const string HistoryCommentSet = "history_comment_set";
     public const string HistoryCommentDeleted = "history_comment_deleted";
     public const string HistoryChefStatusChanged = "history_chef_status_changed";
+    public const string HistoryDinnerTimeSet = "history_dinner_time_set";
+    public const string HistoryDinnerTimeCleared = "history_dinner_time_cleared";
+    public const string HistoryDishAndDinnerTimeSet = "history_dish_and_dinner_time_set";
+    public const string HistoryDishSetDinnerTimeCleared = "history_dish_set_dinner_time_cleared";
+
+    // Notification keys.
+    public const string NotificationDinnerTimeChanged = "notification_dinner_time_changed";
+    public const string NotificationDishAndDinnerTimeChanged = "notification_dish_and_dinner_time_changed";
 
     // Nudge keys.
     public const string NudgePleaseAddAttendance = "nudge_please_add_attendance";
@@ -23,6 +31,12 @@ public static class TranslationKeys
         HistoryCommentSet,
         HistoryCommentDeleted,
         HistoryChefStatusChanged,
+        HistoryDinnerTimeSet,
+        HistoryDinnerTimeCleared,
+        HistoryDishAndDinnerTimeSet,
+        HistoryDishSetDinnerTimeCleared,
+        NotificationDinnerTimeChanged,
+        NotificationDishAndDinnerTimeChanged,
         NudgePleaseAddAttendance,
         NudgeWhatWouldYouLikeToEat,
         NudgeDinnerSoonWhatsYourPlan,

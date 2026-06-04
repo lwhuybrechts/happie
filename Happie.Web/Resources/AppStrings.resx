@@ -354,11 +354,23 @@
   <data name="DishPanel_Discard" xml:space="preserve">
     <value>Annuleren</value>
   </data>
+  <data name="DishPanel_ClearTime" xml:space="preserve">
+    <value>Wissen</value>
+  </data>
   <data name="DishPanel_InputAriaLabel" xml:space="preserve">
     <value>Gerecht omschrijving</value>
   </data>
   <data name="DishPanel_SaveError" xml:space="preserve">
     <value>Opslaan mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="DinnerTimeLabel" xml:space="preserve">
+    <value>Etenstijd</value>
+  </data>
+  <data name="DinnerTimePlaceholder" xml:space="preserve">
+    <value>Optioneel</value>
+  </data>
+  <data name="DinnerTimeValidationError" xml:space="preserve">
+    <value>Voer een geldige tijd in (UU:MM)</value>
   </data>
   <data name="ColorPicker_AriaLabel" xml:space="preserve">
     <value>Kies een kleur</value>

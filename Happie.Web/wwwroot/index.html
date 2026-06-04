@@ -426,6 +426,49 @@
             return window.matchMedia('(hover: hover)').matches;
         };
 
+        // Height animation helpers — capture current height and animate to new content height.
+        happie.captureHeight = function (element) {
+            if (!element) return;
+            var currentHeight = element.offsetHeight;
+            element.style.height = currentHeight + 'px';
+            element.style.overflow = 'hidden';
+            element.style.transition = 'none';
+        };
+
+        happie.animateToContentHeight = function (element) {
+            if (!element) return;
+            // Respect prefers-reduced-motion: skip animation entirely.
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                element.style.height = '';
+                element.style.overflow = '';
+                element.style.transition = '';
+                return;
+            }
+            // Force a reflow so the browser registers the fixed height.
+            element.offsetHeight;
+            // Temporarily remove height constraint to measure natural content height.
+            var savedHeight = element.style.height;
+            element.style.height = 'auto';
+            var targetHeight = element.offsetHeight;
+            // Restore the captured height immediately (no transition yet).
+            element.style.height = savedHeight;
+            // Force another reflow to lock in the starting height.
+            element.offsetHeight;
+            // Now animate to the target.
+            element.style.transition = 'height 300ms ease';
+            element.style.height = targetHeight + 'px';
+            // Clean up after transition.
+            var cleanup = function () {
+                element.style.height = '';
+                element.style.overflow = '';
+                element.style.transition = '';
+                element.removeEventListener('transitionend', cleanup);
+            };
+            element.addEventListener('transitionend', cleanup, { once: true });
+            // Fallback cleanup in case transitionend never fires.
+            setTimeout(cleanup, 350);
+        };
+
         // Outside-click detection — registers a document-level click listener.
         // Invokes HandleOutsideClickAsync on the .NET reference when a click occurs
         // outside the element with the given elementId.

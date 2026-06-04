@@ -6,4 +6,6 @@ namespace Happie.Shared.Contracts;
 public record DishDto(
     [property: JsonPropertyName("description")] string Description,
     [property: JsonPropertyName("lastChangedByHousemateId")] Guid? LastChangedByHousemateId,
-    [property: JsonPropertyName("lastChangedAt")] DateTimeOffset? LastChangedAt);
+    [property: JsonPropertyName("lastChangedAt")] DateTimeOffset? LastChangedAt,
+    [property: JsonPropertyName("dinnerTimeHour")] int? DinnerTimeHour,
+    [property: JsonPropertyName("dinnerTimeMinute")] int? DinnerTimeMinute);

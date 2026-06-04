@@ -4,6 +4,16 @@
     padding: 16px 20px;
 }
 
+.dish-panel--animating {
+    overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dish-panel {
+        transition: none;
+    }
+}
+
 .dish-panel__header {
     display: flex;
     align-items: center;
@@ -105,6 +115,48 @@
     gap: 4px;
 }
 
+.dish-panel__body--has-time {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+}
+
+.dish-panel__text-column {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dish-panel__text-column .dish-panel__dish-text {
+    word-break: break-word;
+}
+
+.dish-panel__time-column {
+    max-width: 30%;
+    text-align: right;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.dish-panel__time-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.3;
+}
+
+.dish-panel__time-label {
+    font-size: 12px;
+    color: #718096;
+    text-align: right;
+    line-height: 1;
+}
+
 .dish-panel__dish-text {
     font-size: 20px;
     font-weight: 700;
@@ -127,7 +179,8 @@
     font-size: 12px;
     color: #718096;
     letter-spacing: 0.3px;
-    margin-top: 4px;
+    margin-top: 0;
+    line-height: 1;
 }
 
 .dish-panel__meta-clock {
@@ -145,6 +198,8 @@
     border-radius: 12px;
     outline: none;
     transition: box-shadow 0.15s ease;
+    height: 48px;
+    box-sizing: border-box;
 }
 
 .dish-panel__input::placeholder {
@@ -158,6 +213,77 @@
 
 .dish-panel__input:disabled {
     opacity: 0.6;
+}
+
+.dish-panel__time-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.dish-panel__time-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dish-panel__time-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4CAF50;
+}
+
+.dish-panel__clear-text-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #718096;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.dish-panel__clear-text-btn:hover:not(:disabled) {
+    opacity: 0.7;
+}
+
+.dish-panel__clear-text-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dish-panel__time-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dish-panel__time-input {
+    flex: 1;
+    text-align: center;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 48px;
+    box-sizing: border-box;
+}
+
+.dish-panel__time-input:focus {
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.4);
+}
+
+.dish-panel__time-input::-webkit-calendar-picker-indicator {
+    display: none;
+}
+
+.dish-panel__time-input::-webkit-date-and-time-value {
+    text-align: center;
+}
+
+.dish-panel__validation-error {
+    font-size: 12px;
+    color: #F44336;
 }
 
 .dish-panel__toast {

@@ -1,8 +1,9 @@
 @using Happie.Shared.Contracts
 @inject HttpClient Http
 @inject IStringLocalizer<AppStrings> Localizer
+@inject IJSRuntime JS
 
-<div class="dish-panel">
+<div class="dish-panel @(_isAnimating ? "dish-panel--animating" : "")" @ref="_panelRef">
     <div class="dish-panel__header">
         <div class="dish-panel__header-left">
             <span class="dish-panel__food-icon-bg">
@@ -21,7 +22,7 @@
             {
                 <button class="dish-panel__action-btn dish-panel__action-btn--accept"
                         @onclick="SaveAsync"
-                        disabled="@_isSaving"
+                        disabled="@(_isSaving || _hasTimeValidationError || !HasUnsavedChanges)"
                         aria-label="@Localizer["DishPanel_Accept"]">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -54,7 +55,7 @@
         </div>
     </div>
 
-    <div class="dish-panel__body">
+    <div class="dish-panel__body @(HasDinnerTime && !_isEditing && !string.IsNullOrWhiteSpace(_committedValue) ? "dish-panel__body--has-time" : "")">
         @if (_isEditing)
         {
             <input class="dish-panel__input"
@@ -66,20 +67,60 @@
                    @onkeydown="HandleKeyDownAsync"
                    disabled="@_isSaving"
                    aria-label="@Localizer["DishPanel_InputAriaLabel"]" />
+
+            <div class="dish-panel__time-input-group">
+                <div class="dish-panel__time-header-row">
+                    <label class="dish-panel__time-header" for="dinner-time-input">
+                        @Localizer["DinnerTimeLabel"]
+                    </label>
+                    @if (!string.IsNullOrEmpty(_editTimeValue))
+                    {
+                        <button class="dish-panel__clear-text-btn"
+                                type="button"
+                                @onclick="ClearTimeInput"
+                                disabled="@_isSaving">
+                            @Localizer["DishPanel_ClearTime"]
+                        </button>
+                    }
+                </div>
+                <div class="dish-panel__time-input-row">
+                    <input class="dish-panel__input dish-panel__time-input"
+                           id="dinner-time-input"
+                           type="time"
+                           step="60"
+                           placeholder="@Localizer["DinnerTimePlaceholder"]"
+                           value="@_editTimeValue"
+                           @oninput="HandleTimeInput"
+                           disabled="@_isSaving" />
+                </div>
+                @if (_hasTimeValidationError)
+                {
+                    <span class="dish-panel__validation-error" role="alert">@Localizer["DinnerTimeValidationError"]</span>
+                }
+            </div>
         }
         else if (!string.IsNullOrWhiteSpace(_committedValue))
         {
-            <span class="dish-panel__dish-text">@_committedValue</span>
-            @if (_lastEditorName is not null && Dish?.LastChangedAt is not null)
+            <div class="dish-panel__text-column">
+                <span class="dish-panel__dish-text">@_committedValue</span>
+                @if (_lastEditorName is not null && Dish?.LastChangedAt is not null)
+                {
+                    <span class="dish-panel__meta" title="@Dish.LastChangedAt.Value.ToLocalTime().ToString("HH:mm")">
+                        <svg class="dish-panel__meta-clock" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        @_lastEditorName · @TimeFormatter.FormatDishTime(Dish.LastChangedAt.Value, DateTimeOffset.Now, Localizer["Time_JustNow"], Localizer["Time_MinAgo"], Localizer["Time_HoursAgo"])
+                    </span>
+                }
+            </div>
+            @if (HasDinnerTime)
             {
-                <span class="dish-panel__meta" title="@Dish.LastChangedAt.Value.ToLocalTime().ToString("HH:mm")">
-                    <svg class="dish-panel__meta-clock" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    @_lastEditorName · @TimeFormatter.FormatDishTime(Dish.LastChangedAt.Value, DateTimeOffset.Now, Localizer["Time_JustNow"], Localizer["Time_MinAgo"], Localizer["Time_HoursAgo"])
-                </span>
+                <div class="dish-panel__time-column">
+                    <span class="dish-panel__time-value">@FormatDinnerTime()</span>
+                    <span class="dish-panel__time-label">@Localizer["DinnerTimeLabel"]</span>
+                </div>
             }
         }
         else
@@ -119,10 +160,46 @@
 
     private string _committedValue = string.Empty;
     private string _editValue = string.Empty;
+    private string _editTimeValue = string.Empty;
     private string? _lastEditorName;
     private bool _isEditing;
     private bool _isSaving;
     private bool _showError;
+    private bool _isAnimating;
+    private ElementReference _panelRef;
+
+    private bool HasDinnerTime => Dish?.DinnerTimeHour is not null && Dish?.DinnerTimeMinute is not null;
+
+    private bool _hasTimeValidationError => !IsTimeValueValid(_editTimeValue);
+
+    private bool HasUnsavedChanges =>
+        _editValue.Trim() != _committedValue || _editTimeValue != GetStoredTimeValue();
+
+    private string FormatDinnerTime() =>
+        $"{Dish!.DinnerTimeHour:D2}:{Dish!.DinnerTimeMinute:D2}";
+
+    private static bool IsTimeValueValid(string timeValue)
+    {
+        if (string.IsNullOrEmpty(timeValue))
+            return true;
+
+        var parts = timeValue.Split(':');
+        if (parts.Length < 2)
+            return false;
+
+        if (!int.TryParse(parts[0], out var hour) || !int.TryParse(parts[1], out var minute))
+            return false;
+
+        return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+    }
+
+    private string GetStoredTimeValue()
+    {
+        if (HasDinnerTime)
+            return $"{Dish!.DinnerTimeHour:D2}:{Dish!.DinnerTimeMinute:D2}";
+
+        return string.Empty;
+    }
 
     protected override void OnParametersSet()
     {
@@ -139,16 +216,45 @@
         return editor?.HousemateName;
     }
 
-    private void StartEdit()
+    private async Task StartEdit()
     {
         _editValue = _committedValue;
+        _editTimeValue = GetStoredTimeValue();
         _showError = false;
-        _isEditing = true;
+        await AnimateHeightChangeAsync(() => _isEditing = true);
     }
 
-    private void DiscardEdit()
+    private async Task DiscardEdit()
     {
-        _isEditing = false;
+        _editTimeValue = GetStoredTimeValue();
+        await AnimateHeightChangeAsync(() => _isEditing = false);
+    }
+
+    private async Task AnimateHeightChangeAsync(Action stateChange)
+    {
+        _isAnimating = true;
+        await JS.InvokeVoidAsync("happie.captureHeight", _panelRef);
+        stateChange();
+        StateHasChanged();
+        await Task.Yield();
+        await JS.InvokeVoidAsync("happie.animateToContentHeight", _panelRef);
+
+        // Remove animating class after animation completes.
+        _ = Task.Delay(320).ContinueWith(_ =>
+        {
+            _isAnimating = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void ClearTimeInput()
+    {
+        _editTimeValue = string.Empty;
+    }
+
+    private void HandleTimeInput(ChangeEventArgs args)
+    {
+        _editTimeValue = args.Value?.ToString() ?? string.Empty;
     }
 
     private async Task HandleKeyDownAsync(KeyboardEventArgs args)
@@ -156,7 +262,7 @@
         if (args.Key == "Enter")
             await SaveAsync();
         else if (args.Key == "Escape")
-            DiscardEdit();
+            await DiscardEdit();
     }
 
     private async Task SaveAsync()
@@ -168,7 +274,19 @@
         _committedValue = trimmed;
         _showError = false;
         _isSaving = true;
+
+        // Animate the collapse from edit mode to read mode.
+        _isAnimating = true;
+        await JS.InvokeVoidAsync("happie.captureHeight", _panelRef);
         _isEditing = false;
+        StateHasChanged();
+        await Task.Yield();
+        await JS.InvokeVoidAsync("happie.animateToContentHeight", _panelRef);
+        _ = Task.Delay(320).ContinueWith(_ =>
+        {
+            _isAnimating = false;
+            InvokeAsync(StateHasChanged);
+        });
 
         HttpResponseMessage response;
 
@@ -179,9 +297,22 @@
         }
         else
         {
+            // Parse dinner time from the edit input.
+            int? dinnerTimeHour = null;
+            int? dinnerTimeMinute = null;
+
+            if (!string.IsNullOrEmpty(_editTimeValue))
+            {
+                var timeParts = _editTimeValue.Split(':');
+                dinnerTimeHour = int.Parse(timeParts[0]);
+                dinnerTimeMinute = int.Parse(timeParts[1]);
+            }
+
+            var timezoneOffsetMinutes = (int)DateTimeOffset.Now.Offset.TotalMinutes;
+
             response = await Http.PutAsJsonAsync(
                 $"days/{Date}/dish",
-                new UpdateDishRequest(trimmed));
+                new UpdateDishRequest(trimmed, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes));
         }
 
         _isSaving = false;

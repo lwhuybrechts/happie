@@ -169,7 +169,6 @@ public class JwtMiddleware : IFunctionsWorkerMiddleware
     {
         var response = requestData.CreateResponse();
         response.StatusCode = (System.Net.HttpStatusCode)statusCode;
-        response.Headers.Add("Content-Type", "application/json; charset=utf-8");
         await response.WriteAsJsonAsync(new ApiErrorResponse(message, code));
 
         // Bind the response to the function invocation result so the pipeline is short-circuited.

@@ -7,5 +7,6 @@ public record DishRecord(
     // Max 100 chars.
     string Description,
     Guid? LastChangedByHousemateId,
-    DateTimeOffset? LastChangedAt
+    DateTimeOffset? LastChangedAt,
+    TimeOnly? DinnerTime
 );

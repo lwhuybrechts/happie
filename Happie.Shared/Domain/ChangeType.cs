@@ -7,4 +7,6 @@ public enum ChangeType
     Dish,
     Comment,
     ChefStatusChanged,
+    DinnerTime,
+    DishAndDinnerTime,
 }
