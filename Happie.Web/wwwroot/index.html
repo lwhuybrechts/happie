@@ -32,7 +32,7 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
-    <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
+    <script>if (navigator.serviceWorker) { navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' }); }</script>
     <script>
         window.happie = window.happie || {};
 
@@ -327,27 +327,29 @@
         };
 
         // Listen for navigation messages from the service worker (notification click while app is open).
-        navigator.serviceWorker.addEventListener('message', function (event) {
-            if (event.data && event.data.type === 'navigate' && event.data.url) {
-                var notificationHouseholdId = event.data.householdId;
-                var currentHouseholdId = localStorage.getItem('householdId');
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.addEventListener('message', function (event) {
+                if (event.data && event.data.type === 'navigate' && event.data.url) {
+                    var notificationHouseholdId = event.data.householdId;
+                    var currentHouseholdId = localStorage.getItem('householdId');
 
-                // If the notification is from a different household, clear session and redirect to login
-                // with the target URL preserved as returnUrl.
-                if (notificationHouseholdId && currentHouseholdId && notificationHouseholdId !== currentHouseholdId) {
-                    localStorage.removeItem('jwt');
-                    localStorage.removeItem('activeHousemateId');
-                    localStorage.removeItem('activeHousemateName');
-                    localStorage.removeItem('activeHousemateColor');
-                    localStorage.removeItem('householdId');
-                    localStorage.setItem('returnUrl', event.data.url);
-                    localStorage.setItem('returnUrlHouseholdId', notificationHouseholdId);
-                    window.location.href = '/';
-                } else {
-                    window.location.href = event.data.url;
+                    // If the notification is from a different household, clear session and redirect to login
+                    // with the target URL preserved as returnUrl.
+                    if (notificationHouseholdId && currentHouseholdId && notificationHouseholdId !== currentHouseholdId) {
+                        localStorage.removeItem('jwt');
+                        localStorage.removeItem('activeHousemateId');
+                        localStorage.removeItem('activeHousemateName');
+                        localStorage.removeItem('activeHousemateColor');
+                        localStorage.removeItem('householdId');
+                        localStorage.setItem('returnUrl', event.data.url);
+                        localStorage.setItem('returnUrlHouseholdId', notificationHouseholdId);
+                        window.location.href = '/';
+                    } else {
+                        window.location.href = event.data.url;
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Decode the householdId claim from a JWT token without verifying the signature.
         happie.getHouseholdIdFromJwt = function (token) {
