@@ -118,7 +118,7 @@
 .dish-panel__body--has-time {
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    align-items: baseline;
 }
 
 .dish-panel__text-column {
@@ -140,18 +140,21 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    gap: 4px;
 }
 
 .dish-panel__time-value {
     font-size: 20px;
     font-weight: 700;
     color: #ffffff;
+    line-height: 1.3;
 }
 
 .dish-panel__time-label {
     font-size: 12px;
     color: #718096;
     text-align: right;
+    line-height: 1;
 }
 
 .dish-panel__dish-text {
@@ -176,7 +179,8 @@
     font-size: 12px;
     color: #718096;
     letter-spacing: 0.3px;
-    margin-top: 4px;
+    margin-top: 0;
+    line-height: 1;
 }
 
 .dish-panel__meta-clock {
@@ -216,10 +220,36 @@
     margin-top: 12px;
 }
 
+.dish-panel__time-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
 .dish-panel__time-header {
     font-size: 12px;
     font-weight: 600;
-    color: #a0aec0;
+    color: #4CAF50;
+}
+
+.dish-panel__clear-text-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #718096;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.dish-panel__clear-text-btn:hover:not(:disabled) {
+    opacity: 0.7;
+}
+
+.dish-panel__clear-text-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .dish-panel__time-input-row {
@@ -230,32 +260,11 @@
 
 .dish-panel__time-input {
     flex: 1;
+    text-align: center;
 }
 
-.dish-panel__clear-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    background-color: rgba(244, 67, 54, 0.15);
-    border-radius: 50%;
-    color: #F44336;
-    font-size: 18px;
-    font-weight: 700;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background-color 0.15s ease;
-}
-
-.dish-panel__clear-btn:hover:not(:disabled) {
-    background-color: rgba(244, 67, 54, 0.3);
-}
-
-.dish-panel__clear-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.dish-panel__time-input::-webkit-calendar-picker-indicator {
+    display: none;
 }
 
 .dish-panel__validation-error {

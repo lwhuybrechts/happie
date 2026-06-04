@@ -69,7 +69,20 @@
                    aria-label="@Localizer["DishPanel_InputAriaLabel"]" />
 
             <div class="dish-panel__time-input-group">
-                <label class="dish-panel__time-header" for="dinner-time-input">@Localizer["DinnerTimeLabel"]</label>
+                <div class="dish-panel__time-header-row">
+                    <label class="dish-panel__time-header" for="dinner-time-input">
+                        @Localizer["DinnerTimeLabel"]
+                    </label>
+                    @if (!string.IsNullOrEmpty(_editTimeValue))
+                    {
+                        <button class="dish-panel__clear-text-btn"
+                                type="button"
+                                @onclick="ClearTimeInput"
+                                disabled="@_isSaving">
+                            @Localizer["DishPanel_ClearTime"]
+                        </button>
+                    }
+                </div>
                 <div class="dish-panel__time-input-row">
                     <input class="dish-panel__input dish-panel__time-input"
                            id="dinner-time-input"
@@ -79,16 +92,6 @@
                            value="@_editTimeValue"
                            @oninput="HandleTimeInput"
                            disabled="@_isSaving" />
-                    @if (!string.IsNullOrEmpty(_editTimeValue))
-                    {
-                        <button class="dish-panel__clear-btn"
-                                type="button"
-                                @onclick="ClearTimeInput"
-                                disabled="@_isSaving"
-                                aria-label="@Localizer["DishPanel_Discard"]">
-                            ×
-                        </button>
-                    }
                 </div>
                 @if (_hasTimeValidationError)
                 {

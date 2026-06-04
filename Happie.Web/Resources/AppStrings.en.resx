@@ -354,6 +354,9 @@
   <data name="DishPanel_Discard" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="DishPanel_ClearTime" xml:space="preserve">
+    <value>Clear</value>
+  </data>
   <data name="DishPanel_InputAriaLabel" xml:space="preserve">
     <value>Dish description</value>
   </data>

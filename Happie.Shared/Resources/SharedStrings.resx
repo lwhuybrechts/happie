@@ -157,16 +157,16 @@
     <value>uitgeschakeld</value>
   </data>
   <data name="history_dinner_time_set" xml:space="preserve">
-    <value>{name} heeft de etenstijd ingesteld op {time}</value>
+    <value>Etenstijd ingesteld op {time}.</value>
   </data>
   <data name="history_dinner_time_cleared" xml:space="preserve">
-    <value>{name} heeft de etenstijd verwijderd</value>
+    <value>Etenstijd verwijderd.</value>
   </data>
   <data name="history_dish_and_dinner_time_set" xml:space="preserve">
-    <value>{name} heeft het gerecht gewijzigd naar "{description}" en de etenstijd ingesteld op {time}</value>
+    <value>Gerecht gewijzigd naar "{description}" en etenstijd ingesteld op {time}.</value>
   </data>
   <data name="history_dish_set_dinner_time_cleared" xml:space="preserve">
-    <value>{name} heeft het gerecht gewijzigd naar "{description}" en de etenstijd verwijderd</value>
+    <value>Gerecht gewijzigd naar "{description}" en etenstijd verwijderd.</value>
   </data>
   <data name="notification_dinner_time_changed" xml:space="preserve">
     <value>{name} heeft de etenstijd gewijzigd naar {time}</value>

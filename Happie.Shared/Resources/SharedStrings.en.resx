@@ -157,16 +157,16 @@
     <value>disabled</value>
   </data>
   <data name="history_dinner_time_set" xml:space="preserve">
-    <value>{name} set the dinner time to {time}</value>
+    <value>Dinner time set to {time}.</value>
   </data>
   <data name="history_dinner_time_cleared" xml:space="preserve">
-    <value>{name} cleared the dinner time</value>
+    <value>Dinner time cleared.</value>
   </data>
   <data name="history_dish_and_dinner_time_set" xml:space="preserve">
-    <value>{name} changed the dish to "{description}" and set the dinner time to {time}</value>
+    <value>Dish set to "{description}" and dinner time to {time}.</value>
   </data>
   <data name="history_dish_set_dinner_time_cleared" xml:space="preserve">
-    <value>{name} changed the dish to "{description}" and cleared the dinner time</value>
+    <value>Dish set to "{description}" and dinner time cleared.</value>
   </data>
   <data name="notification_dinner_time_changed" xml:space="preserve">
     <value>{name} changed the dinner time to {time}</value>
