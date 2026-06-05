@@ -157,6 +157,12 @@
                 if (state.animating) return;
                 // Ignore touches that originate inside a modal overlay or dialog.
                 if (e.target.closest('[role="dialog"], .nudge-modal__overlay, .color-modal__overlay')) return;
+                // Ignore touches on input fields so text selection works on iOS.
+                if (e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+                // Ignore touches starting near screen edges so iOS back/forward gestures work.
+                const edgeThreshold = 20;
+                const touchX = e.touches[0].clientX;
+                if (touchX <= edgeThreshold || touchX >= window.innerWidth - edgeThreshold) return;
                 state.startX = e.touches[0].clientX;
                 state.startY = e.touches[0].clientY;
                 state.currentX = 0;
