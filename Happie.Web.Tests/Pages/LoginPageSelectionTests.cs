@@ -29,6 +29,7 @@ public class LoginPageSelectionTests : BunitContext
             new ActiveHousemateService(serviceProvider.GetRequiredService<IJSRuntime>()));
 
         Services.AddSingleton(new Mock<ICacheStore>().Object);
+        Services.AddSingleton(new Mock<IConnectivityService>().Object);
         Services.AddLocalization();
     }
 

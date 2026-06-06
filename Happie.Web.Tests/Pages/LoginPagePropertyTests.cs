@@ -156,6 +156,7 @@ public class LoginPagePropertyTests
         context.Services.AddScoped(serviceProvider =>
             new ActiveHousemateService(serviceProvider.GetRequiredService<IJSRuntime>()));
         context.Services.AddSingleton(new Mock<ICacheStore>().Object);
+        context.Services.AddSingleton(new Mock<IConnectivityService>().Object);
         context.Services.AddLocalization();
         context.RegisterHttpClient(HttpStatusCode.Unauthorized, null);
         return context;

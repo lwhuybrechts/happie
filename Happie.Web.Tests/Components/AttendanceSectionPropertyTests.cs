@@ -7,9 +7,11 @@ using Happie.Shared.Contracts;
 using Happie.Shared.Domain;
 using Happie.Web.Components;
 using Happie.Web.Services;
+using Happie.Web.Services.Caching;
 using Happie.Web.Tests.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
+using Moq;
 
 namespace Happie.Web.Tests.Components;
 
@@ -84,6 +86,8 @@ public class AttendanceSectionPropertyTests
             new LocaleService(serviceProvider.GetRequiredService<IJSRuntime>()));
         context.Services.AddScoped(serviceProvider =>
             new ActiveHousemateService(serviceProvider.GetRequiredService<IJSRuntime>()));
+        context.Services.AddSingleton(new Mock<ICachedApiClient>().Object);
+        context.Services.AddSingleton(new Mock<IConnectivityService>().Object);
         context.Services.AddLocalization();
         context.RegisterHttpClient(HttpStatusCode.OK, null);
         return context;

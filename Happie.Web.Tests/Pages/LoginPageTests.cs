@@ -15,12 +15,14 @@ public class LoginPageTests : BunitContext
 {
     private readonly MockHttpMessageHandler _mockHttp = new();
     private readonly Mock<IStringLocalizer<AppStrings>> _localizerMock = new();
+    private readonly Mock<IConnectivityService> _connectivityServiceMock = new();
 
     public LoginPageTests()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
 
         SetupLocalizer();
+        _connectivityServiceMock.Setup(x => x.IsOnline).Returns(true);
 
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("http://localhost/api/");
@@ -30,6 +32,7 @@ public class LoginPageTests : BunitContext
         Services.AddScoped<LocaleService>();
         Services.AddScoped<ActiveHousemateService>();
         Services.AddSingleton(new Mock<ICacheStore>().Object);
+        Services.AddSingleton(_connectivityServiceMock.Object);
     }
 
     [Fact]
