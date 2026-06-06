@@ -901,3 +901,99 @@ if (e.target.closest('[role="dialog"], .nudge-modal__overlay, .color-modal__over
 When adding a new modal that can appear on a swipe-enabled page, ensure:
 1. The modal dialog element has `role="dialog"` (already required for accessibility).
 2. If the overlay uses a class not yet listed in the `closest()` check, add it to the selector in `index.html`.
+
+
+---
+
+## Client-Side API Calls — CachedApiClient (MUST follow)
+
+All day-plan and calendar data operations (attendance, dish, comments, chef status, day plan reads, calendar reads) in **pages and components** MUST go through `ICachedApiClient` — NEVER use `HttpClient` directly for these operations.
+
+`ICachedApiClient` provides:
+- **Stale-while-revalidate** for GET requests (DayPlan, Calendar)
+- **Offline mutation queueing** with optimistic UI for writes
+- **Cache updates** on successful mutations
+- **Conflict detection** via `If-Unmodified-Since` on replayed mutations
+
+### When to use `ICachedApiClient`
+
+| Operation | Use `ICachedApiClient` |
+|---|---|
+| GET day plan | `GetDayPlanAsync(date)` |
+| GET calendar | `GetCalendarAsync(viewedMonth)` |
+| PUT attendance | `SaveAttendanceAsync(date, housemateId, status)` |
+| PUT dish | `SaveDishAsync(date, description, hour, minute, tzOffset)` |
+| DELETE dish | `DeleteDishAsync(date)` |
+| PUT chef status | `SaveChefStatusAsync(date, housemateId, isChef)` |
+| PUT comment | `SaveCommentAsync(date, housemateId, text)` |
+| DELETE comment | `DeleteCommentAsync(date, housemateId)` |
+
+Any page or component that reads or writes day plan or calendar data MUST use the methods above. This includes `DayPlanPage`, `CalendarPage`, and all child components (`AttendanceSection`, `AttendanceToggle`, `DishPanel`, `CommentsSection`, `CommentEditor`).
+
+### When to use `HttpClient` directly
+
+- Login (`POST /api/auth/login`) — not cacheable, not day-plan/calendar scoped
+- Housemate management (`GET/POST/PATCH/DELETE /api/housemates`) — not day-plan/calendar scoped
+- Push subscribe (`POST /api/push/subscribe`) — not cacheable
+- Nudge (`POST /api/days/{date}/nudge`) — requires connectivity, not queueable
+
+### Injection pattern
+
+```csharp
+// ✅ GOOD: inject ICachedApiClient for day-plan mutations.
+@using Happie.Web.Services.Caching
+@inject ICachedApiClient CachedApi
+
+var success = await CachedApi.SaveAttendanceAsync(Date, housemateId, newStatus);
+```
+
+```csharp
+// ❌ BAD: direct HttpClient for day-plan operations — crashes offline.
+@inject HttpClient Http
+
+var response = await Http.PutAsJsonAsync($"days/{Date}/attendance/{housemateId}", request);
+```
+
+### Rules
+
+- Do NOT inject `HttpClient` in a component if all its HTTP calls go through `ICachedApiClient`
+- Components that need both (e.g., nudge + attendance) may inject both, but day-plan operations MUST use `ICachedApiClient`
+- `ICachedApiClient` methods return `bool` for success/failure — use this for optimistic rollback instead of checking `HttpResponseMessage.IsSuccessStatusCode`
+
+
+---
+
+## Extending the Offline Cache (MUST follow)
+
+### Adding a new API endpoint to the cache
+
+To add stale-while-revalidate caching for a new GET endpoint:
+
+1. Add a JS method to `cacheDb.js` for the new object store (if the data type doesn't fit `dayPlanCache` or `calendarCache`).
+2. Add `Get{Type}Async` and `Put{Type}Async` methods to `ICacheStore` / `CacheStore`.
+3. Add a `Get{Type}Async` method to `ICachedApiClient` / `CachedApiClient` that follows the stale-while-revalidate pattern:
+   - Check cache → return cached + fire background refresh → update cache if data changed → notify UI via event.
+4. Add an `On{Type}Updated` event to `ICachedApiClient` for background refresh notifications.
+5. Subscribe to the event in the consuming page/component.
+
+### Adding a new mutation type to the offline queue
+
+To add offline support for a new write endpoint:
+
+1. Add a `Save{Type}Async` or `Delete{Type}Async` method to `ICachedApiClient` / `CachedApiClient` that:
+   - Online: sends HTTP, updates relevant cache entry on success.
+   - Offline: enqueues the mutation (with method, URL, headers, body, date, mutationType), applies optimistic update to cache.
+2. Add the optimistic update logic (`Apply{Type}OptimisticUpdate`) as a private method in `CachedApiClient`.
+3. Add a rollback case for the new `mutationType` in `SyncService.RollbackMutation`.
+4. Add the localized mutation type name to `SyncService.GetLocalizedMutationType` and the corresponding `Sync_MutationType_{Type}` resource keys.
+5. If conflict detection is needed: add `LastModified` to the server entity and check `If-Unmodified-Since` in the handler.
+
+### Pages and components that use `HttpClient` directly (not cached)
+
+These operations inherently require connectivity and are NOT cached/queued:
+- Login, Housemate management, Push subscribe, Nudge
+
+They MUST include:
+- A connectivity check (`ConnectivityService.IsOnline`) before the HTTP call.
+- A try/catch around the HTTP call.
+- A localized "requires internet" error message when offline (`Error_RequiresInternet` key).

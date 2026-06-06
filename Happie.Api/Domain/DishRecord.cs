@@ -8,5 +8,6 @@ public record DishRecord(
     string Description,
     Guid? LastChangedByHousemateId,
     DateTimeOffset? LastChangedAt,
-    TimeOnly? DinnerTime
+    TimeOnly? DinnerTime,
+    DateTimeOffset? LastModified
 );

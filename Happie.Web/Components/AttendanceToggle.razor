@@ -1,6 +1,7 @@
 @using Happie.Shared.Contracts
 @using Happie.Shared.Domain
-@inject HttpClient Http
+@using Happie.Web.Services.Caching
+@inject ICachedApiClient CachedApi
 @inject IStringLocalizer<AppStrings> Localizer
 
 <div class="attendance-toggle" aria-label="@Localizer["AttendanceToggle_AriaLabel", HousemateName]">
@@ -82,13 +83,11 @@
         _showError = false;
         _isSaving = true;
 
-        var response = await Http.PutAsJsonAsync(
-            $"days/{Date}/attendance/{HousemateId}",
-            new UpdateAttendanceRequest(newStatus));
+        var success = await CachedApi.SaveAttendanceAsync(Date, HousemateId, newStatus);
 
         _isSaving = false;
 
-        if (!response.IsSuccessStatusCode)
+        if (!success)
         {
             // Roll back to the previous status on failure.
             _currentStatus = previousStatus;

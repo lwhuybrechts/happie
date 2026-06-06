@@ -118,6 +118,12 @@
   <data name="DayPlan_LoadError" xml:space="preserve">
     <value>Failed to load the day plan. Please try again.</value>
   </data>
+  <data name="DayPlan_NoDataOffline" xml:space="preserve">
+    <value>No data available. Visit this page first while online.</value>
+  </data>
+  <data name="DayPlan_Retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
   <data name="DayPlan_PreviousDay" xml:space="preserve">
     <value>Previous day</value>
   </data>
@@ -175,6 +181,12 @@
   </data>
   <data name="Calendar_GoToToday" xml:space="preserve">
     <value>Today</value>
+  </data>
+  <data name="Calendar_NoDataOffline" xml:space="preserve">
+    <value>No calendar data available. Visit this page first while online.</value>
+  </data>
+  <data name="Calendar_Retry" xml:space="preserve">
+    <value>Try again</value>
   </data>
   <data name="Housemates_Title" xml:space="preserve">
     <value>Housemates</value>
@@ -461,5 +473,32 @@
   </data>
   <data name="DayHistory_AutoChefAssigned" xml:space="preserve">
     <value>{0} was automatically assigned as chef.</value>
+  </data>
+  <data name="Sync_FailureMessage" xml:space="preserve">
+    <value>Offline change ({0}) for {1} could not be saved.</value>
+  </data>
+  <data name="Sync_ConflictMessage" xml:space="preserve">
+    <value>Offline change ({0}) for {1} was not applied because another housemate made a more recent change.</value>
+  </data>
+  <data name="Sync_MutationType_Attendance" xml:space="preserve">
+    <value>attendance</value>
+  </data>
+  <data name="Sync_MutationType_Dish" xml:space="preserve">
+    <value>dish</value>
+  </data>
+  <data name="Sync_MutationType_Comment" xml:space="preserve">
+    <value>comment</value>
+  </data>
+  <data name="LoadingIndicator_AriaLabel" xml:space="preserve">
+    <value>Loading data in background</value>
+  </data>
+  <data name="OfflineBanner_Message" xml:space="preserve">
+    <value>You are offline. Changes will sync when connectivity returns.</value>
+  </data>
+  <data name="SyncToast_CloseAriaLabel" xml:space="preserve">
+    <value>Close notification</value>
+  </data>
+  <data name="Error_RequiresInternet" xml:space="preserve">
+    <value>This action requires an internet connection.</value>
   </data>
 </root>

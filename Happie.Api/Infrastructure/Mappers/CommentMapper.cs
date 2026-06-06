@@ -12,7 +12,7 @@ public class CommentMapper : ICommentMapper
     {
         // Row key format: "YYYY-MM-DD_HousemateId".
         var date = DateOnly.Parse(entity.RowKey[..10]);
-        return new Comment(householdId, entity.HousemateId, date, entity.Text, entity.LastEditedAt == default ? null : entity.LastEditedAt);
+        return new Comment(householdId, entity.HousemateId, date, entity.Text, entity.LastEditedAt == default ? null : entity.LastEditedAt, entity.LastModified == default ? null : entity.LastModified);
     }
 
     /// <inheritdoc/>
@@ -22,6 +22,7 @@ public class CommentMapper : ICommentMapper
         entity.HousemateId = comment.HousemateId;
         entity.Text = comment.Text;
         entity.LastEditedAt = comment.LastEditedAt ?? default;
+        entity.LastModified = comment.LastModified ?? default;
         return entity;
     }
 }

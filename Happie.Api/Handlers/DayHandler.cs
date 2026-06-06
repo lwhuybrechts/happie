@@ -114,7 +114,7 @@ public class DayHandler : IDayHandler
         var existingRecord = await _attendanceRepository.GetAsync(householdId, date, housemateId, ct);
         var isChef = existingRecord?.IsChef ?? false;
 
-        var record = new AttendanceRecord(householdId, housemateId, date, status, isChef);
+        var record = new AttendanceRecord(householdId, housemateId, date, status, isChef, DateTimeOffset.UtcNow);
         var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
         {
             ["name"] = housemateId.ToString(),
@@ -149,7 +149,7 @@ public class DayHandler : IDayHandler
         var dishChanged = existingDish is null || existingDish.Description != description;
         var dinnerTimeChanged = existingDish?.DinnerTime != dinnerTime;
 
-        var record = new DishRecord(householdId, date, description, actingHousemateId, DateTimeOffset.UtcNow, dinnerTime);
+        var record = new DishRecord(householdId, date, description, actingHousemateId, DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow);
         await _dishRepository.UpsertAsync(record, ct);
 
         // Write a single history entry based on what changed.
@@ -332,7 +332,7 @@ public class DayHandler : IDayHandler
         if (housemate is null)
             return false;
 
-        var comment = new Comment(householdId, housemateId, date, text, DateTimeOffset.UtcNow);
+        var comment = new Comment(householdId, housemateId, date, text, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
         var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
         {
             ["name"] = housemateId.ToString(),

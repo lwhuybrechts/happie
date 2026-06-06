@@ -1,6 +1,7 @@
 @using Happie.Shared.Contracts
 @using Happie.Shared.Domain
 @inject HttpClient Http
+@inject IConnectivityService ConnectivityService
 @inject IStringLocalizer<AppStrings> Localizer
 
 @if (_isOpen)
@@ -92,6 +93,12 @@
                 @Localizer["NudgeModal_SendError"]
             </div>
         }
+        else if (_showOfflineError)
+        {
+            <div class="nudge-modal__error" role="alert">
+                @Localizer["Error_RequiresInternet"]
+            </div>
+        }
 
         <div class="nudge-modal__footer">
             <button class="nudge-modal__send-btn"
@@ -125,6 +132,7 @@
     private bool _isOpen;
     private bool _isSending;
     private bool _showError;
+    private bool _showOfflineError;
     private bool _useCustomMessage;
     private string _customMessage = string.Empty;
     private NudgeMessageKey _selectedMessageKey = NudgeMessageKey.PleaseAddAttendance;
@@ -146,6 +154,7 @@
         _selectedMessageKey = NudgeMessageKey.PleaseAddAttendance;
         _isSending = false;
         _showError = false;
+        _showOfflineError = false;
         _isOpen = true;
     }
 
@@ -169,6 +178,14 @@
 
         _isSending = true;
         _showError = false;
+        _showOfflineError = false;
+
+        if (!ConnectivityService.IsOnline)
+        {
+            _showOfflineError = true;
+            _isSending = false;
+            return;
+        }
 
         var request = _useCustomMessage
             ? new NudgeRequest(_selectedIds.ToList(), null, _customMessage.Trim())

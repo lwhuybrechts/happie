@@ -1,6 +1,7 @@
 using Happie.Api.Constants;
 using Happie.Api.Handlers;
 using Happie.Api.Http;
+using Happie.Api.Infrastructure.Repositories;
 using Happie.Shared.Contracts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +13,21 @@ namespace Happie.Api.Functions;
 public class DaysFunction
 {
     private readonly IDayHandler _dayHandler;
+    private readonly IAttendanceRepository _attendanceRepository;
+    private readonly IDishRepository _dishRepository;
+    private readonly ICommentRepository _commentRepository;
 
     /// <summary>Initializes a new instance of <see cref="DaysFunction"/>.</summary>
-    public DaysFunction(IDayHandler dayHandler)
+    public DaysFunction(
+        IDayHandler dayHandler,
+        IAttendanceRepository attendanceRepository,
+        IDishRepository dishRepository,
+        ICommentRepository commentRepository)
     {
         _dayHandler = dayHandler;
+        _attendanceRepository = attendanceRepository;
+        _dishRepository = dishRepository;
+        _commentRepository = commentRepository;
     }
 
     /// <summary>Returns the full day plan for the given date.</summary>
@@ -85,6 +96,10 @@ public class DaysFunction
         if (!readResult.IsSuccess)
             return readResult.Error;
 
+        var conflictResult = await CheckAttendanceConflictAsync(request, householdId, parsedDate, parsedHousemateId, cancellationToken);
+        if (conflictResult is not null)
+            return conflictResult;
+
         var found = await _dayHandler.UpsertAttendanceAsync(householdId, parsedDate, parsedHousemateId, readResult.Body.Status, actingHousemateId, cancellationToken);
 
         if (!found)
@@ -130,6 +145,10 @@ public class DaysFunction
             ? new TimeOnly(readResult.Body.DinnerTimeHour.Value, readResult.Body.DinnerTimeMinute!.Value)
             : null;
 
+        var conflictResult = await CheckDishConflictAsync(request, householdId, parsedDate, cancellationToken);
+        if (conflictResult is not null)
+            return conflictResult;
+
         await _dayHandler.UpsertDishAsync(householdId, parsedDate, readResult.Body.Description.Trim(),
             dinnerTime, readResult.Body.TimezoneOffsetMinutes, actingHousemateId, cancellationToken);
 
@@ -157,6 +176,10 @@ public class DaysFunction
         var readResult = await RequestValidator.ReadAndValidateAsync<UpdateCommentRequest>(request, cancellationToken);
         if (!readResult.IsSuccess)
             return readResult.Error;
+
+        var conflictResult = await CheckCommentConflictAsync(request, householdId, parsedDate, parsedHousemateId, cancellationToken);
+        if (conflictResult is not null)
+            return conflictResult;
 
         var found = await _dayHandler.UpsertCommentAsync(householdId, parsedDate, parsedHousemateId, readResult.Body.Text.Trim(), actingHousemateId, cancellationToken);
 
@@ -214,6 +237,10 @@ public class DaysFunction
         if (!RouteParser.TryParseGuid(housemateId, out var parsedHousemateId, out var guidError))
             return guidError;
 
+        var conflictResult = await CheckCommentConflictAsync(request, householdId, parsedDate, parsedHousemateId, cancellationToken);
+        if (conflictResult is not null)
+            return conflictResult;
+
         var found = await _dayHandler.DeleteCommentAsync(householdId, parsedDate, parsedHousemateId, actingHousemateId, cancellationToken);
 
         if (!found)
@@ -221,4 +248,63 @@ public class DaysFunction
 
         return new NoContentResult();
     }
+
+    /// <summary>Returns a 409 Conflict result if the attendance record has been modified after the If-Unmodified-Since header value.</summary>
+    private async Task<IActionResult?> CheckAttendanceConflictAsync(HttpRequest request, Guid householdId, DateOnly date, Guid housemateId, CancellationToken cancellationToken)
+    {
+        if (!TryParseIfUnmodifiedSince(request, out var ifUnmodifiedSince))
+            return null;
+
+        var record = await _attendanceRepository.GetAsync(householdId, date, housemateId, cancellationToken);
+        if (record?.LastModified is not null && record.LastModified.Value > ifUnmodifiedSince)
+            return CreateConflictResult();
+
+        return null;
+    }
+
+    /// <summary>Returns a 409 Conflict result if the dish record has been modified after the If-Unmodified-Since header value.</summary>
+    private async Task<IActionResult?> CheckDishConflictAsync(HttpRequest request, Guid householdId, DateOnly date, CancellationToken cancellationToken)
+    {
+        if (!TryParseIfUnmodifiedSince(request, out var ifUnmodifiedSince))
+            return null;
+
+        var record = await _dishRepository.GetAsync(householdId, date, cancellationToken);
+        if (record?.LastModified is not null && record.LastModified.Value > ifUnmodifiedSince)
+            return CreateConflictResult();
+
+        return null;
+    }
+
+    /// <summary>Returns a 409 Conflict result if the comment has been modified after the If-Unmodified-Since header value.</summary>
+    private async Task<IActionResult?> CheckCommentConflictAsync(HttpRequest request, Guid householdId, DateOnly date, Guid housemateId, CancellationToken cancellationToken)
+    {
+        if (!TryParseIfUnmodifiedSince(request, out var ifUnmodifiedSince))
+            return null;
+
+        var comment = await _commentRepository.GetAsync(householdId, date, housemateId, cancellationToken);
+        if (comment?.LastModified is not null && comment.LastModified.Value > ifUnmodifiedSince)
+            return CreateConflictResult();
+
+        return null;
+    }
+
+    /// <summary>Tries to parse the If-Unmodified-Since header value as a DateTimeOffset.</summary>
+    private static bool TryParseIfUnmodifiedSince(HttpRequest request, out DateTimeOffset result)
+    {
+        var headerValue = request.Headers["If-Unmodified-Since"].FirstOrDefault();
+        if (string.IsNullOrEmpty(headerValue))
+        {
+            result = default;
+            return false;
+        }
+
+        return DateTimeOffset.TryParse(headerValue, out result);
+    }
+
+    /// <summary>Creates a 409 Conflict response.</summary>
+    private static ObjectResult CreateConflictResult() =>
+        new(new ApiErrorResponse("The resource has been modified since your offline change was made.", ApiErrorCodes.Conflict))
+        {
+            StatusCode = 409
+        };
 }

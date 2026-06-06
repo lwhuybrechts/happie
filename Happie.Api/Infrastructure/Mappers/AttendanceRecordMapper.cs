@@ -12,7 +12,7 @@ public class AttendanceRecordMapper : IAttendanceRecordMapper
     {
         // Row key format: "YYYY-MM-DD_HousemateId".
         var date = DateOnly.Parse(entity.RowKey[..10]);
-        return new AttendanceRecord(householdId, entity.HousemateId, date, entity.Status, entity.IsChef);
+        return new AttendanceRecord(householdId, entity.HousemateId, date, entity.Status, entity.IsChef, entity.LastModified == default ? null : entity.LastModified);
     }
 
     /// <inheritdoc/>
@@ -22,6 +22,7 @@ public class AttendanceRecordMapper : IAttendanceRecordMapper
         entity.HousemateId = record.HousemateId;
         entity.Status = record.Status;
         entity.IsChef = record.IsChef;
+        entity.LastModified = record.LastModified ?? default;
         return entity;
     }
 }

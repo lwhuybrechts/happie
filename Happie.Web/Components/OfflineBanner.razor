@@ -1,0 +1,52 @@
+@inject IConnectivityService ConnectivityService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<AppStrings> Localizer
+@implements IDisposable
+
+@if (_shouldDisplay)
+{
+    <div class="offline-banner" role="alert">
+        <span class="offline-banner__message">@Localizer["OfflineBanner_Message"]</span>
+    </div>
+    <div class="offline-banner__spacer"></div>
+}
+
+@code {
+    private bool _isOffline;
+    private bool _isOnLoginPage;
+
+    private bool _shouldDisplay => _isOffline && !_isOnLoginPage;
+
+    protected override void OnInitialized()
+    {
+        _isOffline = !ConnectivityService.IsOnline;
+        _isOnLoginPage = IsLoginPage();
+
+        ConnectivityService.OnConnectivityChanged += HandleConnectivityChanged;
+        NavigationManager.LocationChanged += HandleLocationChanged;
+    }
+
+    private void HandleConnectivityChanged(bool isOnline)
+    {
+        _isOffline = !isOnline;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs eventArgs)
+    {
+        _isOnLoginPage = IsLoginPage();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private bool IsLoginPage()
+    {
+        var relativePath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        return string.IsNullOrEmpty(relativePath) || relativePath == "/";
+    }
+
+    public void Dispose()
+    {
+        ConnectivityService.OnConnectivityChanged -= HandleConnectivityChanged;
+        NavigationManager.LocationChanged -= HandleLocationChanged;
+    }
+}

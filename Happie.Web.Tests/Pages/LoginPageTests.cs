@@ -2,6 +2,7 @@ using Bunit;
 using Happie.Web.Pages;
 using Happie.Web.Resources;
 using Happie.Web.Services;
+using Happie.Web.Services.Caching;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
@@ -28,6 +29,7 @@ public class LoginPageTests : BunitContext
         Services.AddSingleton(_localizerMock.Object);
         Services.AddScoped<LocaleService>();
         Services.AddScoped<ActiveHousemateService>();
+        Services.AddSingleton(new Mock<ICacheStore>().Object);
     }
 
     [Fact]

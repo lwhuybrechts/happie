@@ -3,7 +3,9 @@
 @using System.Globalization
 @using Happie.Shared.Contracts
 @using Happie.Shared.Domain
-@inject HttpClient Http
+@using Happie.Web.Services.Caching
+@inject ICachedApiClient CachedApi
+@inject IConnectivityService ConnectivityService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject IStringLocalizer<AppStrings> Localizer
@@ -38,6 +40,15 @@
     {
         <p>@Localizer["DayPlan_Loading"]</p>
     }
+    else if (_loadError)
+    {
+        <p role="alert">@Localizer["DayPlan_LoadError"]</p>
+        <button @onclick="RetryAsync">@Localizer["Calendar_Retry"]</button>
+    }
+    else if (_noDataOffline)
+    {
+        <p>@Localizer["Calendar_NoDataOffline"]</p>
+    }
     else
     {
         <CalendarGrid Days="@_days"
@@ -63,9 +74,16 @@
     private IReadOnlyList<CalendarDayDto> _days = [];
     private DateOnly _viewedMonth;
     private DateOnly? _selectedDate;
-    private bool _isLoading;
+    private bool _isLoading = true;
+    private bool _loadError;
+    private bool _noDataOffline;
     private ElementReference _calendarElement;
     private DotNetObjectReference<CalendarPage>? _dotNetRef;
+
+    protected override void OnInitialized()
+    {
+        CachedApi.OnCalendarUpdated += HandleCalendarUpdated;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -90,7 +108,7 @@
         _selectedDate = newSelectedDate;
 
         if (monthChanged || _days.Count == 0)
-            await LoadAttendanceDataAsync();
+            await LoadCalendarDataAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -114,7 +132,7 @@
         if (next.Month != _viewedMonth.Month || next.Year != _viewedMonth.Year)
         {
             _viewedMonth = new DateOnly(next.Year, next.Month, 1);
-            await LoadAttendanceDataAsync();
+            await LoadCalendarDataAsync();
         }
 
         // Update the URL so other components (e.g. bottom nav) can read the selected date.
@@ -134,7 +152,7 @@
         if (previous.Month != _viewedMonth.Month || previous.Year != _viewedMonth.Year)
         {
             _viewedMonth = new DateOnly(previous.Year, previous.Month, 1);
-            await LoadAttendanceDataAsync();
+            await LoadCalendarDataAsync();
         }
 
         // Update the URL so other components (e.g. bottom nav) can read the selected date.
@@ -157,13 +175,13 @@
     private Task GoToPreviousMonth()
     {
         _viewedMonth = _viewedMonth.AddMonths(-1);
-        return LoadAttendanceDataAsync();
+        return LoadCalendarDataAsync();
     }
 
     private Task GoToNextMonth()
     {
         _viewedMonth = _viewedMonth.AddMonths(1);
-        return LoadAttendanceDataAsync();
+        return LoadCalendarDataAsync();
     }
 
     private void NavigateToDayPlan()
@@ -184,27 +202,62 @@
         _viewedMonth = new DateOnly(today.Year, today.Month, 1);
         _selectedDate = today;
         NavigationManager.NavigateTo($"/calendar/{today:yyyy-MM-dd}", replace: true);
-        return LoadAttendanceDataAsync();
+        return LoadCalendarDataAsync();
     }
 
-    private async Task LoadAttendanceDataAsync()
+    private async Task LoadCalendarDataAsync()
     {
-        _isLoading = true;
+        _loadError = false;
+        _noDataOffline = false;
 
-        var (startDate, endDate) = GetVisibleDateRange(_viewedMonth);
-        var response = await Http.GetAsync($"days?from={startDate:yyyy-MM-dd}&to={endDate:yyyy-MM-dd}");
+        var result = await CachedApi.GetCalendarAsync(_viewedMonth);
 
-        if (response.IsSuccessStatusCode)
+        if (result is not null)
         {
-            var calendarResponse = await response.Content.ReadFromJsonAsync<CalendarResponse>();
-            _days = calendarResponse?.Days ?? [];
+            _days = result.Days;
+            _isLoading = false;
+        }
+        else if (CachedApi.HasLoadError)
+        {
+            _loadError = true;
+            _isLoading = false;
+        }
+        else if (!ConnectivityService.IsOnline)
+        {
+            _noDataOffline = true;
+            _isLoading = false;
         }
         else
         {
-            _days = [];
+            // Null result with no error and online — treat as load error.
+            _loadError = true;
+            _isLoading = false;
         }
+    }
+
+    private async Task RetryAsync()
+    {
+        _loadError = false;
+        _isLoading = true;
+
+        var result = await CachedApi.RetryCalendarAsync(_viewedMonth);
+
+        if (result is not null)
+            _days = result.Days;
+        else if (CachedApi.HasLoadError)
+            _loadError = true;
+        else if (!ConnectivityService.IsOnline)
+            _noDataOffline = true;
+        else
+            _loadError = true;
 
         _isLoading = false;
+    }
+
+    private void HandleCalendarUpdated(CalendarResponse updatedCalendar)
+    {
+        _days = updatedCalendar.Days;
+        InvokeAsync(StateHasChanged);
     }
 
     private static (DateOnly Start, DateOnly End) GetVisibleDateRange(DateOnly viewedMonth)
@@ -214,6 +267,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        CachedApi.OnCalendarUpdated -= HandleCalendarUpdated;
         await JsRuntime.InvokeVoidAsync("happie.unregisterCalendarScroll", _calendarElement);
         _dotNetRef?.Dispose();
     }

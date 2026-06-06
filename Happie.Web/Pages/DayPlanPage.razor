@@ -1,7 +1,10 @@
 @page "/day/{date}"
 @using Happie.Shared.Contracts
 @using Happie.Shared.Domain
-@inject HttpClient Http
+@using Happie.Web.Services.Caching
+@inject ICachedApiClient CachedApi
+@inject ISyncService SyncService
+@inject IConnectivityService ConnectivityService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject IStringLocalizer<AppStrings> Localizer
@@ -25,6 +28,11 @@
     else if (_loadError)
     {
         <p role="alert">@Localizer["DayPlan_LoadError"]</p>
+        <button @onclick="RetryAsync">@Localizer["DayPlan_Retry"]</button>
+    }
+    else if (_noDataOffline)
+    {
+        <p>@Localizer["DayPlan_NoDataOffline"]</p>
     }
     else if (_dayPlan is not null)
     {
@@ -62,8 +70,9 @@
 
     private DayPlanResponse? _dayPlan;
     private DateOnly _parsedDate;
-    private bool _isLoading;
+    private bool _isLoading = true;
     private bool _loadError;
+    private bool _noDataOffline;
     private Guid _activeHousemateId;
     private ElementReference _pageElement;
     private DotNetObjectReference<DayPlanPage>? _dotNetRef;
@@ -74,6 +83,8 @@
         _dotNetRef = DotNetObjectReference.Create(this);
         await ActiveHousemateService.InitializeAsync();
         _activeHousemateId = ActiveHousemateService.Id ?? Guid.Empty;
+        CachedApi.OnDayPlanUpdated += HandleDayPlanUpdated;
+        SyncService.OnDayPlanRolledBack += HandleDayPlanRolledBack;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -120,31 +131,72 @@
 
     private async Task LoadDayPlanAsync()
     {
-        _isLoading = true;
         _loadError = false;
-        _dayPlan = null;
+        _noDataOffline = false;
 
-        var response = await Http.GetAsync($"days/{Date}");
+        // Peek the cache first: if data exists for this date, swap it in without any loading flash.
+        // CachedApiClient.GetDayPlanAsync returns synchronously from cache or awaits for a cold fetch.
+        var result = await CachedApi.GetDayPlanAsync(Date);
 
-        if (response.IsSuccessStatusCode)
-            _dayPlan = await response.Content.ReadFromJsonAsync<DayPlanResponse>();
+        if (result is not null)
+        {
+            _dayPlan = result;
+            _isLoading = false;
+        }
+        else if (CachedApi.IsColdCacheFetch && CachedApi.HasLoadError)
+        {
+            _dayPlan = null;
+            _loadError = true;
+            _isLoading = false;
+        }
+        else if (!ConnectivityService.IsOnline)
+        {
+            _dayPlan = null;
+            _noDataOffline = true;
+            _isLoading = false;
+        }
+        else
+        {
+            // Null result with no error and online — treat as load error.
+            _dayPlan = null;
+            _loadError = true;
+            _isLoading = false;
+        }
+    }
+
+    private async Task RetryAsync()
+    {
+        _loadError = false;
+        _isLoading = true;
+
+        var result = await CachedApi.RetryDayPlanAsync(Date);
+
+        if (result is not null)
+            _dayPlan = result;
+        else if (CachedApi.HasLoadError)
+            _loadError = true;
+        else if (!ConnectivityService.IsOnline)
+            _noDataOffline = true;
         else
             _loadError = true;
 
         _isLoading = false;
     }
 
-    /// <summary>
-    /// Silently re-fetches the day plan without showing a loading state.
-    /// Used after optimistic saves to pick up server-side changes (e.g. new history entries)
-    /// without disrupting the current UI.
-    /// </summary>
-    private async Task RefreshDayPlanAsync()
+    private void HandleDayPlanUpdated(DayPlanResponse updatedDayPlan)
     {
-        var response = await Http.GetAsync($"days/{Date}");
+        _dayPlan = updatedDayPlan;
+        InvokeAsync(StateHasChanged);
+    }
 
-        if (response.IsSuccessStatusCode)
-            _dayPlan = await response.Content.ReadFromJsonAsync<DayPlanResponse>();
+    private void HandleDayPlanRolledBack(string date, DayPlanResponse rolledBackDayPlan)
+    {
+        // Only update if this rollback is for the currently viewed date.
+        if (date == Date)
+        {
+            _dayPlan = rolledBackDayPlan;
+            InvokeAsync(StateHasChanged);
+        }
     }
 
     private void OpenNudgeModal()
@@ -154,20 +206,26 @@
 
     private async Task OnDishChangedAsync(string? newDescription)
     {
-        // Silently refresh to pick up the new history entry.
-        await RefreshDayPlanAsync();
+        // Refresh from cache to pick up the latest state after the child's mutation.
+        var result = await CachedApi.GetDayPlanAsync(Date);
+        if (result is not null)
+            _dayPlan = result;
     }
 
     private async Task OnAttendanceChangedAsync((Guid HousemateId, AttendanceStatus Status) change)
     {
-        // Silently refresh to pick up the new history entry.
-        await RefreshDayPlanAsync();
+        // Refresh from cache to pick up the latest state after the child's mutation.
+        var result = await CachedApi.GetDayPlanAsync(Date);
+        if (result is not null)
+            _dayPlan = result;
     }
 
     private async Task OnChefChangedAsync((Guid HousemateId, bool IsChef) change)
     {
-        // Silently refresh to pick up the new history entry.
-        await RefreshDayPlanAsync();
+        // Refresh from cache to pick up the latest state after the child's mutation.
+        var result = await CachedApi.GetDayPlanAsync(Date);
+        if (result is not null)
+            _dayPlan = result;
     }
 
     private async Task OnCommentChangedAsync((Guid HousemateId, string? Text) change)
@@ -192,12 +250,16 @@
             _dayPlan = _dayPlan with { Comments = updatedComments };
         }
 
-        // Silently refresh to pick up the new history entry.
-        await RefreshDayPlanAsync();
+        // Refresh from cache to pick up the latest state after the child's mutation.
+        var result = await CachedApi.GetDayPlanAsync(Date);
+        if (result is not null)
+            _dayPlan = result;
     }
 
     public async ValueTask DisposeAsync()
     {
+        CachedApi.OnDayPlanUpdated -= HandleDayPlanUpdated;
+        SyncService.OnDayPlanRolledBack -= HandleDayPlanRolledBack;
         await JsRuntime.InvokeVoidAsync("happie.unregisterSwipe", _pageElement);
         _dotNetRef?.Dispose();
     }

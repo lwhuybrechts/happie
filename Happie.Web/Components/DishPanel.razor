@@ -1,5 +1,6 @@
 @using Happie.Shared.Contracts
-@inject HttpClient Http
+@using Happie.Web.Services.Caching
+@inject ICachedApiClient CachedApi
 @inject IStringLocalizer<AppStrings> Localizer
 @inject IJSRuntime JS
 
@@ -288,12 +289,12 @@
             InvokeAsync(StateHasChanged);
         });
 
-        HttpResponseMessage response;
+        bool success;
 
         if (string.IsNullOrEmpty(trimmed))
         {
             // Clear the dish.
-            response = await Http.DeleteAsync($"days/{Date}/dish");
+            success = await CachedApi.DeleteDishAsync(Date);
         }
         else
         {
@@ -310,14 +311,12 @@
 
             var timezoneOffsetMinutes = (int)DateTimeOffset.Now.Offset.TotalMinutes;
 
-            response = await Http.PutAsJsonAsync(
-                $"days/{Date}/dish",
-                new UpdateDishRequest(trimmed, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes));
+            success = await CachedApi.SaveDishAsync(Date, trimmed, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes);
         }
 
         _isSaving = false;
 
-        if (!response.IsSuccessStatusCode)
+        if (!success)
         {
             // Rollback to the previous value on failure.
             _committedValue = previousValue;
@@ -332,9 +331,7 @@
                 var anyChef = Attendance.Any(x => x.IsChef);
                 if (!anyChef)
                 {
-                    await Http.PutAsJsonAsync(
-                        $"days/{Date}/chef/{ActingHousemateId}",
-                        new UpdateChefStatusRequest(true));
+                    await CachedApi.SaveChefStatusAsync(Date, ActingHousemateId, true);
                 }
             }
 

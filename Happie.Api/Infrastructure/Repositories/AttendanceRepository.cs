@@ -73,6 +73,7 @@ public class AttendanceRepository : BaseRepository<AttendanceRecordEntity>, IAtt
         if (existing is not null)
         {
             existing.IsChef = isChef;
+            existing.LastModified = DateTimeOffset.UtcNow;
             await UpsertAsync(existing, cancellationToken);
         }
         else
@@ -81,6 +82,7 @@ public class AttendanceRepository : BaseRepository<AttendanceRecordEntity>, IAtt
             entity.HousemateId = housemateId;
             entity.Status = AttendanceStatus.Unknown;
             entity.IsChef = isChef;
+            entity.LastModified = DateTimeOffset.UtcNow;
             await UpsertAsync(entity, cancellationToken);
         }
     }

@@ -23,4 +23,7 @@ public class CommentEntity : MyTableEntity
 
     /// <summary>The timestamp when the comment was last edited.</summary>
     public DateTimeOffset LastEditedAt { get; set; }
+
+    /// <summary>The timestamp when this record was last written (for conflict detection).</summary>
+    public DateTimeOffset LastModified { get; set; }
 }

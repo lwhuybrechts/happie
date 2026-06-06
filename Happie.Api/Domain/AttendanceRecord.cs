@@ -8,5 +8,6 @@ public record AttendanceRecord(
     Guid HousemateId,
     DateOnly Date,
     AttendanceStatus Status,
-    bool IsChef
+    bool IsChef,
+    DateTimeOffset? LastModified
 );

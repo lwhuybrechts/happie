@@ -5,10 +5,12 @@ using Bunit.TestDoubles;
 using Happie.Shared.Contracts;
 using Happie.Web.Pages;
 using Happie.Web.Services;
+using Happie.Web.Services.Caching;
 using Happie.Web.Tests.Helpers;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
+using Moq;
 
 namespace Happie.Web.Tests.Pages;
 
@@ -26,6 +28,7 @@ public class LoginPageSelectionTests : BunitContext
         Services.AddScoped(serviceProvider =>
             new ActiveHousemateService(serviceProvider.GetRequiredService<IJSRuntime>()));
 
+        Services.AddSingleton(new Mock<ICacheStore>().Object);
         Services.AddLocalization();
     }
 

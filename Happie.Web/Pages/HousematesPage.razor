@@ -2,6 +2,7 @@
 @using Happie.Shared.Contracts
 @using Happie.Shared.Domain
 @inject HttpClient Http
+@inject IConnectivityService ConnectivityService
 @inject IStringLocalizer<AppStrings> Localizer
 @inject SessionService SessionService
 @inject ActiveHousemateService ActiveHousemateService
@@ -238,6 +239,12 @@
             @Localizer["Housemates_SaveError"]
         </div>
     }
+    else if (_showOfflineError)
+    {
+        <div class="toast toast--error" role="alert">
+            @Localizer["Error_RequiresInternet"]
+        </div>
+    }
 </div>
 
 @code {
@@ -245,6 +252,7 @@
     private bool _isLoading = true;
     private bool _loadError;
     private bool _showError;
+    private bool _showOfflineError;
     private Guid _activeHousemateId;
 
     // Add form state.
@@ -316,6 +324,11 @@
                 // Server returns them sorted by SortOrder already.
                 _housemates = housemates ?? new();
             }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                await SessionService.LogoutAsync();
+                return;
+            }
             else
             {
                 _loadError = true;
@@ -350,6 +363,12 @@
     {
         if (!IsValidNewName)
             return;
+
+        if (!ConnectivityService.IsOnline)
+        {
+            ShowOfflineError();
+            return;
+        }
 
         var trimmedName = _newHousemateName.Trim();
         _newHousemateName = string.Empty;
@@ -431,6 +450,12 @@
         if (string.IsNullOrWhiteSpace(trimmedName) || trimmedName.Length > 50)
             return;
 
+        if (!ConnectivityService.IsOnline)
+        {
+            ShowOfflineError();
+            return;
+        }
+
         _editingHousemateId = null;
 
         try
@@ -471,6 +496,12 @@
         if (_colorPickerHousemate is null)
             return;
 
+        if (!ConnectivityService.IsOnline)
+        {
+            ShowOfflineError();
+            return;
+        }
+
         var housemate = _colorPickerHousemate;
         _colorPickerHousemate = null;
 
@@ -503,6 +534,12 @@
         var newIndex = currentIndex + direction;
         if (newIndex < 0 || newIndex >= _housemates.Count)
             return;
+
+        if (!ConnectivityService.IsOnline)
+        {
+            ShowOfflineError();
+            return;
+        }
 
         // Swap in the local list for immediate UI feedback.
         (_housemates[currentIndex], _housemates[newIndex]) = (_housemates[newIndex], _housemates[currentIndex]);
@@ -540,6 +577,12 @@
     {
         if (_confirmRemoveHousemate is null)
             return;
+
+        if (!ConnectivityService.IsOnline)
+        {
+            ShowOfflineError();
+            return;
+        }
 
         var housemateToRemove = _confirmRemoveHousemate;
         var isDeletingSelf = housemateToRemove.Id == _activeHousemateId;
@@ -585,10 +628,23 @@
         _ = DismissErrorAsync();
     }
 
+    private void ShowOfflineError()
+    {
+        _showOfflineError = true;
+        _ = DismissOfflineErrorAsync();
+    }
+
     private async Task DismissErrorAsync()
     {
         await Task.Delay(4000);
         _showError = false;
+        StateHasChanged();
+    }
+
+    private async Task DismissOfflineErrorAsync()
+    {
+        await Task.Delay(4000);
+        _showOfflineError = false;
         StateHasChanged();
     }
 }

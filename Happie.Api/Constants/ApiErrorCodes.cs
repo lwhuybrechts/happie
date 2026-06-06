@@ -21,6 +21,9 @@ public static class ApiErrorCodes
     /// <summary>The requested housemate color is already in use within the household.</summary>
     public const string ColorConflict = "COLOR_CONFLICT";
 
+    /// <summary>The resource has been modified since the specified timestamp.</summary>
+    public const string Conflict = "CONFLICT";
+
     /// <summary>An unexpected server-side error occurred.</summary>
     public const string InternalError = "INTERNAL_ERROR";
 }
