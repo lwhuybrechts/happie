@@ -165,18 +165,15 @@ public class DayHandler : IDayHandler
             {
                 // History entry write failure must not roll back the dish save (Requirement 8.8).
             }
-        }
 
-        // Consolidated push notification: at most one per save.
-        var dinnerTimeCleared = dinnerTimeChanged && dinnerTime is null;
-        var shouldNotifyDish = dishChanged && IsTodayOrTomorrow(date);
-        var shouldNotifyDinnerTime = dinnerTimeChanged && !dinnerTimeCleared
-            && IsDinnerTimeWithinWindow(date, dinnerTime!.Value, timezoneOffsetMinutes);
+            // Consolidated push notification: at most one per save.
+            var dinnerTimeCleared = dinnerTimeChanged && dinnerTime is null;
+            var shouldNotifyDish = dishChanged && IsTodayOrTomorrow(date);
+            var shouldNotifyDinnerTime = dinnerTimeChanged && !dinnerTimeCleared
+                && IsDinnerTimeWithinWindow(date, dinnerTime!.Value, timezoneOffsetMinutes);
 
-        if (shouldNotifyDish || shouldNotifyDinnerTime)
-        {
-            var (notificationKey, notificationParameters) = GetNotificationKeyAndParameters(description, dinnerTime, shouldNotifyDish, shouldNotifyDinnerTime);
-            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, notificationKey, notificationParameters, ct);
+            if (shouldNotifyDish || shouldNotifyDinnerTime)
+                await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.TranslationKey, historyEntry.Parameters, ct);
         }
     }
 
@@ -292,37 +289,6 @@ public class DayHandler : IDayHandler
             return false;
 
         return IsDinnerTimeWithinWindow(date, newDinnerTime.Value, timezoneOffsetMinutes, currentUtcTime);
-    }
-
-    /// <summary>Selects the consolidated notification translation key and parameters based on what changed.</summary>
-    private static (string TranslationKey, string Parameters) GetNotificationKeyAndParameters(
-        string description, TimeOnly? dinnerTime, bool shouldNotifyDish, bool shouldNotifyDinnerTime)
-    {
-        if (shouldNotifyDish && shouldNotifyDinnerTime)
-        {
-            var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
-            {
-                ["description"] = description,
-                ["time"] = dinnerTime!.Value.ToString("HH:mm")
-            });
-            return (TranslationKeys.NotificationDishAndDinnerTimeChanged, parameters);
-        }
-
-        if (shouldNotifyDinnerTime)
-        {
-            var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
-            {
-                ["time"] = dinnerTime!.Value.ToString("HH:mm")
-            });
-            return (TranslationKeys.NotificationDinnerTimeChanged, parameters);
-        }
-
-        // Only dish changed.
-        var dishParameters = JsonSerializer.Serialize(new Dictionary<string, string>
-        {
-            ["description"] = description
-        });
-        return (TranslationKeys.HistoryDishSet, dishParameters);
     }
 
     /// <inheritdoc/>

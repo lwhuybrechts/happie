@@ -14,10 +14,6 @@ public static class TranslationKeys
     public const string HistoryDishAndDinnerTimeSet = "history_dish_and_dinner_time_set";
     public const string HistoryDishSetDinnerTimeCleared = "history_dish_set_dinner_time_cleared";
 
-    // Notification keys.
-    public const string NotificationDinnerTimeChanged = "notification_dinner_time_changed";
-    public const string NotificationDishAndDinnerTimeChanged = "notification_dish_and_dinner_time_changed";
-
     // Nudge keys.
     public const string NudgePleaseAddAttendance = "nudge_please_add_attendance";
     public const string NudgeWhatWouldYouLikeToEat = "nudge_what_would_you_like_to_eat";
@@ -35,8 +31,6 @@ public static class TranslationKeys
         HistoryDinnerTimeCleared,
         HistoryDishAndDinnerTimeSet,
         HistoryDishSetDinnerTimeCleared,
-        NotificationDinnerTimeChanged,
-        NotificationDishAndDinnerTimeChanged,
         NudgePleaseAddAttendance,
         NudgeWhatWouldYouLikeToEat,
         NudgeDinnerSoonWhatsYourPlan,
