@@ -18,6 +18,16 @@ public class SessionService
         _cacheStore = cacheStore;
     }
 
+    /// <summary>Removes all session-related tokens from localStorage without navigating or clearing the cache.</summary>
+    public async Task ClearSessionTokensAsync()
+    {
+        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "jwt");
+        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateId");
+        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateName");
+        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateColor");
+        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "householdId");
+    }
+
     /// <summary>Clears the JWT and active housemate data from localStorage and navigates to the login page.</summary>
     public async Task LogoutAsync()
     {
@@ -27,11 +37,7 @@ public class SessionService
         if (!string.IsNullOrEmpty(householdId))
             await _cacheStore.ClearAllAsync(householdId);
 
-        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "jwt");
-        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateId");
-        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateName");
-        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateColor");
-        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "householdId");
+        await ClearSessionTokensAsync();
 
         _navigationManager.NavigateTo("/");
     }

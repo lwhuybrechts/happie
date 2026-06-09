@@ -12,6 +12,7 @@
 @inject LocaleService LocaleService
 @inject ActiveHousemateService ActiveHousemateService
 @inject ICacheStore CacheStore
+@inject SessionService SessionService
 
 <PageTitle>Happie</PageTitle>
 
@@ -107,6 +108,25 @@
         // Only redirect if both JWT and housemate selection are present (fully logged in).
         if (!string.IsNullOrWhiteSpace(existingToken) && !string.IsNullOrWhiteSpace(activeHousemateId))
         {
+            // Ensure householdId is present — if missing, try to re-derive it from the JWT.
+            // Without householdId, CachedApiClient redirects back here creating an infinite loop.
+            var householdId = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "householdId");
+            if (string.IsNullOrWhiteSpace(householdId))
+            {
+                householdId = await JsRuntime.InvokeAsync<string?>("happie.getHouseholdIdFromJwt", existingToken);
+                if (!string.IsNullOrWhiteSpace(householdId))
+                {
+                    await JsRuntime.InvokeVoidAsync("localStorage.setItem", "householdId", householdId);
+                }
+                else
+                {
+                    // Cannot recover householdId — clear stale session and show login form.
+                    await SessionService.ClearSessionTokensAsync();
+                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "returnUrl");
+                    return;
+                }
+            }
+
             var returnUrl = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "returnUrl");
             await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "returnUrl");
 

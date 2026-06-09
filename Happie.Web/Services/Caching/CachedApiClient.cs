@@ -18,6 +18,7 @@ public class CachedApiClient : ICachedApiClient
     private readonly HttpClient _httpClient;
     private readonly IJSRuntime _jsRuntime;
     private readonly NavigationManager _navigationManager;
+    private readonly SessionService _sessionService;
 
     public event Action<DayPlanResponse>? OnDayPlanUpdated;
     public event Action<CalendarResponse>? OnCalendarUpdated;
@@ -32,7 +33,8 @@ public class CachedApiClient : ICachedApiClient
         LoadingIndicatorState loadingIndicatorState,
         HttpClient httpClient,
         IJSRuntime jsRuntime,
-        NavigationManager navigationManager)
+        NavigationManager navigationManager,
+        SessionService sessionService)
     {
         _cacheStore = cacheStore;
         _mutationQueue = mutationQueue;
@@ -41,6 +43,7 @@ public class CachedApiClient : ICachedApiClient
         _httpClient = httpClient;
         _jsRuntime = jsRuntime;
         _navigationManager = navigationManager;
+        _sessionService = sessionService;
     }
 
     public async Task<DayPlanResponse?> GetDayPlanAsync(string date)
@@ -668,11 +671,7 @@ public class CachedApiClient : ICachedApiClient
             await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "returnUrl", "/" + currentUri);
 
         // Clear session from localStorage.
-        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "jwt");
-        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateId");
-        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateName");
-        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateColor");
-        await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "householdId");
+        await _sessionService.ClearSessionTokensAsync();
 
         // Use a small delay to ensure IndexedDB writes are flushed before the page reload kills pending operations.
         await Task.Delay(100);
@@ -690,6 +689,9 @@ public class CachedApiClient : ICachedApiClient
         var currentUri = _navigationManager.ToBaseRelativePath(_navigationManager.Uri);
         if (!string.IsNullOrWhiteSpace(currentUri))
             await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "returnUrl", "/" + currentUri);
+
+        // Clear session tokens so LoginPage does not auto-redirect back (which would create a loop).
+        await _sessionService.ClearSessionTokensAsync();
 
         _navigationManager.NavigateTo("/", forceLoad: true);
     }

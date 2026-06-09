@@ -33,6 +33,9 @@ public class LoginPageTests : BunitContext
         Services.AddScoped<ActiveHousemateService>();
         Services.AddSingleton(new Mock<ICacheStore>().Object);
         Services.AddSingleton(_connectivityServiceMock.Object);
+
+        // Register SessionService so LoginPage can clear stale sessions.
+        Services.AddScoped<SessionService>();
     }
 
     [Fact]

@@ -30,6 +30,14 @@ public class LoginPageSelectionTests : BunitContext
 
         Services.AddSingleton(new Mock<ICacheStore>().Object);
         Services.AddSingleton(new Mock<IConnectivityService>().Object);
+
+        // Register SessionService so LoginPage can clear stale sessions.
+        Services.AddScoped(serviceProvider =>
+            new SessionService(
+                serviceProvider.GetRequiredService<IJSRuntime>(),
+                serviceProvider.GetRequiredService<NavigationManager>(),
+                serviceProvider.GetRequiredService<ICacheStore>()));
+
         Services.AddLocalization();
     }
 
@@ -218,6 +226,7 @@ public class LoginPageSelectionTests : BunitContext
     {
         JSInterop.Setup<string?>("localStorage.getItem", "jwt").SetResult("existing-jwt-token");
         JSInterop.Setup<string?>("localStorage.getItem", "activeHousemateId").SetResult(Guid.NewGuid().ToString());
+        JSInterop.Setup<string?>("localStorage.getItem", "householdId").SetResult("test-household-id");
     }
 
     private static List<HousemateDto> CreateHousemateList() =>

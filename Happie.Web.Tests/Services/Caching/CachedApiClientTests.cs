@@ -35,6 +35,8 @@ public class CachedApiClientTests
 
         SetupLocalStorageGetItem("householdId", HouseholdId);
 
+        var sessionService = new SessionService(_jsRuntimeMock.Object, _navigationManager, _cacheStoreMock.Object);
+
         _sut = new CachedApiClient(
             _cacheStoreMock.Object,
             _mutationQueueMock.Object,
@@ -42,7 +44,8 @@ public class CachedApiClientTests
             _loadingIndicatorState,
             httpClient,
             _jsRuntimeMock.Object,
-            _navigationManager);
+            _navigationManager,
+            sessionService);
     }
 
     [Fact]
@@ -182,6 +185,33 @@ public class CachedApiClientTests
 
         // Assert.
         Assert.Null(exception);
+    }
+
+    [Fact]
+    public async Task GetDayPlanAsync_NullHouseholdId_ClearsSessionAndRedirectsToLogin()
+    {
+        // Arrange.
+        SetupLocalStorageGetItem("householdId", null!);
+        SetupCacheReturnsNull();
+        SetupConnectivityOnline();
+
+        // Act.
+        var result = await _sut.GetDayPlanAsync(TestDate);
+
+        // Assert.
+        Assert.Null(result);
+        _jsRuntimeMock.Verify(
+            x => x.InvokeAsync<Microsoft.JSInterop.Infrastructure.IJSVoidResult>(
+                "localStorage.removeItem",
+                It.Is<object[]>(x => x.Length == 1 && x[0].ToString() == "jwt")),
+            Times.Once);
+        _jsRuntimeMock.Verify(
+            x => x.InvokeAsync<Microsoft.JSInterop.Infrastructure.IJSVoidResult>(
+                "localStorage.removeItem",
+                It.Is<object[]>(x => x.Length == 1 && x[0].ToString() == "activeHousemateId")),
+            Times.Once);
+        Assert.Equal("/", _navigationManager.LastNavigatedUri);
+        Assert.True(_navigationManager.LastForceLoad);
     }
 
     private void SetupLocalStorageGetItem(string key, string? value)
