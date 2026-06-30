@@ -1,7 +1,8 @@
 @using Happie.Shared.Contracts
 @using Happie.Shared.Domain
 @using Happie.Web.Services
-@inject HttpClient Http
+@using Happie.Web.Services.Caching
+@inject ICachedApiClient CachedApi
 @inject IStringLocalizer<AppStrings> Localizer
 @inject IJSRuntime JS
 @implements IAsyncDisposable
@@ -244,11 +245,9 @@
             // and the disabled state change would cause a visible flicker.
             _errorHousemateId = null;
 
-            var response = await Http.PutAsJsonAsync(
-                $"days/{Date}/attendance/{housemateId}",
-                new UpdateAttendanceRequest(clickedStatus));
+            var success = await CachedApi.SaveAttendanceAsync(Date, housemateId, clickedStatus);
 
-            if (!response.IsSuccessStatusCode)
+            if (!success)
             {
                 _optimisticOverrides.Remove(housemateId);
                 _errorHousemateId = housemateId;
@@ -381,13 +380,11 @@
         _savingIds.Add(housemateId);
         _errorHousemateId = null;
 
-        var response = await Http.PutAsJsonAsync(
-            $"days/{Date}/attendance/{housemateId}",
-            new UpdateAttendanceRequest(newStatus));
+        var success = await CachedApi.SaveAttendanceAsync(Date, housemateId, newStatus);
 
         _savingIds.Remove(housemateId);
 
-        if (!response.IsSuccessStatusCode)
+        if (!success)
         {
             // Rollback: remove the optimistic override so the original value shows.
             _optimisticOverrides.Remove(housemateId);
@@ -420,13 +417,11 @@
         _chefOverrides[housemateId] = newIsChef;
         _chefSavingIds.Add(housemateId);
 
-        var response = await Http.PutAsJsonAsync(
-            $"days/{Date}/chef/{housemateId}",
-            new UpdateChefStatusRequest(newIsChef));
+        var success = await CachedApi.SaveChefStatusAsync(Date, housemateId, newIsChef);
 
         _chefSavingIds.Remove(housemateId);
 
-        if (!response.IsSuccessStatusCode)
+        if (!success)
         {
             // Rollback.
             _chefOverrides.Remove(housemateId);

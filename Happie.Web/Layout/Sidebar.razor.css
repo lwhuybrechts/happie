@@ -26,6 +26,11 @@
     gap: 10px;
 }
 
+.sidebar__brand ::deep .loading-indicator {
+    margin-left: auto;
+    margin-right: 12px;
+}
+
 .sidebar__logo {
     width: 36px;
     height: 36px;

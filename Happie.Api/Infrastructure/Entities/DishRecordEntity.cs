@@ -27,4 +27,7 @@ public class DishRecordEntity : MyTableEntity
     // -1 sentinel means "not set" (Azure Table Storage cannot store nullable int or TimeOnly).
     public int DinnerTimeHour { get; set; } = -1;
     public int DinnerTimeMinute { get; set; } = -1;
+
+    /// <summary>The timestamp when this record was last written (for conflict detection).</summary>
+    public DateTimeOffset LastModified { get; set; }
 }

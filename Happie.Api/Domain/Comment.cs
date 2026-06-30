@@ -7,5 +7,6 @@ public record Comment(
     DateOnly Date,
     // Max 200 chars.
     string Text,
-    DateTimeOffset? LastEditedAt
+    DateTimeOffset? LastEditedAt,
+    DateTimeOffset? LastModified
 );

@@ -3,7 +3,10 @@
 @inject NavigationManager NavigationManager
 
 <header class="mobile-header">
-    <span class="mobile-header__brand">Happie</span>
+    <div class="mobile-header__left">
+        <span class="mobile-header__brand">Happie</span>
+        <LoadingIndicator />
+    </div>
 
     <div class="mobile-header__right">
         <LocaleSwitcher />

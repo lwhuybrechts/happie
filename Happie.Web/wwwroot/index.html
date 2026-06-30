@@ -494,7 +494,35 @@
                 document.removeEventListener('click', happie._outsideClickHandler);
             happie._outsideClickHandler = null;
         };
+
+        // Connectivity detection — wraps navigator.onLine and online/offline events.
+        happie.getOnlineStatus = function () {
+            return navigator.onLine;
+        };
+
+        happie.registerConnectivityListener = function (dotNetRef) {
+            happie._connectivityDotNetRef = dotNetRef;
+            happie._onOnline = function () {
+                dotNetRef.invokeMethodAsync('OnConnectivityChangedCallback', true);
+            };
+            happie._onOffline = function () {
+                dotNetRef.invokeMethodAsync('OnConnectivityChangedCallback', false);
+            };
+            window.addEventListener('online', happie._onOnline);
+            window.addEventListener('offline', happie._onOffline);
+        };
+
+        happie.unregisterConnectivityListener = function () {
+            if (happie._onOnline)
+                window.removeEventListener('online', happie._onOnline);
+            if (happie._onOffline)
+                window.removeEventListener('offline', happie._onOffline);
+            happie._onOnline = null;
+            happie._onOffline = null;
+            happie._connectivityDotNetRef = null;
+        };
     </script>
+    <script src="js/cacheDb.js"></script>
 </body>
 
 </html>

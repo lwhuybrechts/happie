@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject PushNotificationService PushNotificationService
 @inject ActiveHousemateService ActiveHousemateService
+@inject SessionService SessionService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject IStringLocalizer<AppStrings> Localizer
@@ -17,6 +18,7 @@
 
     <main>
         <article class="content">
+            <OfflineBanner />
             @if (PushNotificationService.ShouldShowEnablePrompt && _showEnablePrompt)
             {
                 <div class="push-enable-banner" role="alert">
@@ -41,6 +43,8 @@
     <div class="mobile-bottom-nav-container">
         <MobileBottomNav />
     </div>
+
+    <SyncToast />
 </div>
 
 @code {
@@ -67,11 +71,7 @@
                 // If the notification is from a different household, clear session and redirect to login with returnUrl.
                 if (!string.IsNullOrWhiteSpace(pending.HouseholdId) && !string.IsNullOrWhiteSpace(currentHouseholdId) && pending.HouseholdId != currentHouseholdId)
                 {
-                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "jwt");
-                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateId");
-                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateName");
-                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "activeHousemateColor");
-                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "householdId");
+                    await SessionService.ClearSessionTokensAsync();
                     await JsRuntime.InvokeVoidAsync("localStorage.setItem", "returnUrl", pending.Url);
                     await JsRuntime.InvokeVoidAsync("localStorage.setItem", "returnUrlHouseholdId", pending.HouseholdId);
                     NavigationManager.NavigateTo("/", forceLoad: true);

@@ -4,6 +4,7 @@ using FsCheck.Xunit;
 using Happie.Api.Constants;
 using Happie.Api.Functions;
 using Happie.Api.Handlers;
+using Happie.Api.Infrastructure.Repositories;
 using Happie.Shared.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
@@ -22,11 +23,18 @@ namespace Happie.Api.Tests.Functions;
 public class DaysFunctionDinnerTimeValidationPropertyTests
 {
     private readonly Mock<IDayHandler> _dayHandlerMock = new();
+    private readonly Mock<IAttendanceRepository> _attendanceRepositoryMock = new();
+    private readonly Mock<IDishRepository> _dishRepositoryMock = new();
+    private readonly Mock<ICommentRepository> _commentRepositoryMock = new();
     private readonly DaysFunction _sut;
 
     public DaysFunctionDinnerTimeValidationPropertyTests()
     {
-        _sut = new DaysFunction(_dayHandlerMock.Object);
+        _sut = new DaysFunction(
+            _dayHandlerMock.Object,
+            _attendanceRepositoryMock.Object,
+            _dishRepositoryMock.Object,
+            _commentRepositoryMock.Object);
     }
 
     /// <summary>

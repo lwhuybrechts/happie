@@ -169,6 +169,18 @@ dotnet-script Happie.Api.IntegrationTests/Scripts/seed-local.csx
 
 This inserts a test household (password: **`happie`**) with two housemates (Alice and Bob). The script is idempotent (uses upsert), so it's safe to run after integration tests truncate the tables or after restarting Azurite.
 
+### Re-seed After Integration Tests
+
+Integration tests truncate Azure Table Storage tables as part of their setup. This leaves the local database empty after a test run, which breaks manual testing (login fails because no household exists).
+
+**After running integration tests, ALWAYS re-seed the database:**
+
+```bash
+dotnet-script Happie.Api.IntegrationTests/Scripts/seed-local.csx
+```
+
+When asked to run integration tests (e.g., `dotnet test` on the integration test project), always follow up with the seed script so the local environment remains usable for manual testing.
+
 
 ## Blazor WebAssembly Patterns
 
@@ -195,3 +207,53 @@ The login page (`/`) checks for an existing session on load. It MUST only redire
 - `activeHousemateId` exists in `localStorage` (user has selected a housemate)
 
 If only the JWT exists (e.g., user is on the housemate selection step and reloads), the page MUST show the housemate selection view, not redirect.
+
+## Offline Cache & Sync Architecture
+
+The app uses application-level caching (IndexedDB via JS interop) for offline support. This is separate from the Service Worker's static asset caching.
+
+### Key Services (all in `Happie.Web/Services/Caching/`)
+
+| Service | Responsibility |
+|---|---|
+| `ICachedApiClient` / `CachedApiClient` | Central API facade: stale-while-revalidate for GETs, offline queueing for writes |
+| `ICacheStore` / `CacheStore` | IndexedDB CRUD for DayPlan and Calendar cache entries |
+| `IMutationQueue` / `MutationQueue` | IndexedDB queue for offline write operations |
+| `ISyncService` / `SyncService` | Replays queued mutations on reconnect with exponential backoff |
+| `IConnectivityService` / `ConnectivityService` | Tracks online/offline state via `navigator.onLine` events |
+| `LoadingIndicatorState` | Tracks active background operations for the spinner |
+
+### JS Interop Module
+
+`wwwroot/js/cacheDb.js` — manages the `happie-cache` IndexedDB database with three object stores:
+- `dayPlanCache` — cached DayPlan responses (max 30 per household, LRU eviction)
+- `calendarCache` — cached Calendar responses (max 2 per household)
+- `mutationQueue` — offline mutations awaiting replay (FIFO)
+
+### Initialization
+
+All caching services MUST be initialized in `Program.cs` after the host is built:
+
+```csharp
+var cacheStore = host.Services.GetRequiredService<ICacheStore>();
+await cacheStore.InitializeAsync();
+var mutationQueue = host.Services.GetRequiredService<IMutationQueue>();
+await mutationQueue.InitializeAsync();
+var connectivityService = host.Services.GetRequiredService<IConnectivityService>();
+await connectivityService.InitializeAsync();
+var syncService = host.Services.GetRequiredService<ISyncService>();
+await syncService.InitializeAsync();
+```
+
+Without these calls, IndexedDB is never opened and all cache operations silently no-op.
+
+### Session handling
+
+- `AuthHeaderHandler` only injects headers — it does NOT handle 401 responses or redirect.
+- 401 handling is done by `CachedApiClient` (clears session + cache + queue, saves returnUrl, redirects to login).
+- When `householdId` is missing from localStorage (no session), `CachedApiClient` GET methods redirect to login automatically.
+- `SyncService` treats 401 during replay as a 4xx (discard mutation + rollback).
+
+### Server-side conflict detection
+
+Mutation endpoints support `If-Unmodified-Since` header. When present and the entity's `LastModified` is strictly after the header value, the server returns HTTP 409 (`CONFLICT`). The `SyncService` adds this header from the mutation's `createdAt` timestamp during replay.

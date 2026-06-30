@@ -118,6 +118,12 @@
   <data name="DayPlan_LoadError" xml:space="preserve">
     <value>Dagplan laden mislukt. Probeer het opnieuw.</value>
   </data>
+  <data name="DayPlan_NoDataOffline" xml:space="preserve">
+    <value>Geen gegevens beschikbaar. Bezoek deze pagina eerst wanneer je online bent.</value>
+  </data>
+  <data name="DayPlan_Retry" xml:space="preserve">
+    <value>Opnieuw proberen</value>
+  </data>
   <data name="DayPlan_PreviousDay" xml:space="preserve">
     <value>Vorige dag</value>
   </data>
@@ -175,6 +181,12 @@
   </data>
   <data name="Calendar_GoToToday" xml:space="preserve">
     <value>Vandaag</value>
+  </data>
+  <data name="Calendar_NoDataOffline" xml:space="preserve">
+    <value>Geen kalendergegevens beschikbaar. Bezoek deze pagina eerst wanneer je online bent.</value>
+  </data>
+  <data name="Calendar_Retry" xml:space="preserve">
+    <value>Opnieuw proberen</value>
   </data>
   <data name="Housemates_Title" xml:space="preserve">
     <value>Huisgenoten</value>
@@ -461,5 +473,32 @@
   </data>
   <data name="DayHistory_AutoChefAssigned" xml:space="preserve">
     <value>{0} is automatisch als kok ingesteld.</value>
+  </data>
+  <data name="Sync_FailureMessage" xml:space="preserve">
+    <value>Offline wijziging ({0}) voor {1} kon niet worden opgeslagen.</value>
+  </data>
+  <data name="Sync_ConflictMessage" xml:space="preserve">
+    <value>Offline wijziging ({0}) voor {1} is niet doorgevoerd omdat een huisgenoot een recentere wijziging heeft gemaakt.</value>
+  </data>
+  <data name="Sync_MutationType_Attendance" xml:space="preserve">
+    <value>aanwezigheid</value>
+  </data>
+  <data name="Sync_MutationType_Dish" xml:space="preserve">
+    <value>gerecht</value>
+  </data>
+  <data name="Sync_MutationType_Comment" xml:space="preserve">
+    <value>opmerking</value>
+  </data>
+  <data name="LoadingIndicator_AriaLabel" xml:space="preserve">
+    <value>Achtergrondgegevens worden geladen</value>
+  </data>
+  <data name="OfflineBanner_Message" xml:space="preserve">
+    <value>Je bent offline. Wijzigingen worden gesynchroniseerd zodra je weer verbinding hebt.</value>
+  </data>
+  <data name="SyncToast_CloseAriaLabel" xml:space="preserve">
+    <value>Melding sluiten</value>
+  </data>
+  <data name="Error_RequiresInternet" xml:space="preserve">
+    <value>Deze actie vereist een internetverbinding.</value>
   </data>
 </root>

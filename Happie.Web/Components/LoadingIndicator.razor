@@ -1,0 +1,25 @@
+@inject LoadingIndicatorState LoadingState
+@inject IStringLocalizer<AppStrings> Localizer
+@implements IDisposable
+
+@if (LoadingState.IsVisible)
+{
+    <span class="loading-indicator" role="status" aria-label="@Localizer["LoadingIndicator_AriaLabel"]"></span>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        LoadingState.OnStateChanged += OnStateChanged;
+    }
+
+    private void OnStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        LoadingState.OnStateChanged -= OnStateChanged;
+    }
+}

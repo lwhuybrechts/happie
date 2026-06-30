@@ -67,7 +67,7 @@ public class DayHandlerChefTests
                         if (storage.TryGetValue(hmId, out var existing))
                             storage[hmId] = existing with { IsChef = isChef };
                         else
-                            storage[hmId] = new AttendanceRecord(hId, hmId, d, AttendanceStatus.Unknown, isChef);
+                            storage[hmId] = new AttendanceRecord(hId, hmId, d, AttendanceStatus.Unknown, isChef, DateTimeOffset.UtcNow);
                     })
                     .Returns(Task.CompletedTask);
 

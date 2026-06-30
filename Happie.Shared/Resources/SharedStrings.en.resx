@@ -168,10 +168,4 @@
   <data name="history_dish_set_dinner_time_cleared" xml:space="preserve">
     <value>Dish set to "{description}" and dinner time cleared.</value>
   </data>
-  <data name="notification_dinner_time_changed" xml:space="preserve">
-    <value>{name} changed the dinner time to {time}</value>
-  </data>
-  <data name="notification_dish_and_dinner_time_changed" xml:space="preserve">
-    <value>{name} changed the dish to "{description}" and the dinner time to {time}</value>
-  </data>
 </root>

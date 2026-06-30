@@ -21,6 +21,12 @@
     text-transform: uppercase;
 }
 
+.mobile-header__left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
 .mobile-header__right {
     display: flex;
     align-items: center;

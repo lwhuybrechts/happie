@@ -1,5 +1,6 @@
 @using Happie.Shared.Contracts
-@inject HttpClient Http
+@using Happie.Web.Services.Caching
+@inject ICachedApiClient CachedApi
 @inject IStringLocalizer<AppStrings> Localizer
 
 <div class="comment-editor">
@@ -146,13 +147,11 @@
         _showError = false;
         _isSaving = true;
 
-        var response = await Http.PutAsJsonAsync(
-            $"days/{Date}/comments/{HousemateId}",
-            new UpdateCommentRequest(text));
+        var success = await CachedApi.SaveCommentAsync(Date, HousemateId, text);
 
         _isSaving = false;
 
-        if (!response.IsSuccessStatusCode)
+        if (!success)
         {
             // Roll back to the previous value on failure.
             _committedValue = previousValue;
@@ -173,11 +172,11 @@
         _showError = false;
         _isSaving = true;
 
-        var response = await Http.DeleteAsync($"days/{Date}/comments/{HousemateId}");
+        var success = await CachedApi.DeleteCommentAsync(Date, HousemateId);
 
         _isSaving = false;
 
-        if (!response.IsSuccessStatusCode)
+        if (!success)
         {
             // Roll back to the previous value on failure.
             _committedValue = previousValue;

@@ -114,7 +114,7 @@ public class DayHandler : IDayHandler
         var existingRecord = await _attendanceRepository.GetAsync(householdId, date, housemateId, ct);
         var isChef = existingRecord?.IsChef ?? false;
 
-        var record = new AttendanceRecord(householdId, housemateId, date, status, isChef);
+        var record = new AttendanceRecord(householdId, housemateId, date, status, isChef, DateTimeOffset.UtcNow);
         var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
         {
             ["name"] = housemateId.ToString(),
@@ -149,7 +149,7 @@ public class DayHandler : IDayHandler
         var dishChanged = existingDish is null || existingDish.Description != description;
         var dinnerTimeChanged = existingDish?.DinnerTime != dinnerTime;
 
-        var record = new DishRecord(householdId, date, description, actingHousemateId, DateTimeOffset.UtcNow, dinnerTime);
+        var record = new DishRecord(householdId, date, description, actingHousemateId, DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow);
         await _dishRepository.UpsertAsync(record, ct);
 
         // Write a single history entry based on what changed.
@@ -165,18 +165,15 @@ public class DayHandler : IDayHandler
             {
                 // History entry write failure must not roll back the dish save (Requirement 8.8).
             }
-        }
 
-        // Consolidated push notification: at most one per save.
-        var dinnerTimeCleared = dinnerTimeChanged && dinnerTime is null;
-        var shouldNotifyDish = dishChanged && IsTodayOrTomorrow(date);
-        var shouldNotifyDinnerTime = dinnerTimeChanged && !dinnerTimeCleared
-            && IsDinnerTimeWithinWindow(date, dinnerTime!.Value, timezoneOffsetMinutes);
+            // Consolidated push notification: at most one per save.
+            var dinnerTimeCleared = dinnerTimeChanged && dinnerTime is null;
+            var shouldNotifyDish = dishChanged && IsTodayOrTomorrow(date);
+            var shouldNotifyDinnerTime = dinnerTimeChanged && !dinnerTimeCleared
+                && IsDinnerTimeWithinWindow(date, dinnerTime!.Value, timezoneOffsetMinutes);
 
-        if (shouldNotifyDish || shouldNotifyDinnerTime)
-        {
-            var (notificationKey, notificationParameters) = GetNotificationKeyAndParameters(description, dinnerTime, shouldNotifyDish, shouldNotifyDinnerTime);
-            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, notificationKey, notificationParameters, ct);
+            if (shouldNotifyDish || shouldNotifyDinnerTime)
+                await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.TranslationKey, historyEntry.Parameters, ct);
         }
     }
 
@@ -294,37 +291,6 @@ public class DayHandler : IDayHandler
         return IsDinnerTimeWithinWindow(date, newDinnerTime.Value, timezoneOffsetMinutes, currentUtcTime);
     }
 
-    /// <summary>Selects the consolidated notification translation key and parameters based on what changed.</summary>
-    private static (string TranslationKey, string Parameters) GetNotificationKeyAndParameters(
-        string description, TimeOnly? dinnerTime, bool shouldNotifyDish, bool shouldNotifyDinnerTime)
-    {
-        if (shouldNotifyDish && shouldNotifyDinnerTime)
-        {
-            var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
-            {
-                ["description"] = description,
-                ["time"] = dinnerTime!.Value.ToString("HH:mm")
-            });
-            return (TranslationKeys.NotificationDishAndDinnerTimeChanged, parameters);
-        }
-
-        if (shouldNotifyDinnerTime)
-        {
-            var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
-            {
-                ["time"] = dinnerTime!.Value.ToString("HH:mm")
-            });
-            return (TranslationKeys.NotificationDinnerTimeChanged, parameters);
-        }
-
-        // Only dish changed.
-        var dishParameters = JsonSerializer.Serialize(new Dictionary<string, string>
-        {
-            ["description"] = description
-        });
-        return (TranslationKeys.HistoryDishSet, dishParameters);
-    }
-
     /// <inheritdoc/>
     public async Task<bool> UpsertCommentAsync(Guid householdId, DateOnly date, Guid housemateId, string text, Guid actingHousemateId, CancellationToken ct = default)
     {
@@ -332,7 +298,7 @@ public class DayHandler : IDayHandler
         if (housemate is null)
             return false;
 
-        var comment = new Comment(householdId, housemateId, date, text, DateTimeOffset.UtcNow);
+        var comment = new Comment(householdId, housemateId, date, text, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
         var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
         {
             ["name"] = housemateId.ToString(),

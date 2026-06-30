@@ -1,5 +1,6 @@
 @using Happie.Shared.Contracts
-@inject HttpClient Http
+@using Happie.Web.Services.Caching
+@inject ICachedApiClient CachedApi
 @inject IStringLocalizer<AppStrings> Localizer
 
 <div class="comments-section">
@@ -307,18 +308,11 @@
 
     private async Task<bool> UpsertCommentAsync(string text)
     {
-        var response = await Http.PutAsJsonAsync(
-            $"days/{Date}/comments/{ActiveHousemateId}",
-            new UpdateCommentRequest(text));
-
-        return response.IsSuccessStatusCode;
+        return await CachedApi.SaveCommentAsync(Date, ActiveHousemateId, text);
     }
 
     private async Task<bool> DeleteCommentAsync()
     {
-        var response = await Http.DeleteAsync(
-            $"days/{Date}/comments/{ActiveHousemateId}");
-
-        return response.IsSuccessStatusCode;
+        return await CachedApi.DeleteCommentAsync(Date, ActiveHousemateId);
     }
 }

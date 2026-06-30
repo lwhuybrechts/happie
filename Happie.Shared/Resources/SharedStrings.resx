@@ -168,10 +168,4 @@
   <data name="history_dish_set_dinner_time_cleared" xml:space="preserve">
     <value>Gerecht gewijzigd naar "{description}" en etenstijd verwijderd.</value>
   </data>
-  <data name="notification_dinner_time_changed" xml:space="preserve">
-    <value>{name} heeft de etenstijd gewijzigd naar {time}</value>
-  </data>
-  <data name="notification_dish_and_dinner_time_changed" xml:space="preserve">
-    <value>{name} heeft het gerecht gewijzigd naar "{description}" en de etenstijd naar {time}</value>
-  </data>
 </root>

@@ -95,7 +95,7 @@ public class DataIsolationTests
                 var (householdA, householdB, housemateId, date) = args;
 
                 // Arrange.
-                var record = new AttendanceRecord(householdA, housemateId, date, AttendanceStatus.EatingIn, false);
+                var record = new AttendanceRecord(householdA, housemateId, date, AttendanceStatus.EatingIn, false, null);
                 await _attendanceRepository.UpsertAsync(record);
 
                 // Act.
@@ -123,7 +123,7 @@ public class DataIsolationTests
                 var (householdA, householdB, housemateId, date) = args;
 
                 // Arrange.
-                var dish = new DishRecord(householdA, date, "Pasta", housemateId, DateTimeOffset.UtcNow, null);
+                var dish = new DishRecord(householdA, date, "Pasta", housemateId, DateTimeOffset.UtcNow, null, null);
                 await _dishRepository.UpsertAsync(dish);
 
                 // Act.
@@ -151,7 +151,7 @@ public class DataIsolationTests
                 var (householdA, householdB, housemateId, date) = args;
 
                 // Arrange.
-                var comment = new Comment(householdA, housemateId, date, "Home late", null);
+                var comment = new Comment(householdA, housemateId, date, "Home late", null, null);
                 await _commentRepository.UpsertAsync(comment);
 
                 // Act.

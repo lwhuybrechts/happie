@@ -3,12 +3,16 @@
 @using Happie.Shared.Contracts
 @using Happie.Shared.Domain
 @using Happie.Web.Services
+@using Happie.Web.Services.Caching
 @inject HttpClient Http
+@inject IConnectivityService ConnectivityService
 @inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<AppStrings> Localizer
 @inject LocaleService LocaleService
 @inject ActiveHousemateService ActiveHousemateService
+@inject ICacheStore CacheStore
+@inject SessionService SessionService
 
 <PageTitle>Happie</PageTitle>
 
@@ -53,6 +57,10 @@
             {
                 <p role="alert">@Localizer["Login_ErrorMessage"]</p>
             }
+            else if (_showOfflineError)
+            {
+                <p role="alert">@Localizer["Error_RequiresInternet"]</p>
+            }
 
             <button type="submit" class="login-btn" disabled="@_isSubmitting">@Localizer["Login_SubmitButton"]</button>
         </EditForm>
@@ -89,6 +97,7 @@
     private readonly LoginFormModel _loginModel = new();
     private List<HousemateDto>? _housemates;
     private bool _showError;
+    private bool _showOfflineError;
     private bool _isSubmitting;
 
     protected override async Task OnInitializedAsync()
@@ -99,6 +108,25 @@
         // Only redirect if both JWT and housemate selection are present (fully logged in).
         if (!string.IsNullOrWhiteSpace(existingToken) && !string.IsNullOrWhiteSpace(activeHousemateId))
         {
+            // Ensure householdId is present — if missing, try to re-derive it from the JWT.
+            // Without householdId, CachedApiClient redirects back here creating an infinite loop.
+            var householdId = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "householdId");
+            if (string.IsNullOrWhiteSpace(householdId))
+            {
+                householdId = await JsRuntime.InvokeAsync<string?>("happie.getHouseholdIdFromJwt", existingToken);
+                if (!string.IsNullOrWhiteSpace(householdId))
+                {
+                    await JsRuntime.InvokeVoidAsync("localStorage.setItem", "householdId", householdId);
+                }
+                else
+                {
+                    // Cannot recover householdId — clear stale session and show login form.
+                    await SessionService.ClearSessionTokensAsync();
+                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "returnUrl");
+                    return;
+                }
+            }
+
             var returnUrl = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "returnUrl");
             await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "returnUrl");
 
@@ -138,42 +166,65 @@
     {
         _isSubmitting = true;
         _showError = false;
+        _showOfflineError = false;
 
-        var response = await Http.PostAsJsonAsync("auth/login", new LoginRequest(_loginModel.Password));
-
-        if (response.IsSuccessStatusCode)
+        if (!ConnectivityService.IsOnline)
         {
-            var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
+            _showOfflineError = true;
+            _isSubmitting = false;
+            return;
+        }
 
-            if (loginResponse is null || loginResponse.Housemates is null || !loginResponse.Housemates.Any())
+        try
+        {
+            var response = await Http.PostAsJsonAsync("auth/login", new LoginRequest(_loginModel.Password));
+
+            if (response.IsSuccessStatusCode)
             {
-                _showError = true;
+                var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
+
+                if (loginResponse is null || loginResponse.Housemates is null || !loginResponse.Housemates.Any())
+                {
+                    _showError = true;
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("localStorage.setItem", "jwt", loginResponse.Token);
+
+                    // Read the previously stored householdId before decoding the new one.
+                    var previousHouseholdId = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "householdId");
+
+                    // Decode the householdId from the JWT and persist it for cross-household push detection.
+                    var householdId = await JsRuntime.InvokeAsync<string?>("happie.getHouseholdIdFromJwt", loginResponse.Token);
+
+                    // If the household changed, clear all cache entries and mutation queue for the previous household.
+                    if (!string.IsNullOrWhiteSpace(previousHouseholdId) && previousHouseholdId != householdId)
+                        await CacheStore.ClearAllAsync(previousHouseholdId);
+
+                    if (!string.IsNullOrWhiteSpace(householdId))
+                        await JsRuntime.InvokeVoidAsync("localStorage.setItem", "householdId", householdId);
+
+                    // Clear returnUrl if the user logged into a different household than the notification was for.
+                    var returnUrlHouseholdId = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "returnUrlHouseholdId");
+                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "returnUrlHouseholdId");
+                    if (!string.IsNullOrWhiteSpace(returnUrlHouseholdId) && returnUrlHouseholdId != householdId)
+                        await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "returnUrl");
+
+                    _housemates = loginResponse.Housemates.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
+
+                    // Persist housemates to sessionStorage so they survive a locale-switch reload.
+                    var serialized = System.Text.Json.JsonSerializer.Serialize(_housemates);
+                    await JsRuntime.InvokeVoidAsync("sessionStorage.setItem", "pendingHousemates", serialized);
+                }
             }
             else
             {
-                await JsRuntime.InvokeVoidAsync("localStorage.setItem", "jwt", loginResponse.Token);
-
-                // Decode the householdId from the JWT and persist it for cross-household push detection.
-                var householdId = await JsRuntime.InvokeAsync<string?>("happie.getHouseholdIdFromJwt", loginResponse.Token);
-                if (!string.IsNullOrWhiteSpace(householdId))
-                    await JsRuntime.InvokeVoidAsync("localStorage.setItem", "householdId", householdId);
-
-                // Clear returnUrl if the user logged into a different household than the notification was for.
-                var returnUrlHouseholdId = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "returnUrlHouseholdId");
-                await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "returnUrlHouseholdId");
-                if (!string.IsNullOrWhiteSpace(returnUrlHouseholdId) && returnUrlHouseholdId != householdId)
-                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "returnUrl");
-
-                _housemates = loginResponse.Housemates.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
-
-                // Persist housemates to sessionStorage so they survive a locale-switch reload.
-                var serialized = System.Text.Json.JsonSerializer.Serialize(_housemates);
-                await JsRuntime.InvokeVoidAsync("sessionStorage.setItem", "pendingHousemates", serialized);
+                _showError = true;
             }
         }
-        else
+        catch
         {
-            _showError = true;
+            _showOfflineError = true;
         }
 
         _isSubmitting = false;

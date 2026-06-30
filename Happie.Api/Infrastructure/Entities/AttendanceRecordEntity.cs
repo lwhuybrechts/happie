@@ -25,4 +25,7 @@ public class AttendanceRecordEntity : MyTableEntity
 
     /// <summary>Whether the housemate is marked as chef for this day.</summary>
     public bool IsChef { get; set; }
+
+    /// <summary>The timestamp when this record was last written (for conflict detection).</summary>
+    public DateTimeOffset LastModified { get; set; }
 }
