@@ -53,6 +53,7 @@
     top: 0;
     left: -100%;
     overflow: hidden;
+    transition: opacity 0.15s ease;
 }
 
 /* Active day panel: in normal flow so it determines container height and allows scrolling. */
@@ -67,6 +68,7 @@
     top: 0;
     left: 100%;
     overflow: hidden;
+    transition: opacity 0.15s ease;
 }
 
 /* Panel content: flex column layout with spacing. */

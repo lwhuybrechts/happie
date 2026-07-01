@@ -6,11 +6,12 @@
     window.happie = window.happie || {};
 
     // Constants.
-    const SWIPE_THRESHOLD = 60;
+    const SWIPE_THRESHOLD = 100;
     const DEAD_ZONE = 10;
     const EDGE_EXCLUSION = 20;
     const MAX_OVERSHOOT_FACTOR = 1.2;
     const ANIMATION_DURATION = 300;
+    const FADED_OPACITY = 0.6;
 
     // Registry for cleanup.
     const _carouselRegistry = new Map();
@@ -51,7 +52,9 @@
             directionLocked: false,
             isHorizontal: false,
             animating: false,
-            snapBackAnimationId: null
+            snapBackAnimationId: null,
+            thresholdMet: false,
+            incomingPanel: null
         };
 
         var rafId = null;
@@ -250,6 +253,29 @@
             var translated = rubberBand(totalDrag, viewportWidth);
 
             scheduleTranslate(translated);
+
+            // Toggle opacity on the incoming panel only.
+            // Below threshold: incoming panel faded.
+            // Above threshold: incoming panel goes solid (navigation will happen on release).
+            var absDrag = Math.abs(totalDrag);
+            if (!state.incomingPanel) {
+                state.incomingPanel = totalDrag > 0
+                    ? element.querySelector('.swipe-carousel__panel--prev')
+                    : element.querySelector('.swipe-carousel__panel--next');
+            }
+
+            if (absDrag >= SWIPE_THRESHOLD && !state.thresholdMet) {
+                state.thresholdMet = true;
+                if (state.incomingPanel)
+                    state.incomingPanel.style.opacity = '';
+            } else if (absDrag < SWIPE_THRESHOLD && state.thresholdMet) {
+                state.thresholdMet = false;
+                if (state.incomingPanel)
+                    state.incomingPanel.style.opacity = FADED_OPACITY;
+            } else if (!state.thresholdMet && state.incomingPanel && state.incomingPanel.style.opacity !== String(FADED_OPACITY)) {
+                // Ensure incoming starts faded on first move.
+                state.incomingPanel.style.opacity = FADED_OPACITY;
+            }
         };
 
         var onTouchEnd = function () {
@@ -263,6 +289,13 @@
             }
             state.tracking = false;
             cancelScheduledTranslate();
+
+            // Reset panel opacities.
+            if (state.incomingPanel) {
+                state.incomingPanel.style.opacity = '';
+                state.incomingPanel = null;
+            }
+            state.thresholdMet = false;
 
             var currentTranslateX = getCurrentTranslateX();
             var absDelta = Math.abs(currentTranslateX);
@@ -282,6 +315,13 @@
             if (!state.tracking) return;
             state.tracking = false;
             cancelScheduledTranslate();
+
+            // Reset panel opacities.
+            if (state.incomingPanel) {
+                state.incomingPanel.style.opacity = '';
+                state.incomingPanel = null;
+            }
+            state.thresholdMet = false;
 
             var currentTranslateX = getCurrentTranslateX();
             if (currentTranslateX !== 0)
