@@ -1,8 +1,5 @@
-/* Base layout: vertical stack with spacing between sections. */
+/* Page root: simple positioning container. */
 .day-plan-page {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
     position: relative;
 }
 
@@ -11,14 +8,92 @@
     .day-plan-page {
         max-width: 600px;
         margin: 0 auto;
-        padding: 24px 16px;
     }
 }
 
-/* Mobile (<641px): full viewport width with 16px horizontal padding. */
+/* Mobile (<641px): full viewport width. */
 @media (max-width: 640.98px) {
     .day-plan-page {
         width: 100%;
-        padding: 16px;
     }
+}
+
+/* Carousel viewport: clips overflow so adjacent panels are hidden until swipe. */
+.swipe-carousel-viewport {
+    position: relative;
+    overflow: hidden;
+    width: 100vw;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Desktop (≥641px): constrain carousel to page width, no swipe needed. */
+@media (min-width: 641px) {
+    .swipe-carousel-viewport {
+        width: 100%;
+        left: 0;
+        transform: none;
+    }
+}
+
+/* Carousel track: translates during swipe to reveal adjacent panels. */
+.swipe-carousel {
+    position: relative;
+    touch-action: pan-y;
+}
+
+/* Panel base: adjacent panels are absolutely positioned, active is in flow. */
+.swipe-carousel__panel {
+    width: 100%;
+}
+
+/* Previous day panel: positioned to the left of the active panel. */
+.swipe-carousel__panel--prev {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    overflow: hidden;
+}
+
+/* Active day panel: in normal flow so it determines container height and allows scrolling. */
+.swipe-carousel__panel--active {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Next day panel: positioned to the right of the active panel. */
+.swipe-carousel__panel--next {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    overflow: hidden;
+}
+
+/* Panel content: flex column layout with spacing. */
+.swipe-carousel__panel-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px 32px;
+}
+
+/* Desktop (≥641px): adjust panel content padding. */
+@media (min-width: 641px) {
+    .swipe-carousel__panel-content {
+        padding: 24px 32px;
+    }
+}
+
+/* Arrow placeholder: centered chevron shown when adjacent panel data is not yet loaded. */
+.swipe-carousel__arrow-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: #aaa;
+}
+
+.swipe-carousel__arrow-placeholder svg {
+    width: 48px;
+    height: 48px;
 }

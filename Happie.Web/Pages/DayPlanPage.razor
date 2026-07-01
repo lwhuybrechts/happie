@@ -16,52 +16,142 @@
 <div class="day-plan-page"
      @ref="_pageElement">
 
-    <DateNavigationPanel ViewedDate="@_parsedDate"
-                         OnPreviousDay="GoToPreviousDay"
-                         OnNextDay="GoToNextDay"
-                         OnCenterClicked="NavigateToCalendar" />
+    <div class="swipe-carousel-viewport">
+        <div class="swipe-carousel" @ref="_carouselElement">
+        <div class="swipe-carousel__panel swipe-carousel__panel--prev">
+            @if (_prevLoaded && _prevDayPlan is not null)
+            {
+                <div class="swipe-carousel__panel-content">
+                    <DateNavigationPanel ViewedDate="@_prevDate"
+                                         OnPreviousDay="@(() => Task.CompletedTask)"
+                                         OnNextDay="@(() => Task.CompletedTask)"
+                                         OnCenterClicked="@(() => { })" />
 
-    @if (_isLoading)
-    {
-        <p>@Localizer["DayPlan_Loading"]</p>
-    }
-    else if (_loadError)
-    {
-        <p role="alert">@Localizer["DayPlan_LoadError"]</p>
-        <button @onclick="RetryAsync">@Localizer["DayPlan_Retry"]</button>
-    }
-    else if (_noDataOffline)
-    {
-        <p>@Localizer["DayPlan_NoDataOffline"]</p>
-    }
-    else if (_dayPlan is not null)
-    {
-        <DishPanel Date="@Date"
-                   Dish="@_dayPlan.Dish"
-                   Attendance="@_dayPlan.Attendance"
-                   ActingHousemateId="@_activeHousemateId"
-                   OnDishChanged="OnDishChangedAsync" />
+                    <DishPanel Date="@_prevDate.ToString("yyyy-MM-dd")"
+                               Dish="@_prevDayPlan.Dish"
+                               Attendance="@_prevDayPlan.Attendance"
+                               ActingHousemateId="@_activeHousemateId"
+                               OnDishChanged="@(_ => Task.CompletedTask)" />
 
-        <AttendanceSection Date="@Date"
-                           Attendance="@_dayPlan.Attendance"
-                           OnNudgeClicked="OpenNudgeModal"
-                           OnStatusChanged="OnAttendanceChangedAsync"
-                           OnChefChanged="OnChefChangedAsync" />
+                    <AttendanceSection Date="@_prevDate.ToString("yyyy-MM-dd")"
+                                       Attendance="@_prevDayPlan.Attendance"
+                                       OnNudgeClicked="@(() => { })"
+                                       OnStatusChanged="@(_ => Task.CompletedTask)"
+                                       OnChefChanged="@(_ => Task.CompletedTask)" />
 
-        <CommentsSection Date="@Date"
-                         Comments="@_dayPlan.Comments"
-                         Attendance="@_dayPlan.Attendance"
-                         ActiveHousemateId="@_activeHousemateId"
-                         OnCommentChanged="OnCommentChangedAsync" />
+                    <CommentsSection Date="@_prevDate.ToString("yyyy-MM-dd")"
+                                     Comments="@_prevDayPlan.Comments"
+                                     Attendance="@_prevDayPlan.Attendance"
+                                     ActiveHousemateId="@_activeHousemateId"
+                                     OnCommentChanged="@(_ => Task.CompletedTask)" />
 
-        <HistorySection History="@_dayPlan.History"
-                        Attendance="@_dayPlan.Attendance" />
+                    <HistorySection History="@_prevDayPlan.History"
+                                    Attendance="@_prevDayPlan.Attendance" />
+                </div>
+            }
+            else
+            {
+                <div class="swipe-carousel__arrow-placeholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </div>
+            }
+        </div>
 
-        <NudgeModal @ref="_nudgeModal"
-                    Attendance="@_dayPlan.Attendance"
-                    ActiveHousemateId="@_activeHousemateId"
-                    Date="@Date" />
-    }
+        <div class="swipe-carousel__panel swipe-carousel__panel--active">
+            <div class="swipe-carousel__panel-content">
+                <DateNavigationPanel ViewedDate="@_parsedDate"
+                                     OnPreviousDay="GoToPreviousDay"
+                                     OnNextDay="GoToNextDay"
+                                     OnCenterClicked="NavigateToCalendar" />
+
+                @if (_isLoading)
+                {
+                    <p>@Localizer["DayPlan_Loading"]</p>
+                }
+                else if (_loadError)
+                {
+                    <p role="alert">@Localizer["DayPlan_LoadError"]</p>
+                    <button @onclick="RetryAsync">@Localizer["DayPlan_Retry"]</button>
+                }
+                else if (_noDataOffline)
+                {
+                    <p>@Localizer["DayPlan_NoDataOffline"]</p>
+                }
+                else if (_dayPlan is not null)
+                {
+                    <DishPanel Date="@Date"
+                               Dish="@_dayPlan.Dish"
+                               Attendance="@_dayPlan.Attendance"
+                               ActingHousemateId="@_activeHousemateId"
+                               OnDishChanged="OnDishChangedAsync" />
+
+                    <AttendanceSection Date="@Date"
+                                       Attendance="@_dayPlan.Attendance"
+                                       OnNudgeClicked="OpenNudgeModal"
+                                       OnStatusChanged="OnAttendanceChangedAsync"
+                                       OnChefChanged="OnChefChangedAsync" />
+
+                    <CommentsSection Date="@Date"
+                                     Comments="@_dayPlan.Comments"
+                                     Attendance="@_dayPlan.Attendance"
+                                     ActiveHousemateId="@_activeHousemateId"
+                                     OnCommentChanged="OnCommentChangedAsync" />
+
+                    <HistorySection History="@_dayPlan.History"
+                                    Attendance="@_dayPlan.Attendance" />
+
+                    <NudgeModal @ref="_nudgeModal"
+                                Attendance="@_dayPlan.Attendance"
+                                ActiveHousemateId="@_activeHousemateId"
+                                Date="@Date" />
+                }
+            </div>
+        </div>
+
+        <div class="swipe-carousel__panel swipe-carousel__panel--next">
+            @if (_nextLoaded && _nextDayPlan is not null)
+            {
+                <div class="swipe-carousel__panel-content">
+                    <DateNavigationPanel ViewedDate="@_nextDate"
+                                         OnPreviousDay="@(() => Task.CompletedTask)"
+                                         OnNextDay="@(() => Task.CompletedTask)"
+                                         OnCenterClicked="@(() => { })" />
+
+                    <DishPanel Date="@_nextDate.ToString("yyyy-MM-dd")"
+                               Dish="@_nextDayPlan.Dish"
+                               Attendance="@_nextDayPlan.Attendance"
+                               ActingHousemateId="@_activeHousemateId"
+                               OnDishChanged="@(_ => Task.CompletedTask)" />
+
+                    <AttendanceSection Date="@_nextDate.ToString("yyyy-MM-dd")"
+                                       Attendance="@_nextDayPlan.Attendance"
+                                       OnNudgeClicked="@(() => { })"
+                                       OnStatusChanged="@(_ => Task.CompletedTask)"
+                                       OnChefChanged="@(_ => Task.CompletedTask)" />
+
+                    <CommentsSection Date="@_nextDate.ToString("yyyy-MM-dd")"
+                                     Comments="@_nextDayPlan.Comments"
+                                     Attendance="@_nextDayPlan.Attendance"
+                                     ActiveHousemateId="@_activeHousemateId"
+                                     OnCommentChanged="@(_ => Task.CompletedTask)" />
+
+                    <HistorySection History="@_nextDayPlan.History"
+                                    Attendance="@_nextDayPlan.Attendance" />
+                </div>
+            }
+            else
+            {
+                <div class="swipe-carousel__arrow-placeholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </div>
+            }
+        </div>
+        </div>
+    </div>
 </div>
 
 @code {
@@ -75,8 +165,21 @@
     private bool _noDataOffline;
     private Guid _activeHousemateId;
     private ElementReference _pageElement;
+    private ElementReference _carouselElement;
     private DotNetObjectReference<DayPlanPage>? _dotNetRef;
     private NudgeModal? _nudgeModal;
+
+    // Carousel state: adjacent day plans.
+    private DayPlanResponse? _prevDayPlan;
+    private DayPlanResponse? _nextDayPlan;
+    private bool _prevLoaded;
+    private bool _nextLoaded;
+    private bool _isSwiping;
+    private CancellationTokenSource? _prefetchCts;
+    private DateOnly _prevDate;
+    private DateOnly _nextDate;
+    private DateOnly _previousParsedDate;
+    private List<Action>? _deferredUpdates;
 
     protected override async Task OnInitializedAsync()
     {
@@ -95,20 +198,106 @@
             _parsedDate = DateOnly.FromDateTime(DateTime.Today);
         }
 
-        await LoadDayPlanAsync();
+        // Cancel any in-flight pre-fetches from the previous date.
+        _prefetchCts?.Cancel();
+        _prefetchCts?.Dispose();
+        _prefetchCts = new CancellationTokenSource();
+
+        // Determine navigation direction relative to the previous date.
+        var dayDifference = _parsedDate.DayNumber - _previousParsedDate.DayNumber;
+
+        if (dayDifference == 1 && _nextLoaded && _nextDayPlan is not null)
+        {
+            // Navigated forward: recycle panels.
+            _prevDayPlan = _dayPlan;
+            _prevLoaded = _prevDayPlan is not null;
+            _dayPlan = _nextDayPlan;
+            _isLoading = false;
+            _loadError = false;
+            _noDataOffline = false;
+            _nextDayPlan = null;
+            _nextLoaded = false;
+        }
+        else if (dayDifference == -1 && _prevLoaded && _prevDayPlan is not null)
+        {
+            // Navigated backward: recycle panels.
+            _nextDayPlan = _dayPlan;
+            _nextLoaded = _nextDayPlan is not null;
+            _dayPlan = _prevDayPlan;
+            _isLoading = false;
+            _loadError = false;
+            _noDataOffline = false;
+            _prevDayPlan = null;
+            _prevLoaded = false;
+        }
+        else
+        {
+            // Non-adjacent navigation or first load: reset all panels and fetch from scratch.
+            _prevLoaded = false;
+            _nextLoaded = false;
+            _prevDayPlan = null;
+            _nextDayPlan = null;
+            await LoadDayPlanAsync();
+        }
+
+        _prevDate = _parsedDate.AddDays(-1);
+        _nextDate = _parsedDate.AddDays(1);
+        _previousParsedDate = _parsedDate;
+
+        // Fire-and-forget pre-fetch of adjacent days after active day has loaded.
+        if (_dayPlan is not null && !_isLoading)
+            _ = PreFetchAdjacentDaysAsync();
+
+        // Navigation complete: allow next swipe gesture.
+        _isSwiping = false;
+        ApplyDeferredUpdates();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
-            await JsRuntime.InvokeVoidAsync("happie.registerSwipe", _pageElement, _dotNetRef);
+            await JsRuntime.InvokeVoidAsync("happie.registerSwipeCarousel", _carouselElement, _dotNetRef);
     }
 
     [JSInvokable]
-    public Task SwipeLeftAsync() => GoToNextDay();
+    public Task SwipeLeftAsync()
+    {
+        if (_isSwiping)
+            return Task.CompletedTask;
+
+        _isSwiping = true;
+        return GoToNextDay();
+    }
 
     [JSInvokable]
-    public Task SwipeRightAsync() => GoToPreviousDay();
+    public Task SwipeRightAsync()
+    {
+        if (_isSwiping)
+            return Task.CompletedTask;
+
+        _isSwiping = true;
+        return GoToPreviousDay();
+    }
+
+    [JSInvokable]
+    public Task SwipeCancelledAsync()
+    {
+        _isSwiping = false;
+        ApplyDeferredUpdates();
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void ApplyDeferredUpdates()
+    {
+        if (_deferredUpdates is null || _deferredUpdates.Count == 0)
+            return;
+
+        foreach (var update in _deferredUpdates)
+            update();
+
+        _deferredUpdates = null;
+    }
 
     private Task GoToNextDay()
     {
@@ -164,6 +353,90 @@
         }
     }
 
+    private async Task PreFetchAdjacentDaysAsync()
+    {
+        var cancellationToken = _prefetchCts?.Token ?? CancellationToken.None;
+
+        try
+        {
+            // Yield to ensure the active panel renders and paints before adjacent panel rendering begins.
+            // This satisfies requirement 10.1: Active_Panel content rendered to DOM before Adjacent_Panel content.
+            await Task.Yield();
+
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            // Only fetch adjacent days that are not already loaded from panel recycling.
+            Task<DayPlanResponse?>? prevTask = _prevLoaded ? null : CachedApi.GetDayPlanAsync(_prevDate.ToString("yyyy-MM-dd"));
+            Task<DayPlanResponse?>? nextTask = _nextLoaded ? null : CachedApi.GetDayPlanAsync(_nextDate.ToString("yyyy-MM-dd"));
+
+            if (prevTask is not null)
+                await prevTask;
+            if (nextTask is not null)
+                await nextTask;
+
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            if (prevTask is not null)
+            {
+                var prevResult = await prevTask;
+                if (prevResult is not null)
+                {
+                    // Defer panel update if a swipe gesture is in progress.
+                    if (_isSwiping)
+                    {
+                        _deferredUpdates ??= new List<Action>();
+                        _deferredUpdates.Add(() =>
+                        {
+                            _prevDayPlan = prevResult;
+                            _prevLoaded = true;
+                        });
+                    }
+                    else
+                    {
+                        _prevDayPlan = prevResult;
+                        _prevLoaded = true;
+                    }
+                }
+            }
+
+            if (nextTask is not null)
+            {
+                var nextResult = await nextTask;
+                if (nextResult is not null)
+                {
+                    // Defer panel update if a swipe gesture is in progress.
+                    if (_isSwiping)
+                    {
+                        _deferredUpdates ??= new List<Action>();
+                        _deferredUpdates.Add(() =>
+                        {
+                            _nextDayPlan = nextResult;
+                            _nextLoaded = true;
+                        });
+                    }
+                    else
+                    {
+                        _nextDayPlan = nextResult;
+                        _nextLoaded = true;
+                    }
+                }
+            }
+
+            if (!_isSwiping && (_prevLoaded || _nextLoaded))
+                await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+            // Pre-fetch was cancelled due to navigation. Discard results.
+        }
+        catch
+        {
+            // Pre-fetch failed. Leave Arrow_Placeholder in place.
+        }
+    }
+
     private async Task RetryAsync()
     {
         _loadError = false;
@@ -185,6 +458,18 @@
 
     private void HandleDayPlanUpdated(DayPlanResponse updatedDayPlan)
     {
+        if (_isSwiping)
+        {
+            // Defer state update until the swipe gesture completes.
+            _deferredUpdates ??= new List<Action>();
+            _deferredUpdates.Add(() =>
+            {
+                _dayPlan = updatedDayPlan;
+                InvokeAsync(StateHasChanged);
+            });
+            return;
+        }
+
         _dayPlan = updatedDayPlan;
         InvokeAsync(StateHasChanged);
     }
@@ -192,11 +477,23 @@
     private void HandleDayPlanRolledBack(string date, DayPlanResponse rolledBackDayPlan)
     {
         // Only update if this rollback is for the currently viewed date.
-        if (date == Date)
+        if (date != Date)
+            return;
+
+        if (_isSwiping)
         {
-            _dayPlan = rolledBackDayPlan;
-            InvokeAsync(StateHasChanged);
+            // Defer state update until the swipe gesture completes.
+            _deferredUpdates ??= new List<Action>();
+            _deferredUpdates.Add(() =>
+            {
+                _dayPlan = rolledBackDayPlan;
+                InvokeAsync(StateHasChanged);
+            });
+            return;
         }
+
+        _dayPlan = rolledBackDayPlan;
+        InvokeAsync(StateHasChanged);
     }
 
     private void OpenNudgeModal()
@@ -272,7 +569,9 @@
     {
         CachedApi.OnDayPlanUpdated -= HandleDayPlanUpdated;
         SyncService.OnDayPlanRolledBack -= HandleDayPlanRolledBack;
-        await JsRuntime.InvokeVoidAsync("happie.unregisterSwipe", _pageElement);
+        _prefetchCts?.Cancel();
+        _prefetchCts?.Dispose();
+        await JsRuntime.InvokeVoidAsync("happie.disposeSwipeCarousel", _carouselElement);
         _dotNetRef?.Dispose();
     }
 }

@@ -112,7 +112,9 @@
                             <circle cx="12" cy="12" r="10" />
                             <polyline points="12 6 12 12 16 14" />
                         </svg>
-                        @_lastEditorName · @TimeFormatter.FormatDishTime(Dish.LastChangedAt.Value, DateTimeOffset.Now, Localizer["Time_JustNow"], Localizer["Time_MinAgo"], Localizer["Time_HoursAgo"])
+                        <span class="dish-panel__meta-name">@_lastEditorName</span>
+                        <span class="dish-panel__meta-separator">·</span>
+                        <span class="dish-panel__meta-time">@TimeFormatter.FormatDishTime(Dish.LastChangedAt.Value, DateTimeOffset.Now, Localizer["Time_JustNow"], Localizer["Time_MinAgo"], Localizer["Time_HoursAgo"])</span>
                     </span>
                 }
             </div>

@@ -56,6 +56,10 @@
     font-size: 14px;
     font-weight: 600;
     color: #1a1a1a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
 }
 
 .history-section__clock-icon {
