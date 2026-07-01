@@ -149,11 +149,11 @@ public class CachedApiClient : ICachedApiClient
             return false;
 
         var url = $"days/{date}/attendance/{housemateId}";
-        var body = JsonSerializer.Serialize(new UpdateAttendanceRequest(status));
+        var request = new UpdateAttendanceRequest(status);
 
         if (_connectivityService.IsOnline)
         {
-            var response = await _httpClient.PutAsJsonAsync(url, new UpdateAttendanceRequest(status));
+            var response = await _httpClient.PutAsJsonAsync(url, request);
             if (!response.IsSuccessStatusCode)
                 return false;
 
@@ -167,12 +167,7 @@ public class CachedApiClient : ICachedApiClient
         }
 
         // Offline: enqueue mutation and apply optimistic update.
-        var headers = await BuildMutationHeadersAsync();
-        var mutation = new QueuedMutation(
-            0, householdId, "PUT", url, headers, body,
-            DateTimeOffset.UtcNow, DateOnly.ParseExact(date, "yyyy-MM-dd"), "attendance");
-
-        await _mutationQueue.EnqueueAsync(householdId, mutation);
+        await EnqueueMutationAsync(householdId, "PUT", url, JsonSerializer.Serialize(request), date, "attendance");
         await ApplyAttendanceOptimisticUpdate(householdId, date, housemateId, status);
         await UpdateCalendarOnAttendanceChange(householdId, date, housemateId, status);
 
@@ -187,7 +182,6 @@ public class CachedApiClient : ICachedApiClient
 
         var url = $"days/{date}/dish";
         var request = new UpdateDishRequest(description, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes);
-        var body = JsonSerializer.Serialize(request);
 
         if (_connectivityService.IsOnline)
         {
@@ -201,12 +195,7 @@ public class CachedApiClient : ICachedApiClient
         }
 
         // Offline: enqueue mutation and apply optimistic update.
-        var headers = await BuildMutationHeadersAsync();
-        var mutation = new QueuedMutation(
-            0, householdId, "PUT", url, headers, body,
-            DateTimeOffset.UtcNow, DateOnly.ParseExact(date, "yyyy-MM-dd"), "dish");
-
-        await _mutationQueue.EnqueueAsync(householdId, mutation);
+        await EnqueueMutationAsync(householdId, "PUT", url, JsonSerializer.Serialize(request), date, "dish");
         await ApplyDishOptimisticUpdate(householdId, date, description, dinnerTimeHour, dinnerTimeMinute);
 
         return true;
@@ -232,12 +221,7 @@ public class CachedApiClient : ICachedApiClient
         }
 
         // Offline: enqueue mutation and apply optimistic update.
-        var headers = await BuildMutationHeadersAsync();
-        var mutation = new QueuedMutation(
-            0, householdId, "DELETE", url, headers, null,
-            DateTimeOffset.UtcNow, DateOnly.ParseExact(date, "yyyy-MM-dd"), "dish");
-
-        await _mutationQueue.EnqueueAsync(householdId, mutation);
+        await EnqueueMutationAsync(householdId, "DELETE", url, null, date, "dish");
         await ApplyDishDeleteOptimisticUpdate(householdId, date);
 
         return true;
@@ -251,7 +235,6 @@ public class CachedApiClient : ICachedApiClient
 
         var url = $"days/{date}/chef/{housemateId}";
         var request = new UpdateChefStatusRequest(isChef);
-        var body = JsonSerializer.Serialize(request);
 
         if (_connectivityService.IsOnline)
         {
@@ -265,12 +248,7 @@ public class CachedApiClient : ICachedApiClient
         }
 
         // Offline: enqueue mutation and apply optimistic update.
-        var headers = await BuildMutationHeadersAsync();
-        var mutation = new QueuedMutation(
-            0, householdId, "PUT", url, headers, body,
-            DateTimeOffset.UtcNow, DateOnly.ParseExact(date, "yyyy-MM-dd"), "attendance");
-
-        await _mutationQueue.EnqueueAsync(householdId, mutation);
+        await EnqueueMutationAsync(householdId, "PUT", url, JsonSerializer.Serialize(request), date, "attendance");
         await ApplyChefOptimisticUpdate(householdId, date, housemateId, isChef);
 
         return true;
@@ -297,12 +275,7 @@ public class CachedApiClient : ICachedApiClient
         }
 
         // Offline: enqueue mutation and apply optimistic update.
-        var headers = await BuildMutationHeadersAsync();
-        var mutation = new QueuedMutation(
-            0, householdId, "PUT", url, headers, body,
-            DateTimeOffset.UtcNow, DateOnly.ParseExact(date, "yyyy-MM-dd"), "comment");
-
-        await _mutationQueue.EnqueueAsync(householdId, mutation);
+        await EnqueueMutationAsync(householdId, "PUT", url, body, date, "comment");
         await ApplyCommentOptimisticUpdate(householdId, date, housemateId, text);
 
         return true;
@@ -328,12 +301,7 @@ public class CachedApiClient : ICachedApiClient
         }
 
         // Offline: enqueue mutation and apply optimistic update.
-        var headers = await BuildMutationHeadersAsync();
-        var mutation = new QueuedMutation(
-            0, householdId, "DELETE", url, headers, null,
-            DateTimeOffset.UtcNow, DateOnly.ParseExact(date, "yyyy-MM-dd"), "comment");
-
-        await _mutationQueue.EnqueueAsync(householdId, mutation);
+        await EnqueueMutationAsync(householdId, "DELETE", url, null, date, "comment");
         await ApplyCommentDeleteOptimisticUpdate(householdId, date, housemateId);
 
         return true;
@@ -416,17 +384,23 @@ public class CachedApiClient : ICachedApiClient
 
             var freshJson = await response.Content.ReadAsStringAsync();
 
-            if (freshJson != previousJson)
+            // Compare against the current cache state, not the original snapshot.
+            // An optimistic update may have written newer data while this request was in-flight.
+            var currentCached = await _cacheStore.GetDayPlanAsync(householdId, date);
+            var currentJson = currentCached?.ResponseJson;
+
+            if (freshJson == currentJson)
+                return;
+
+            // Only update cache and notify if no optimistic update has occurred since we started.
+            // If the cache still matches what we originally read, it's safe to overwrite.
+            if (currentJson == previousJson)
             {
                 await _cacheStore.PutDayPlanAsync(householdId, date, freshJson);
+
                 var freshResponse = JsonSerializer.Deserialize<DayPlanResponse>(freshJson);
                 if (freshResponse is not null)
                     OnDayPlanUpdated?.Invoke(freshResponse);
-            }
-            else
-            {
-                // Same data; update timestamp only by re-putting.
-                await _cacheStore.PutDayPlanAsync(householdId, date, freshJson);
             }
         }
         catch
@@ -458,17 +432,22 @@ public class CachedApiClient : ICachedApiClient
 
             var freshJson = await response.Content.ReadAsStringAsync();
 
-            if (freshJson != previousJson)
+            // Compare against the current cache state, not the original snapshot.
+            // An optimistic update may have written newer data while this request was in-flight.
+            var currentCached = await _cacheStore.GetCalendarAsync(householdId, month);
+            var currentJson = currentCached?.ResponseJson;
+
+            if (freshJson == currentJson)
+                return;
+
+            // Only update cache and notify if no optimistic update has occurred since we started.
+            if (currentJson == previousJson)
             {
                 await _cacheStore.PutCalendarAsync(householdId, month, freshJson);
+
                 var freshResponse = JsonSerializer.Deserialize<CalendarResponse>(freshJson);
                 if (freshResponse is not null)
                     OnCalendarUpdated?.Invoke(freshResponse);
-            }
-            else
-            {
-                // Same data; update timestamp only by re-putting.
-                await _cacheStore.PutCalendarAsync(householdId, month, freshJson);
             }
         }
         catch
@@ -483,11 +462,7 @@ public class CachedApiClient : ICachedApiClient
 
     private async Task ApplyAttendanceOptimisticUpdate(string householdId, string date, Guid housemateId, AttendanceStatus status)
     {
-        var cached = await _cacheStore.GetDayPlanAsync(householdId, date);
-        if (cached is null)
-            return;
-
-        var dayPlan = JsonSerializer.Deserialize<DayPlanResponse>(cached.ResponseJson);
+        var dayPlan = await GetCachedDayPlanAsync(householdId, date);
         if (dayPlan is null)
             return;
 
@@ -495,9 +470,7 @@ public class CachedApiClient : ICachedApiClient
             .Select(x => x.HousemateId == housemateId ? x with { Status = status } : x)
             .ToList();
 
-        var updatedDayPlan = dayPlan with { Attendance = updatedAttendance };
-        var updatedJson = JsonSerializer.Serialize(updatedDayPlan);
-        await _cacheStore.PutDayPlanAsync(householdId, date, updatedJson);
+        await SaveDayPlanUpdateAsync(householdId, date, dayPlan with { Attendance = updatedAttendance });
     }
 
     private async Task UpdateCalendarOnAttendanceChange(string householdId, string date, Guid housemateId, AttendanceStatus status)
@@ -514,11 +487,7 @@ public class CachedApiClient : ICachedApiClient
             return;
 
         // Get the housemate color from the day plan cache if available.
-        var dayPlanCached = await _cacheStore.GetDayPlanAsync(householdId, date);
-        if (dayPlanCached is null)
-            return;
-
-        var dayPlan = JsonSerializer.Deserialize<DayPlanResponse>(dayPlanCached.ResponseJson);
+        var dayPlan = await GetCachedDayPlanAsync(householdId, date);
         if (dayPlan is null)
             return;
 
@@ -553,45 +522,31 @@ public class CachedApiClient : ICachedApiClient
 
     private async Task ApplyDishOptimisticUpdate(string householdId, string date, string description, int? dinnerTimeHour, int? dinnerTimeMinute)
     {
-        var cached = await _cacheStore.GetDayPlanAsync(householdId, date);
-        if (cached is null)
-            return;
-
-        var dayPlan = JsonSerializer.Deserialize<DayPlanResponse>(cached.ResponseJson);
+        var dayPlan = await GetCachedDayPlanAsync(householdId, date);
         if (dayPlan is null)
             return;
 
-        var updatedDish = dayPlan.Dish is not null
-            ? dayPlan.Dish with { Description = description, DinnerTimeHour = dinnerTimeHour, DinnerTimeMinute = dinnerTimeMinute }
-            : new DishDto(description, null, null, dinnerTimeHour, dinnerTimeMinute);
+        var housemateId = await GetActiveHousemateIdAsync();
 
-        var updatedDayPlan = dayPlan with { Dish = updatedDish };
-        var updatedJson = JsonSerializer.Serialize(updatedDayPlan);
-        await _cacheStore.PutDayPlanAsync(householdId, date, updatedJson);
+        var updatedDish = dayPlan.Dish is not null
+            ? dayPlan.Dish with { Description = description, LastChangedByHousemateId = housemateId ?? dayPlan.Dish.LastChangedByHousemateId, LastChangedAt = DateTimeOffset.UtcNow, DinnerTimeHour = dinnerTimeHour, DinnerTimeMinute = dinnerTimeMinute }
+            : new DishDto(description, housemateId, DateTimeOffset.UtcNow, dinnerTimeHour, dinnerTimeMinute);
+
+        await SaveDayPlanUpdateAsync(householdId, date, dayPlan with { Dish = updatedDish });
     }
 
     private async Task ApplyDishDeleteOptimisticUpdate(string householdId, string date)
     {
-        var cached = await _cacheStore.GetDayPlanAsync(householdId, date);
-        if (cached is null)
-            return;
-
-        var dayPlan = JsonSerializer.Deserialize<DayPlanResponse>(cached.ResponseJson);
+        var dayPlan = await GetCachedDayPlanAsync(householdId, date);
         if (dayPlan is null)
             return;
 
-        var updatedDayPlan = dayPlan with { Dish = null };
-        var updatedJson = JsonSerializer.Serialize(updatedDayPlan);
-        await _cacheStore.PutDayPlanAsync(householdId, date, updatedJson);
+        await SaveDayPlanUpdateAsync(householdId, date, dayPlan with { Dish = null });
     }
 
     private async Task ApplyChefOptimisticUpdate(string householdId, string date, Guid housemateId, bool isChef)
     {
-        var cached = await _cacheStore.GetDayPlanAsync(householdId, date);
-        if (cached is null)
-            return;
-
-        var dayPlan = JsonSerializer.Deserialize<DayPlanResponse>(cached.ResponseJson);
+        var dayPlan = await GetCachedDayPlanAsync(householdId, date);
         if (dayPlan is null)
             return;
 
@@ -599,18 +554,12 @@ public class CachedApiClient : ICachedApiClient
             .Select(x => x.HousemateId == housemateId ? x with { IsChef = isChef } : x)
             .ToList();
 
-        var updatedDayPlan = dayPlan with { Attendance = updatedAttendance };
-        var updatedJson = JsonSerializer.Serialize(updatedDayPlan);
-        await _cacheStore.PutDayPlanAsync(householdId, date, updatedJson);
+        await SaveDayPlanUpdateAsync(householdId, date, dayPlan with { Attendance = updatedAttendance });
     }
 
     private async Task ApplyCommentOptimisticUpdate(string householdId, string date, Guid housemateId, string text)
     {
-        var cached = await _cacheStore.GetDayPlanAsync(householdId, date);
-        if (cached is null)
-            return;
-
-        var dayPlan = JsonSerializer.Deserialize<DayPlanResponse>(cached.ResponseJson);
+        var dayPlan = await GetCachedDayPlanAsync(householdId, date);
         if (dayPlan is null)
             return;
 
@@ -636,18 +585,12 @@ public class CachedApiClient : ICachedApiClient
             updatedComments = dayPlan.Comments.Append(newComment).ToList();
         }
 
-        var updatedDayPlan = dayPlan with { Comments = updatedComments };
-        var updatedJson = JsonSerializer.Serialize(updatedDayPlan);
-        await _cacheStore.PutDayPlanAsync(householdId, date, updatedJson);
+        await SaveDayPlanUpdateAsync(householdId, date, dayPlan with { Comments = updatedComments });
     }
 
     private async Task ApplyCommentDeleteOptimisticUpdate(string householdId, string date, Guid housemateId)
     {
-        var cached = await _cacheStore.GetDayPlanAsync(householdId, date);
-        if (cached is null)
-            return;
-
-        var dayPlan = JsonSerializer.Deserialize<DayPlanResponse>(cached.ResponseJson);
+        var dayPlan = await GetCachedDayPlanAsync(householdId, date);
         if (dayPlan is null)
             return;
 
@@ -655,9 +598,7 @@ public class CachedApiClient : ICachedApiClient
             .Where(x => x.HousemateId != housemateId)
             .ToList();
 
-        var updatedDayPlan = dayPlan with { Comments = updatedComments };
-        var updatedJson = JsonSerializer.Serialize(updatedDayPlan);
-        await _cacheStore.PutDayPlanAsync(householdId, date, updatedJson);
+        await SaveDayPlanUpdateAsync(householdId, date, dayPlan with { Comments = updatedComments });
     }
 
     private async Task ClearSessionAndRedirectAsync(string householdId)
@@ -666,9 +607,7 @@ public class CachedApiClient : ICachedApiClient
         await _cacheStore.ClearAllAsync(householdId);
 
         // Save the current page URL so the user is redirected back after re-login.
-        var currentUri = _navigationManager.ToBaseRelativePath(_navigationManager.Uri);
-        if (!string.IsNullOrWhiteSpace(currentUri))
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "returnUrl", "/" + currentUri);
+        await SaveReturnUrlAsync();
 
         // Clear session from localStorage.
         await _sessionService.ClearSessionTokensAsync();
@@ -679,6 +618,27 @@ public class CachedApiClient : ICachedApiClient
         _navigationManager.NavigateTo("/", forceLoad: true);
     }
 
+    private async Task<DayPlanResponse?> GetCachedDayPlanAsync(string householdId, string date)
+    {
+        var cached = await _cacheStore.GetDayPlanAsync(householdId, date);
+        if (cached is null)
+            return null;
+
+        return JsonSerializer.Deserialize<DayPlanResponse>(cached.ResponseJson);
+    }
+
+    private async Task SaveDayPlanUpdateAsync(string householdId, string date, DayPlanResponse updatedDayPlan)
+    {
+        var updatedJson = JsonSerializer.Serialize(updatedDayPlan);
+        await _cacheStore.PutDayPlanAsync(householdId, date, updatedJson);
+    }
+
+    private async Task<Guid?> GetActiveHousemateIdAsync()
+    {
+        var value = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "activeHousemateId");
+        return Guid.TryParse(value, out var parsed) ? parsed : null;
+    }
+
     private async Task<string?> GetHouseholdIdAsync()
     {
         return await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "householdId");
@@ -686,14 +646,19 @@ public class CachedApiClient : ICachedApiClient
 
     private async Task RedirectToLoginAsync()
     {
-        var currentUri = _navigationManager.ToBaseRelativePath(_navigationManager.Uri);
-        if (!string.IsNullOrWhiteSpace(currentUri))
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "returnUrl", "/" + currentUri);
+        await SaveReturnUrlAsync();
 
         // Clear session tokens so LoginPage does not auto-redirect back (which would create a loop).
         await _sessionService.ClearSessionTokensAsync();
 
         _navigationManager.NavigateTo("/", forceLoad: true);
+    }
+
+    private async Task SaveReturnUrlAsync()
+    {
+        var currentUri = _navigationManager.ToBaseRelativePath(_navigationManager.Uri);
+        if (!string.IsNullOrWhiteSpace(currentUri))
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "returnUrl", "/" + currentUri);
     }
 
     private async Task<Dictionary<string, string>> BuildMutationHeadersAsync()
@@ -704,10 +669,20 @@ public class CachedApiClient : ICachedApiClient
         if (!string.IsNullOrWhiteSpace(token))
             headers["Authorization"] = $"Bearer {token}";
 
-        var activeHousemateId = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "activeHousemateId");
-        if (!string.IsNullOrWhiteSpace(activeHousemateId))
-            headers["X-Housemate-Id"] = activeHousemateId;
+        var activeHousemateId = await GetActiveHousemateIdAsync();
+        if (activeHousemateId is not null)
+            headers["X-Housemate-Id"] = activeHousemateId.Value.ToString();
 
         return headers;
+    }
+
+    private async Task EnqueueMutationAsync(string householdId, string method, string url, string? body, string date, string mutationType)
+    {
+        var headers = await BuildMutationHeadersAsync();
+        var mutation = new QueuedMutation(
+            0, householdId, method, url, headers, body,
+            DateTimeOffset.UtcNow, DateOnly.ParseExact(date, "yyyy-MM-dd"), mutationType);
+
+        await _mutationQueue.EnqueueAsync(householdId, mutation);
     }
 }
