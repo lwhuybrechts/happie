@@ -123,6 +123,9 @@
   <data name="history_dish_set" xml:space="preserve">
     <value>Dish set to "{description}".</value>
   </data>
+  <data name="history_dish_deleted" xml:space="preserve">
+    <value>Dish removed.</value>
+  </data>
   <data name="history_comment_set" xml:space="preserve">
     <value>{name}'s comment set to "{text}".</value>
   </data>

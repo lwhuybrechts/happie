@@ -155,6 +155,25 @@ public class DaysFunction
         return new NoContentResult();
     }
 
+    /// <summary>Deletes the dish for the given date.</summary>
+    [Function("DeleteDish")]
+    public async Task<IActionResult> DeleteDishAsync(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "days/{date}/dish")] HttpRequest request,
+        string date,
+        FunctionContext context,
+        CancellationToken cancellationToken)
+    {
+        var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
+        var actingHousemateId = (Guid)context.Items[FunctionContextKeys.HousemateId];
+
+        if (!RouteParser.TryParseDate(date, out var parsedDate, out var error))
+            return error;
+
+        await _dayHandler.DeleteDishAsync(householdId, parsedDate, actingHousemateId, cancellationToken);
+
+        return new NoContentResult();
+    }
+
     /// <summary>Upserts the comment for a housemate on the given date.</summary>
     [Function("PutComment")]
     public async Task<IActionResult> PutCommentAsync(

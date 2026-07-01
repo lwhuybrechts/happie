@@ -204,7 +204,11 @@
 
     protected override void OnParametersSet()
     {
-        _committedValue = Dish?.Description ?? string.Empty;
+        // Don't overwrite the optimistic value while a save is in progress.
+        // A background refresh could fire OnDayPlanUpdated with stale data during the PUT await.
+        if (!_isSaving)
+            _committedValue = Dish?.Description ?? string.Empty;
+
         _lastEditorName = ResolveEditorName();
     }
 

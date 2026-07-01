@@ -26,6 +26,11 @@ public interface IDayHandler
     Task UpsertDishAsync(Guid householdId, DateOnly date, string description, TimeOnly? dinnerTime, int timezoneOffsetMinutes, Guid actingHousemateId, CancellationToken ct = default);
 
     /// <summary>
+    /// Deletes the dish for a household on a given date and writes a history entry.
+    /// </summary>
+    Task DeleteDishAsync(Guid householdId, DateOnly date, Guid actingHousemateId, CancellationToken ct = default);
+
+    /// <summary>
     /// Upserts the comment for a housemate on a given date and writes a history entry.
     /// Returns <c>false</c> if the housemate does not exist in the household.
     /// </summary>

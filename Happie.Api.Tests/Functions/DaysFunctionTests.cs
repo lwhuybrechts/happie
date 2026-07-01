@@ -6,6 +6,7 @@ using Happie.Api.Functions;
 using Happie.Api.Handlers;
 using Happie.Api.Infrastructure.Repositories;
 using Happie.Shared.Contracts;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Moq;
@@ -91,6 +92,47 @@ public class DaysFunctionTests
                 return (result is not UnprocessableEntityObjectResult)
                     .Label($"Expected no 422 for description of trimmed length {description.Trim().Length}");
             });
+    }
+
+    /// <summary>DeleteDishAsync with an invalid date format returns a bad request.</summary>
+    [Fact]
+    public async Task DeleteDishAsync_InvalidDate_ReturnsBadRequest()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var actingHousemateId = Guid.NewGuid();
+        var context = CreateFunctionContext(householdId, actingHousemateId);
+        var request = new DefaultHttpContext().Request;
+
+        // Act.
+        var result = await _sut.DeleteDishAsync(request, "not-a-date", context, CancellationToken.None);
+
+        // Assert.
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    /// <summary>DeleteDishAsync with a valid date delegates to the handler and returns no content.</summary>
+    [Fact]
+    public async Task DeleteDishAsync_ValidDate_ReturnsNoContent()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var actingHousemateId = Guid.NewGuid();
+        var context = CreateFunctionContext(householdId, actingHousemateId);
+        var request = new DefaultHttpContext().Request;
+
+        _dayHandlerMock
+            .Setup(x => x.DeleteDishAsync(householdId, It.IsAny<DateOnly>(), actingHousemateId, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        // Act.
+        var result = await _sut.DeleteDishAsync(request, "2025-07-15", context, CancellationToken.None);
+
+        // Assert.
+        Assert.IsType<NoContentResult>(result);
+        _dayHandlerMock.Verify(
+            x => x.DeleteDishAsync(householdId, new DateOnly(2025, 7, 15), actingHousemateId, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     // Feature: happie, Property 13: Comment length validation

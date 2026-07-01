@@ -189,6 +189,82 @@ public class DayHandlerTests
             Times.Once);
     }
 
+    /// <summary>When no dish exists, DeleteDishAsync does not delete or write history.</summary>
+    [Fact]
+    public async Task DeleteDishAsync_NoDishExists_DoesNotDeleteOrWriteHistory()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var actingHousemateId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+
+        SetupGetDish(householdId, date, null);
+
+        // Act.
+        await _sut.DeleteDishAsync(householdId, date, actingHousemateId);
+
+        // Assert.
+        _dishRepositoryMock.Verify(
+            x => x.DeleteAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _dayHistoryRepositoryMock.Verify(
+            x => x.AddAsync(It.IsAny<DayHistoryEntry>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    /// <summary>When a dish exists, DeleteDishAsync deletes the record and writes a history entry.</summary>
+    [Fact]
+    public async Task DeleteDishAsync_DishExists_DeletesAndWritesHistory()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var actingHousemateId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var existingDish = new DishRecord(householdId, date, "Pasta", actingHousemateId, DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow);
+
+        SetupGetDish(householdId, date, existingDish);
+        SetupDishDelete();
+        SetupHistoryAdd();
+
+        // Act.
+        await _sut.DeleteDishAsync(householdId, date, actingHousemateId);
+
+        // Assert.
+        _dishRepositoryMock.Verify(
+            x => x.DeleteAsync(householdId, date, It.IsAny<CancellationToken>()),
+            Times.Once);
+        _dayHistoryRepositoryMock.Verify(
+            x => x.AddAsync(It.IsAny<DayHistoryEntry>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>DeleteDishAsync stores the correct TranslationKey and Parameters.</summary>
+    [Fact]
+    public async Task DeleteDishAsync_DishExists_StoresCorrectTranslationKeyAndParameters()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var actingHousemateId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var existingDish = new DishRecord(householdId, date, "Pasta", actingHousemateId, DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow);
+
+        SetupGetDish(householdId, date, existingDish);
+        SetupDishDelete();
+
+        DayHistoryEntry? capturedEntry = null;
+        SetupHistoryAddWithCapture(entry => capturedEntry = entry);
+
+        // Act.
+        await _sut.DeleteDishAsync(householdId, date, actingHousemateId);
+
+        // Assert.
+        Assert.NotNull(capturedEntry);
+        Assert.Equal(TranslationKeys.HistoryDishDeleted, capturedEntry.TranslationKey);
+        Assert.Equal("{}", capturedEntry.Parameters);
+        Assert.Equal(ChangeType.Dish, capturedEntry.ChangeType);
+        Assert.Equal(actingHousemateId, capturedEntry.ChangedByHousemateId);
+    }
+
     /// <summary>UpsertAttendanceAsync stores the correct TranslationKey and Parameters.</summary>
     [Fact]
     public async Task UpsertAttendanceAsync_ValidInput_StoresCorrectTranslationKeyAndParameters()
@@ -500,6 +576,13 @@ public class DayHandlerTests
     {
         _commentRepositoryMock
             .Setup(x => x.DeleteAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+    }
+
+    private void SetupDishDelete()
+    {
+        _dishRepositoryMock
+            .Setup(x => x.DeleteAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
     }
 

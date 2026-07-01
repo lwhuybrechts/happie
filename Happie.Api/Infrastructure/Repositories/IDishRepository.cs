@@ -11,4 +11,7 @@ public interface IDishRepository
 
     /// <summary>Upserts a dish record.</summary>
     Task UpsertAsync(DishRecord record, CancellationToken ct = default);
+
+    /// <summary>Deletes the dish record for a specific date in a household.</summary>
+    Task DeleteAsync(Guid householdId, DateOnly date, CancellationToken ct = default);
 }

@@ -89,6 +89,41 @@ public class DayPropertyTests
             });
     }
 
+    // Feature: happie, Property 14: Dish deletion removes the dish from the day plan
+    /// <summary>
+    /// For any household and date where a dish exists, deleting the dish and then retrieving the
+    /// day plan must return no dish for that date.
+    /// </summary>
+    [Property(MaxTest = 100)]
+    public Property DeleteDishAsync_AfterUpsert_DishAbsentFromDayPlan()
+    {
+        return Prop.ForAll(
+            ValidDishDescriptionArb(),
+            async description =>
+            {
+                var householdId = Guid.NewGuid();
+                var housemateId = Guid.NewGuid();
+                var date = new DateOnly(2025, 7, 15);
+
+                // Arrange.
+                var housemate = new Housemate(housemateId, householdId, "Alice", HousemateColors.Palette[0], false);
+                await _housemateRepository.UpsertAsync(housemate);
+
+                // Act.
+                await _sut.UpsertDishAsync(householdId, date, description, null, 0, housemateId);
+                await _sut.DeleteDishAsync(householdId, date, housemateId);
+
+                var dayPlan = await _sut.GetDayPlanAsync(householdId, date);
+
+                // Clean up.
+                await _housemateRepository.DeleteAsync(householdId, housemateId);
+
+                // Assert.
+                return (dayPlan.Dish is null)
+                    .Label($"Expected no dish after deletion, but found: '{dayPlan.Dish?.Description}'");
+            });
+    }
+
     // Feature: happie, Property 11: Comment slot — one per housemate per day
     /// <summary>
     /// For any housemate and date, saving two different comments in sequence must result in exactly one

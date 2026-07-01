@@ -253,6 +253,34 @@ public class DayHandler : IDayHandler
             parameters);
     }
 
+    /// <inheritdoc/>
+    public async Task DeleteDishAsync(Guid householdId, DateOnly date, Guid actingHousemateId, CancellationToken ct = default)
+    {
+        var existingDish = await _dishRepository.GetAsync(householdId, date, ct);
+        if (existingDish is null)
+            return;
+
+        await _dishRepository.DeleteAsync(householdId, date, ct);
+
+        var historyEntry = new DayHistoryEntry(
+            householdId,
+            date,
+            DateTimeOffset.UtcNow,
+            actingHousemateId,
+            ChangeType.Dish,
+            TranslationKeys.HistoryDishDeleted,
+            "{}");
+
+        try
+        {
+            await _dayHistoryRepository.AddAsync(historyEntry, ct);
+        }
+        catch (Exception)
+        {
+            // History entry write failure must not roll back the dish delete.
+        }
+    }
+
     /// <summary>
     /// Returns true when the new dinner time is less than 6 hours away from the setter's local time.
     /// The setter's local time is computed as UTC now + the client-provided timezone offset.

@@ -206,6 +206,18 @@
 
     private async Task OnDishChangedAsync(string? newDescription)
     {
+        // Apply the change optimistically to avoid flashing the old value while the refresh loads.
+        if (_dayPlan is not null)
+        {
+            var updatedDish = newDescription is not null
+                ? (_dayPlan.Dish is not null
+                    ? _dayPlan.Dish with { Description = newDescription }
+                    : new DishDto(newDescription, _activeHousemateId, DateTimeOffset.UtcNow, null, null))
+                : null;
+
+            _dayPlan = _dayPlan with { Dish = updatedDish };
+        }
+
         // Refresh from cache to pick up the latest state after the child's mutation.
         var result = await CachedApi.GetDayPlanAsync(Date);
         if (result is not null)

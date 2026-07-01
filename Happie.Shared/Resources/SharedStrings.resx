@@ -123,6 +123,9 @@
   <data name="history_dish_set" xml:space="preserve">
     <value>Gerecht ingesteld op "{description}".</value>
   </data>
+  <data name="history_dish_deleted" xml:space="preserve">
+    <value>Gerecht verwijderd.</value>
+  </data>
   <data name="history_comment_set" xml:space="preserve">
     <value>Opmerking van {name} ingesteld op "{text}".</value>
   </data>

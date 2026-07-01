@@ -29,4 +29,8 @@ public class DishRepository : BaseRepository<DishRecordEntity>, IDishRepository
     /// <inheritdoc/>
     public Task UpsertAsync(DishRecord record, CancellationToken ct = default)
         => UpsertAsync(_mapper.ToEntity(record), ct);
+
+    /// <inheritdoc/>
+    public Task DeleteAsync(Guid householdId, DateOnly date, CancellationToken ct = default)
+        => DeleteAsync(householdId.ToString(), $"{date:yyyy-MM-dd}", ct);
 }
