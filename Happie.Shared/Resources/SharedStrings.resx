@@ -120,6 +120,9 @@
   <data name="history_attendance_set" xml:space="preserve">
     <value>Aanwezigheid van {name} ingesteld op {status}.</value>
   </data>
+  <data name="history_attendance_set_self" xml:space="preserve">
+    <value>Aanwezigheid ingesteld op {status}.</value>
+  </data>
   <data name="history_dish_set" xml:space="preserve">
     <value>Gerecht ingesteld op "{description}".</value>
   </data>
@@ -129,11 +132,20 @@
   <data name="history_comment_set" xml:space="preserve">
     <value>Opmerking van {name} ingesteld op "{text}".</value>
   </data>
+  <data name="history_comment_set_self" xml:space="preserve">
+    <value>Opmerking ingesteld op "{text}".</value>
+  </data>
   <data name="history_comment_deleted" xml:space="preserve">
     <value>Opmerking van {name} is verwijderd.</value>
   </data>
+  <data name="history_comment_deleted_self" xml:space="preserve">
+    <value>Opmerking verwijderd.</value>
+  </data>
   <data name="history_chef_status_changed" xml:space="preserve">
     <value>Chef status van {name} is {enabled}.</value>
+  </data>
+  <data name="history_chef_status_changed_self" xml:space="preserve">
+    <value>Chef status is {enabled}.</value>
   </data>
   <data name="nudge_please_add_attendance" xml:space="preserve">
     <value>Vul je aanwezigheid in voor {date}.</value>
@@ -170,5 +182,11 @@
   </data>
   <data name="history_dish_set_dinner_time_cleared" xml:space="preserve">
     <value>Gerecht gewijzigd naar "{description}" en etenstijd verwijderd.</value>
+  </data>
+  <data name="push_date_today" xml:space="preserve">
+    <value>Vandaag</value>
+  </data>
+  <data name="push_date_tomorrow" xml:space="preserve">
+    <value>Morgen</value>
   </data>
 </root>

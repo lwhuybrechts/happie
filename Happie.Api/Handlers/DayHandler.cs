@@ -115,6 +115,10 @@ public class DayHandler : IDayHandler
         var isChef = existingRecord?.IsChef ?? false;
 
         var record = new AttendanceRecord(householdId, housemateId, date, status, isChef, DateTimeOffset.UtcNow);
+        var isSelf = actingHousemateId == housemateId;
+        var translationKey = isSelf
+            ? TranslationKeys.HistoryAttendanceSetSelf
+            : TranslationKeys.HistoryAttendanceSet;
         var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
         {
             ["name"] = housemateId.ToString(),
@@ -126,7 +130,7 @@ public class DayHandler : IDayHandler
             DateTimeOffset.UtcNow,
             actingHousemateId,
             ChangeType.Attendance,
-            TranslationKeys.HistoryAttendanceSet,
+            translationKey,
             parameters);
 
         await Task.WhenAll(
@@ -327,6 +331,10 @@ public class DayHandler : IDayHandler
             return false;
 
         var comment = new Comment(householdId, housemateId, date, text, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+        var isSelf = actingHousemateId == housemateId;
+        var commentTranslationKey = isSelf
+            ? TranslationKeys.HistoryCommentSetSelf
+            : TranslationKeys.HistoryCommentSet;
         var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
         {
             ["name"] = housemateId.ToString(),
@@ -338,7 +346,7 @@ public class DayHandler : IDayHandler
             DateTimeOffset.UtcNow,
             actingHousemateId,
             ChangeType.Comment,
-            TranslationKeys.HistoryCommentSet,
+            commentTranslationKey,
             parameters);
 
         await Task.WhenAll(
@@ -359,6 +367,10 @@ public class DayHandler : IDayHandler
         if (housemate is null)
             return false;
 
+        var isSelf = actingHousemateId == housemateId;
+        var deleteTranslationKey = isSelf
+            ? TranslationKeys.HistoryCommentDeletedSelf
+            : TranslationKeys.HistoryCommentDeleted;
         var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
         {
             ["name"] = housemateId.ToString(),
@@ -369,7 +381,7 @@ public class DayHandler : IDayHandler
             DateTimeOffset.UtcNow,
             actingHousemateId,
             ChangeType.Comment,
-            TranslationKeys.HistoryCommentDeleted,
+            deleteTranslationKey,
             parameters);
 
         await Task.WhenAll(
@@ -390,6 +402,10 @@ public class DayHandler : IDayHandler
         if (housemate is null || housemate.IsDeleted)
             return false;
 
+        var isSelf = actingHousemateId == housemateId;
+        var chefTranslationKey = isSelf
+            ? TranslationKeys.HistoryChefStatusChangedSelf
+            : TranslationKeys.HistoryChefStatusChanged;
         var parameters = JsonSerializer.Serialize(new Dictionary<string, string>
         {
             ["name"] = housemateId.ToString(),
@@ -401,7 +417,7 @@ public class DayHandler : IDayHandler
             DateTimeOffset.UtcNow,
             actingHousemateId,
             ChangeType.ChefStatusChanged,
-            TranslationKeys.HistoryChefStatusChanged,
+            chefTranslationKey,
             parameters);
 
         await Task.WhenAll(

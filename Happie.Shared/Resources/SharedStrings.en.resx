@@ -120,6 +120,9 @@
   <data name="history_attendance_set" xml:space="preserve">
     <value>{name}'s attendance set to {status}.</value>
   </data>
+  <data name="history_attendance_set_self" xml:space="preserve">
+    <value>Attendance set to {status}.</value>
+  </data>
   <data name="history_dish_set" xml:space="preserve">
     <value>Dish set to "{description}".</value>
   </data>
@@ -129,11 +132,20 @@
   <data name="history_comment_set" xml:space="preserve">
     <value>{name}'s comment set to "{text}".</value>
   </data>
+  <data name="history_comment_set_self" xml:space="preserve">
+    <value>Comment set to "{text}".</value>
+  </data>
   <data name="history_comment_deleted" xml:space="preserve">
     <value>{name}'s comment was deleted.</value>
   </data>
+  <data name="history_comment_deleted_self" xml:space="preserve">
+    <value>Comment deleted.</value>
+  </data>
   <data name="history_chef_status_changed" xml:space="preserve">
     <value>{name}'s chef status {enabled}.</value>
+  </data>
+  <data name="history_chef_status_changed_self" xml:space="preserve">
+    <value>Chef status {enabled}.</value>
   </data>
   <data name="nudge_please_add_attendance" xml:space="preserve">
     <value>Please add your attendance for {date}.</value>
@@ -170,5 +182,11 @@
   </data>
   <data name="history_dish_set_dinner_time_cleared" xml:space="preserve">
     <value>Dish set to "{description}" and dinner time cleared.</value>
+  </data>
+  <data name="push_date_today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="push_date_tomorrow" xml:space="preserve">
+    <value>Tomorrow</value>
   </data>
 </root>

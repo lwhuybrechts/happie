@@ -129,9 +129,18 @@ public class PushHandler : IPushHandler
         // Resolve housemate IDs in parameters to current names before rendering notifications.
         var resolvedParameters = ParameterNameResolver.Resolve(parameters, housemateById);
 
+        // Determine date prefix (today/tomorrow) relative to UTC.
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
         foreach (var subscription in recipients)
         {
             var body = _sharedStringResolver.Resolve(translationKey, resolvedParameters, subscription.Locale);
+
+            // Prepend localized date prefix.
+            var datePrefix = ResolveDatePrefix(date, today, subscription.Locale);
+            if (datePrefix is not null)
+                body = $"{datePrefix}: {body}";
+
             var payload = BuildAutoNotificationPayload(actorName, date, body, householdId);
 
             try
@@ -143,6 +152,18 @@ public class PushHandler : IPushHandler
                 _logger.LogWarning(ex, "Failed to deliver auto-notification to housemate {HousemateId}.", subscription.HousemateId);
             }
         }
+    }
+
+    /// <summary>Resolves the localized date prefix for a push notification (today or tomorrow).</summary>
+    private string? ResolveDatePrefix(DateOnly date, DateOnly today, Locale locale)
+    {
+        if (date == today)
+            return _sharedStringResolver.Resolve(TranslationKeys.PushDateToday, (Dictionary<string, string>?)null, locale);
+
+        if (date == today.AddDays(1))
+            return _sharedStringResolver.Resolve(TranslationKeys.PushDateTomorrow, (Dictionary<string, string>?)null, locale);
+
+        return null;
     }
 
     /// <summary>Resolves a predefined nudge message key to a localized string using the shared resolver.</summary>
