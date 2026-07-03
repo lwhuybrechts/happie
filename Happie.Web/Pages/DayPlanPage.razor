@@ -29,6 +29,10 @@
     <div class="swipe-carousel-viewport">
         <div class="swipe-carousel" @ref="_carouselElement">
         <div class="swipe-carousel__panel swipe-carousel__panel--prev">
+            @* @key forces Blazor to recreate (not reuse) child components when the date changes.
+               Without it, Blazor diffs the AttendanceSection in-place during panel recycling,
+               briefly exposing stale internal state (collapse/expand, optimistic overrides) from
+               the previous day before new parameters propagate — visible as a color flash. *@
             @if (_prevLoaded && _prevDayPlan is not null)
             {
                 <div class="swipe-carousel__panel-content" @key="@($"prev-{_prevDate}")">
@@ -101,11 +105,6 @@
 
                     <HistorySection History="@_dayPlan.History"
                                     Attendance="@_dayPlan.Attendance" />
-
-                    <NudgeModal @ref="_nudgeModal"
-                                Attendance="@_dayPlan.Attendance"
-                                ActiveHousemateId="@_activeHousemateId"
-                                Date="@Date" />
                 }
             </div>
         </div>
@@ -147,6 +146,14 @@
         </div>
         </div>
     </div>
+
+    @if (_dayPlan is not null)
+    {
+        <NudgeModal @ref="_nudgeModal"
+                    Attendance="@_dayPlan.Attendance"
+                    ActiveHousemateId="@_activeHousemateId"
+                    Date="@Date" />
+    }
 </div>
 
 @code {

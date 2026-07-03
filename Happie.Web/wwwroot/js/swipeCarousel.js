@@ -91,6 +91,8 @@
             isHorizontal: false,
             animating: false,
             snapBackAnimationId: null,
+            completionAnimationId: null,
+            disposed: false,
             thresholdMet: false,
             incomingPanel: null
         };
@@ -211,8 +213,9 @@
                     sliderTrack.style.transform = 'translateX(' + (sliderRestOffset + currentValue) + 'px)';
 
                 if (progress < 1) {
-                    requestAnimationFrame(step);
+                    state.completionAnimationId = requestAnimationFrame(step);
                 } else {
+                    state.completionAnimationId = null;
                     // Animation complete — call .NET and reset.
                     carousel.style.transform = '';
                     carousel.style.willChange = '';
@@ -220,14 +223,20 @@
                     if (sliderTrack)
                         sliderTrack.style.transform = 'translateX(' + sliderRestOffset + 'px)';
 
+                    // Guard against disposed DotNetObjectReference.
+                    if (state.disposed) {
+                        state.animating = false;
+                        return;
+                    }
+
                     if (direction < 0)
-                        dotNetRef.invokeMethodAsync('SwipeLeftAsync').then(function () { state.animating = false; });
+                        dotNetRef.invokeMethodAsync('SwipeLeftAsync').then(function () { state.animating = false; }).catch(function () { state.animating = false; });
                     else
-                        dotNetRef.invokeMethodAsync('SwipeRightAsync').then(function () { state.animating = false; });
+                        dotNetRef.invokeMethodAsync('SwipeRightAsync').then(function () { state.animating = false; }).catch(function () { state.animating = false; });
                 }
             }
 
-            requestAnimationFrame(step);
+            state.completionAnimationId = requestAnimationFrame(step);
         }
 
         var onTouchStart = function (e) {
@@ -462,10 +471,19 @@
         var entry = _carouselRegistry.get(touchTarget);
         if (!entry) return;
 
+        // Mark as disposed so in-flight completion animations skip the dotNetRef call.
+        entry.state.disposed = true;
+
         // Cancel any in-progress snap-back animation.
         if (entry.state.snapBackAnimationId !== null) {
             cancelAnimationFrame(entry.state.snapBackAnimationId);
             entry.state.snapBackAnimationId = null;
+        }
+
+        // Cancel any in-progress completion animation.
+        if (entry.state.completionAnimationId !== null) {
+            cancelAnimationFrame(entry.state.completionAnimationId);
+            entry.state.completionAnimationId = null;
         }
 
         // Cancel any pending rAF from scheduleTranslate.
