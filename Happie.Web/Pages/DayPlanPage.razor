@@ -301,18 +301,47 @@
         _deferredUpdates = null;
     }
 
-    private Task GoToNextDay()
+    private async Task GoToNextDay()
     {
+        // On touch devices, trigger the slide animation to teach swipe navigation.
+        if (await TrySlideNavigationAsync(-1))
+            return;
+
         var next = _parsedDate.AddDays(1).ToString("yyyy-MM-dd");
         NavigationManager.NavigateTo($"/day/{next}");
-        return Task.CompletedTask;
     }
 
-    private Task GoToPreviousDay()
+    private async Task GoToPreviousDay()
     {
+        // On touch devices, trigger the slide animation to teach swipe navigation.
+        if (await TrySlideNavigationAsync(1))
+            return;
+
         var previous = _parsedDate.AddDays(-1).ToString("yyyy-MM-dd");
         NavigationManager.NavigateTo($"/day/{previous}");
-        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Attempts to trigger the slide animation programmatically on touch-capable devices.
+    /// Returns true if the animation was started (navigation will happen via SwipeLeftAsync/SwipeRightAsync callback).
+    /// Returns false on non-touch devices, meaning the caller should navigate directly.
+    /// </summary>
+    private async Task<bool> TrySlideNavigationAsync(int direction)
+    {
+        try
+        {
+            var hasTouch = await JsRuntime.InvokeAsync<bool>("happie.hasTouchSupport");
+            if (!hasTouch)
+                return false;
+
+            var started = await JsRuntime.InvokeAsync<bool>("happie.triggerSlideNavigation", _pageElement, direction);
+            return started;
+        }
+        catch
+        {
+            // JS interop failure — fall back to direct navigation.
+            return false;
+        }
     }
 
     private void NavigateToCalendar()

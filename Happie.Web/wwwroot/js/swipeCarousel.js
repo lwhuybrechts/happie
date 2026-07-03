@@ -466,6 +466,100 @@
         });
     };
 
+    // Returns true if the device supports touch input, false otherwise.
+    // Used to decide whether arrow buttons should trigger the slide animation.
+    happie.hasTouchSupport = function () {
+        return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    };
+
+    // Programmatically trigger the slide animation as if the user had swiped.
+    // direction: -1 = slide left (navigate to next day), 1 = slide right (navigate to previous day).
+    // Returns true if the animation was started, false if it couldn't be started (e.g., already animating).
+    happie.triggerSlideNavigation = function (touchTarget, direction) {
+        if (!touchTarget) return false;
+        var entry = _carouselRegistry.get(touchTarget);
+        if (!entry) return false;
+        if (entry.state.animating) return false;
+
+        // Cancel any in-progress snap-back.
+        if (entry.state.snapBackAnimationId !== null) {
+            cancelAnimationFrame(entry.state.snapBackAnimationId);
+            entry.state.snapBackAnimationId = null;
+        }
+
+        // Ensure carousel starts from 0.
+        entry.carousel.style.transition = 'none';
+        entry.carousel.style.transform = '';
+        entry.carousel.style.willChange = 'transform';
+
+        // Expand viewport to fit the tallest panel so adjacent content isn't clipped.
+        var viewport = entry.carousel.parentElement;
+        var activePanel = entry.carousel.querySelector('.swipe-carousel__panel--active');
+        var prevPanel = entry.carousel.querySelector('.swipe-carousel__panel--prev');
+        var nextPanel = entry.carousel.querySelector('.swipe-carousel__panel--next');
+        var maxHeight = activePanel ? activePanel.scrollHeight : 0;
+        if (prevPanel) maxHeight = Math.max(maxHeight, prevPanel.scrollHeight);
+        if (nextPanel) maxHeight = Math.max(maxHeight, nextPanel.scrollHeight);
+        if (maxHeight > 0)
+            viewport.style.minHeight = maxHeight + 'px';
+
+        // Start the completion animation in the requested direction.
+        entry.state.animating = true;
+        var cw = viewport.offsetWidth || window.innerWidth;
+        var targetX = direction * cw;
+        var startTime = null;
+        var sliderTrack = entry.sliderTrack;
+        var carousel = entry.carousel;
+
+        // Recalculate slider rest offset.
+        var sliderViewport = sliderTrack ? sliderTrack.parentElement : null;
+        var vpW = sliderViewport ? sliderViewport.offsetWidth : cw;
+        var sliderRestOffset = vpW / 2 - 1.5 * cw;
+
+        function step(timestamp) {
+            if (startTime === null)
+                startTime = timestamp;
+
+            var elapsed = timestamp - startTime;
+            var progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+            // Ease-out cubic.
+            var eased = 1 - Math.pow(1 - progress, 3);
+            var currentValue = targetX * eased;
+
+            carousel.style.transform = 'translateX(' + currentValue + 'px)';
+
+            // Animate slider track in sync.
+            if (sliderTrack)
+                sliderTrack.style.transform = 'translateX(' + (sliderRestOffset + currentValue) + 'px)';
+
+            if (progress < 1) {
+                entry.state.completionAnimationId = requestAnimationFrame(step);
+            } else {
+                entry.state.completionAnimationId = null;
+                // Animation complete — call .NET and reset.
+                carousel.style.transform = '';
+                carousel.style.willChange = '';
+                viewport.style.minHeight = '';
+                if (sliderTrack)
+                    sliderTrack.style.transform = 'translateX(' + sliderRestOffset + 'px)';
+
+                // Guard against disposed DotNetObjectReference.
+                if (entry.state.disposed) {
+                    entry.state.animating = false;
+                    return;
+                }
+
+                if (direction < 0)
+                    entry.dotNetRef.invokeMethodAsync('SwipeLeftAsync').then(function () { entry.state.animating = false; }).catch(function () { entry.state.animating = false; });
+                else
+                    entry.dotNetRef.invokeMethodAsync('SwipeRightAsync').then(function () { entry.state.animating = false; }).catch(function () { entry.state.animating = false; });
+            }
+        }
+
+        entry.state.completionAnimationId = requestAnimationFrame(step);
+        return true;
+    };
+
     happie.disposeSwipeCarousel = function (touchTarget) {
         if (!touchTarget) return;
         var entry = _carouselRegistry.get(touchTarget);
