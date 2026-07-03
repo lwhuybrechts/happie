@@ -27,49 +27,55 @@
         <div class="date-nav__slider-viewport">
             <div class="date-nav__slider-track">
                 @* Previous date label. *@
-                <div class="date-nav__center date-nav__slider-item" aria-hidden="true">
-                    @if (prevLabel.Title is not null)
-                    {
-                        <span class="date-nav__title @(prevLabel.TitleIsBold ? "date-nav__title--bold" : "")">@prevLabel.Title</span>
-                        <span class="date-nav__date">@prevLabel.FormattedDate</span>
-                    }
-                    else
-                    {
-                        <span class="date-nav__date @(prevLabel.DateIsBold ? "date-nav__date--bold" : "")">@prevLabel.FormattedDate</span>
-                    }
+                <div class="date-nav__slider-item" aria-hidden="true">
+                    <div class="date-nav__center date-nav__center--static">
+                        @if (prevLabel.Title is not null)
+                        {
+                            <span class="date-nav__title @(prevLabel.TitleIsBold ? "date-nav__title--bold" : "")">@prevLabel.Title</span>
+                            <span class="date-nav__date">@prevLabel.FormattedDate</span>
+                        }
+                        else
+                        {
+                            <span class="date-nav__date @(prevLabel.DateIsBold ? "date-nav__date--bold" : "")">@prevLabel.FormattedDate</span>
+                        }
+                    </div>
                 </div>
 
                 @* Current date label. *@
-                <button class="date-nav__center date-nav__slider-item @(OnCenterClicked.HasDelegate ? "" : "date-nav__center--static")"
-                        @onclick="OnCenterClicked"
-                        disabled="@(!OnCenterClicked.HasDelegate)"
-                        aria-label="@(OnCenterClicked.HasDelegate ? "Open calendar" : null)">
-                    @if (CenterText is not null)
-                    {
-                        <span class="date-nav__title date-nav__title--bold">@CenterText</span>
-                    }
-                    else if (label.Title is not null)
-                    {
-                        <span class="date-nav__title @(label.TitleIsBold ? "date-nav__title--bold" : "")">@label.Title</span>
-                        <span class="date-nav__date">@label.FormattedDate</span>
-                    }
-                    else
-                    {
-                        <span class="date-nav__date @(label.DateIsBold ? "date-nav__date--bold" : "")">@label.FormattedDate</span>
-                    }
-                </button>
+                <div class="date-nav__slider-item">
+                    <button class="date-nav__center @(OnCenterClicked.HasDelegate ? "" : "date-nav__center--static")"
+                            @onclick="OnCenterClicked"
+                            disabled="@(!OnCenterClicked.HasDelegate)"
+                            aria-label="@(OnCenterClicked.HasDelegate ? "Open calendar" : null)">
+                        @if (CenterText is not null)
+                        {
+                            <span class="date-nav__title date-nav__title--bold">@CenterText</span>
+                        }
+                        else if (label.Title is not null)
+                        {
+                            <span class="date-nav__title @(label.TitleIsBold ? "date-nav__title--bold" : "")">@label.Title</span>
+                            <span class="date-nav__date">@label.FormattedDate</span>
+                        }
+                        else
+                        {
+                            <span class="date-nav__date @(label.DateIsBold ? "date-nav__date--bold" : "")">@label.FormattedDate</span>
+                        }
+                    </button>
+                </div>
 
                 @* Next date label. *@
-                <div class="date-nav__center date-nav__slider-item" aria-hidden="true">
-                    @if (nextLabel.Title is not null)
-                    {
-                        <span class="date-nav__title @(nextLabel.TitleIsBold ? "date-nav__title--bold" : "")">@nextLabel.Title</span>
-                        <span class="date-nav__date">@nextLabel.FormattedDate</span>
-                    }
-                    else
-                    {
-                        <span class="date-nav__date @(nextLabel.DateIsBold ? "date-nav__date--bold" : "")">@nextLabel.FormattedDate</span>
-                    }
+                <div class="date-nav__slider-item" aria-hidden="true">
+                    <div class="date-nav__center date-nav__center--static">
+                        @if (nextLabel.Title is not null)
+                        {
+                            <span class="date-nav__title @(nextLabel.TitleIsBold ? "date-nav__title--bold" : "")">@nextLabel.Title</span>
+                            <span class="date-nav__date">@nextLabel.FormattedDate</span>
+                        }
+                        else
+                        {
+                            <span class="date-nav__date @(nextLabel.DateIsBold ? "date-nav__date--bold" : "")">@nextLabel.FormattedDate</span>
+                        }
+                    </div>
                 </div>
             </div>
         </div>

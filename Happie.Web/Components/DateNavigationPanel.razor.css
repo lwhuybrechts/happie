@@ -99,9 +99,12 @@
     transform: translateX(-33.333%);
 }
 
-/* Each slider item takes one-third of the track width by default. */
+/* Each slider item takes one-third of the track width by default.
+   Uses flex to center the button without stretching it full-width. */
 .date-nav__slider-item {
     flex: 0 0 33.333%;
     width: 33.333%;
+    display: flex;
     justify-content: center;
+    align-items: center;
 }
