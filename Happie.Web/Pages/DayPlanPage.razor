@@ -16,17 +16,22 @@
 <div class="day-plan-page"
      @ref="_pageElement">
 
+    <div class="day-plan-page__static-header">
+        <DateNavigationPanel ViewedDate="@_parsedDate"
+                             PreviousDate="@_prevDate"
+                             NextDate="@_nextDate"
+                             EnableSliding="true"
+                             OnPreviousDay="GoToPreviousDay"
+                             OnNextDay="GoToNextDay"
+                             OnCenterClicked="NavigateToCalendar" />
+    </div>
+
     <div class="swipe-carousel-viewport">
         <div class="swipe-carousel" @ref="_carouselElement">
         <div class="swipe-carousel__panel swipe-carousel__panel--prev">
             @if (_prevLoaded && _prevDayPlan is not null)
             {
-                <div class="swipe-carousel__panel-content">
-                    <DateNavigationPanel ViewedDate="@_prevDate"
-                                         OnPreviousDay="@(() => Task.CompletedTask)"
-                                         OnNextDay="@(() => Task.CompletedTask)"
-                                         OnCenterClicked="@(() => { })" />
-
+                <div class="swipe-carousel__panel-content" @key="@($"prev-{_prevDate}")">
                     <DishPanel Date="@_prevDate.ToString("yyyy-MM-dd")"
                                Dish="@_prevDayPlan.Dish"
                                Attendance="@_prevDayPlan.Attendance"
@@ -60,12 +65,7 @@
         </div>
 
         <div class="swipe-carousel__panel swipe-carousel__panel--active">
-            <div class="swipe-carousel__panel-content">
-                <DateNavigationPanel ViewedDate="@_parsedDate"
-                                     OnPreviousDay="GoToPreviousDay"
-                                     OnNextDay="GoToNextDay"
-                                     OnCenterClicked="NavigateToCalendar" />
-
+            <div class="swipe-carousel__panel-content" @key="@($"active-{_parsedDate}")">
                 @if (_isLoading)
                 {
                     <p>@Localizer["DayPlan_Loading"]</p>
@@ -113,12 +113,7 @@
         <div class="swipe-carousel__panel swipe-carousel__panel--next">
             @if (_nextLoaded && _nextDayPlan is not null)
             {
-                <div class="swipe-carousel__panel-content">
-                    <DateNavigationPanel ViewedDate="@_nextDate"
-                                         OnPreviousDay="@(() => Task.CompletedTask)"
-                                         OnNextDay="@(() => Task.CompletedTask)"
-                                         OnCenterClicked="@(() => { })" />
-
+                <div class="swipe-carousel__panel-content" @key="@($"next-{_nextDate}")">
                     <DishPanel Date="@_nextDate.ToString("yyyy-MM-dd")"
                                Dish="@_nextDayPlan.Dish"
                                Attendance="@_nextDayPlan.Attendance"
@@ -256,7 +251,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
-            await JsRuntime.InvokeVoidAsync("happie.registerSwipeCarousel", _carouselElement, _dotNetRef);
+            await JsRuntime.InvokeVoidAsync("happie.registerSwipeCarousel", _pageElement, _carouselElement, _dotNetRef);
     }
 
     [JSInvokable]
@@ -588,7 +583,7 @@
         SyncService.OnDayPlanRolledBack -= HandleDayPlanRolledBack;
         _prefetchCts?.Cancel();
         _prefetchCts?.Dispose();
-        await JsRuntime.InvokeVoidAsync("happie.disposeSwipeCarousel", _carouselElement);
+        await JsRuntime.InvokeVoidAsync("happie.disposeSwipeCarousel", _pageElement);
         _dotNetRef?.Dispose();
     }
 }

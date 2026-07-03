@@ -41,11 +41,46 @@
         return clientX <= EDGE_EXCLUSION || clientX >= viewportWidth - EDGE_EXCLUSION;
     }
 
-    happie.registerSwipeCarousel = function (element, dotNetRef) {
-        if (!element) return;
+    happie.registerSwipeCarousel = function (touchTarget, carousel, dotNetRef) {
+        if (!touchTarget || !carousel) return;
 
         // The viewport is the parent of the carousel track element.
-        var viewport = element.parentElement;
+        var viewport = carousel.parentElement;
+
+        // Find the date navigation slider track and arrows in the static header.
+        var sliderTrack = touchTarget.querySelector('.date-nav__slider-track');
+        var leftArrow = touchTarget.querySelector('.date-nav__arrow--left');
+        var rightArrow = touchTarget.querySelector('.date-nav__arrow--right');
+
+        // Size the slider items to match the carousel panel width so dates and pages
+        // are spaced identically and slide in perfect pixel-for-pixel sync.
+        var sliderViewport = sliderTrack ? sliderTrack.parentElement : null;
+        var sliderRestOffset = 0;
+
+        function recalcSliderSizing() {
+            var cw = viewport.offsetWidth || window.innerWidth;
+            // Calculate the resting offset: center the middle item's content within the slider viewport.
+            // Track layout: [item0][item1][item2], each cw wide.
+            // Middle item center is at 1.5 * cw from track left.
+            // We want that to align with the slider viewport's center (vpW / 2 from its left edge).
+            var vpW = sliderViewport ? sliderViewport.offsetWidth : cw;
+            sliderRestOffset = vpW / 2 - 1.5 * cw;
+            if (sliderTrack) {
+                sliderTrack.style.width = (cw * 3) + 'px';
+                sliderTrack.style.transform = 'translateX(' + sliderRestOffset + 'px)';
+                var items = sliderTrack.querySelectorAll('.date-nav__slider-item');
+                for (var i = 0; i < items.length; i++) {
+                    items[i].style.flex = '0 0 ' + cw + 'px';
+                    items[i].style.width = cw + 'px';
+                }
+            }
+        }
+
+        recalcSliderSizing();
+
+        // Recalculate on resize so the centering stays correct after orientation/viewport changes.
+        var onResize = function () { recalcSliderSizing(); };
+        window.addEventListener('resize', onResize);
 
         var state = {
             startX: 0,
@@ -68,8 +103,13 @@
             pendingTranslateX = translateValue;
             if (rafId === null) {
                 rafId = requestAnimationFrame(function () {
-                    if (pendingTranslateX !== null)
-                        element.style.transform = 'translateX(' + pendingTranslateX + 'px)';
+                    if (pendingTranslateX !== null) {
+                        carousel.style.transform = 'translateX(' + pendingTranslateX + 'px)';
+                        // Translate the date slider track by the same pixel amount as the carousel
+                        // so they move at exactly the same speed during swipe.
+                        if (sliderTrack)
+                            sliderTrack.style.transform = 'translateX(' + (sliderRestOffset + pendingTranslateX) + 'px)';
+                    }
                     rafId = null;
                 });
             }
@@ -90,13 +130,13 @@
                 cancelAnimationFrame(state.snapBackAnimationId);
                 state.snapBackAnimationId = null;
                 // Remove transition so we can resume from current position.
-                element.style.transition = 'none';
+                carousel.style.transition = 'none';
             }
         }
 
-        // Get the current translateX from the element's computed transform matrix.
+        // Get the current translateX from the carousel's computed transform matrix.
         function getCurrentTranslateX() {
-            var style = window.getComputedStyle(element);
+            var style = window.getComputedStyle(carousel);
             var matrix = style.transform;
             if (!matrix || matrix === 'none')
                 return 0;
@@ -124,15 +164,21 @@
                 var eased = 1 - Math.pow(1 - progress, 3);
                 var currentValue = startX * (1 - eased);
 
-                element.style.transform = 'translateX(' + currentValue + 'px)';
+                carousel.style.transform = 'translateX(' + currentValue + 'px)';
+
+                // Animate slider track back in sync (same pixel offset).
+                if (sliderTrack)
+                    sliderTrack.style.transform = 'translateX(' + (sliderRestOffset + currentValue) + 'px)';
 
                 if (progress < 1) {
                     state.snapBackAnimationId = requestAnimationFrame(step);
                 } else {
                     // Animation complete.
-                    element.style.transform = '';
-                    element.style.willChange = '';
+                    carousel.style.transform = '';
+                    carousel.style.willChange = '';
                     viewport.style.minHeight = '';
+                    if (sliderTrack)
+                        sliderTrack.style.transform = 'translateX(' + sliderRestOffset + 'px)';
                     state.snapBackAnimationId = null;
                 }
             }
@@ -143,8 +189,8 @@
         // Completion animation (slide full carousel width).
         function animateCompletion(direction) {
             state.animating = true;
-            var carouselWidth = viewport.offsetWidth || window.innerWidth;
-            var targetX = direction * carouselWidth;
+            var cw = viewport.offsetWidth || window.innerWidth;
+            var targetX = direction * cw;
             var startX = getCurrentTranslateX();
             var startTime = null;
 
@@ -158,15 +204,21 @@
                 var eased = 1 - Math.pow(1 - progress, 3);
                 var currentValue = startX + (targetX - startX) * eased;
 
-                element.style.transform = 'translateX(' + currentValue + 'px)';
+                carousel.style.transform = 'translateX(' + currentValue + 'px)';
+
+                // Animate slider track in sync (same pixel offset).
+                if (sliderTrack)
+                    sliderTrack.style.transform = 'translateX(' + (sliderRestOffset + currentValue) + 'px)';
 
                 if (progress < 1) {
                     requestAnimationFrame(step);
                 } else {
                     // Animation complete — call .NET and reset.
-                    element.style.transform = '';
-                    element.style.willChange = '';
+                    carousel.style.transform = '';
+                    carousel.style.willChange = '';
                     viewport.style.minHeight = '';
+                    if (sliderTrack)
+                        sliderTrack.style.transform = 'translateX(' + sliderRestOffset + 'px)';
 
                     if (direction < 0)
                         dotNetRef.invokeMethodAsync('SwipeLeftAsync').then(function () { state.animating = false; });
@@ -207,8 +259,8 @@
             state.directionLocked = false;
             state.isHorizontal = false;
 
-            element.style.transition = 'none';
-            element.style.willChange = 'transform';
+            carousel.style.transition = 'none';
+            carousel.style.willChange = 'transform';
         };
 
         var onTouchMove = function (e) {
@@ -229,9 +281,9 @@
                 if (Math.abs(deltaX) >= Math.abs(deltaY)) {
                     state.isHorizontal = true;
                     // Expand viewport to fit the tallest panel so adjacent content isn't clipped.
-                    var activePanel = element.querySelector('.swipe-carousel__panel--active');
-                    var prevPanel = element.querySelector('.swipe-carousel__panel--prev');
-                    var nextPanel = element.querySelector('.swipe-carousel__panel--next');
+                    var activePanel = carousel.querySelector('.swipe-carousel__panel--active');
+                    var prevPanel = carousel.querySelector('.swipe-carousel__panel--prev');
+                    var nextPanel = carousel.querySelector('.swipe-carousel__panel--next');
                     var maxHeight = activePanel ? activePanel.scrollHeight : 0;
                     if (prevPanel) maxHeight = Math.max(maxHeight, prevPanel.scrollHeight);
                     if (nextPanel) maxHeight = Math.max(maxHeight, nextPanel.scrollHeight);
@@ -241,8 +293,8 @@
                     // Vertical — abort tracking, allow normal scroll.
                     state.isHorizontal = false;
                     state.tracking = false;
-                    element.style.willChange = '';
-                    element.style.transform = '';
+                    carousel.style.willChange = '';
+                    carousel.style.transform = '';
                     return;
                 }
             }
@@ -260,27 +312,57 @@
 
             scheduleTranslate(translated);
 
-            // Toggle opacity on the incoming panel only.
-            // Below threshold: incoming panel faded.
-            // Above threshold: incoming panel goes solid (navigation will happen on release).
+            // Toggle opacity on the incoming panel based on drag progress.
+            // Two phases: 0→80% of threshold linearly from START_OPACITY to PRE_BUMP_OPACITY,
+            // then 80%→100% of threshold bumps from PRE_BUMP_OPACITY to 1.0 for clear feedback.
             var absDrag = Math.abs(totalDrag);
-            if (!state.incomingPanel) {
-                state.incomingPanel = totalDrag > 0
-                    ? element.querySelector('.swipe-carousel__panel--prev')
-                    : element.querySelector('.swipe-carousel__panel--next');
-            }
+            var newIncomingPanel = totalDrag > 0
+                ? carousel.querySelector('.swipe-carousel__panel--prev')
+                : carousel.querySelector('.swipe-carousel__panel--next');
 
-            if (absDrag >= SWIPE_THRESHOLD && !state.thresholdMet) {
-                state.thresholdMet = true;
+            // If direction reversed, reset the old panel's opacity and switch.
+            if (state.incomingPanel && state.incomingPanel !== newIncomingPanel) {
+                state.incomingPanel.style.opacity = '';
+            }
+            state.incomingPanel = newIncomingPanel;
+
+            var START_OPACITY = 0.3;
+            var PRE_BUMP_OPACITY = 0.8;
+            var BUMP_POINT = 0.8; // 80% of threshold distance.
+
+            if (absDrag >= SWIPE_THRESHOLD) {
+                if (!state.thresholdMet) {
+                    state.thresholdMet = true;
+                    // Highlight the relevant navigation arrow.
+                    if (totalDrag > 0 && leftArrow)
+                        leftArrow.classList.add('date-nav__arrow--highlight');
+                    else if (totalDrag < 0 && rightArrow)
+                        rightArrow.classList.add('date-nav__arrow--highlight');
+                }
+                // Snap to full opacity once threshold is reached.
                 if (state.incomingPanel)
                     state.incomingPanel.style.opacity = '';
-            } else if (absDrag < SWIPE_THRESHOLD && state.thresholdMet) {
-                state.thresholdMet = false;
-                if (state.incomingPanel)
-                    state.incomingPanel.style.opacity = FADED_OPACITY;
-            } else if (!state.thresholdMet && state.incomingPanel && state.incomingPanel.style.opacity !== String(FADED_OPACITY)) {
-                // Ensure incoming starts faded on first move.
-                state.incomingPanel.style.opacity = FADED_OPACITY;
+            } else {
+                if (state.thresholdMet) {
+                    state.thresholdMet = false;
+                    // Remove arrow highlight.
+                    if (leftArrow)
+                        leftArrow.classList.remove('date-nav__arrow--highlight');
+                    if (rightArrow)
+                        rightArrow.classList.remove('date-nav__arrow--highlight');
+                }
+                // Linear from START_OPACITY to PRE_BUMP_OPACITY, then hold until threshold snaps to 1.0.
+                if (state.incomingPanel) {
+                    var progress = absDrag / SWIPE_THRESHOLD;
+                    var opacity;
+                    if (progress <= BUMP_POINT) {
+                        opacity = START_OPACITY + (PRE_BUMP_OPACITY - START_OPACITY) * (progress / BUMP_POINT);
+                    } else {
+                        // Hold at PRE_BUMP_OPACITY — the snap to 1.0 happens at threshold.
+                        opacity = PRE_BUMP_OPACITY;
+                    }
+                    state.incomingPanel.style.opacity = opacity.toString();
+                }
             }
         };
 
@@ -288,7 +370,7 @@
             if (!state.tracking || !state.directionLocked || !state.isHorizontal) {
                 state.tracking = false;
                 if (!state.animating) {
-                    element.style.willChange = '';
+                    carousel.style.willChange = '';
                     viewport.style.minHeight = '';
                 }
                 return;
@@ -302,6 +384,12 @@
                 state.incomingPanel = null;
             }
             state.thresholdMet = false;
+
+            // Reset arrow highlights.
+            if (leftArrow)
+                leftArrow.classList.remove('date-nav__arrow--highlight');
+            if (rightArrow)
+                rightArrow.classList.remove('date-nav__arrow--highlight');
 
             var currentTranslateX = getCurrentTranslateX();
             var absDelta = Math.abs(currentTranslateX);
@@ -330,23 +418,30 @@
             }
             state.thresholdMet = false;
 
+            // Reset arrow highlights.
+            if (leftArrow)
+                leftArrow.classList.remove('date-nav__arrow--highlight');
+            if (rightArrow)
+                rightArrow.classList.remove('date-nav__arrow--highlight');
+
             var currentTranslateX = getCurrentTranslateX();
             if (currentTranslateX !== 0)
                 animateSnapBack(currentTranslateX);
             else {
-                element.style.willChange = '';
+                carousel.style.willChange = '';
                 viewport.style.minHeight = '';
             }
         };
 
-        element.addEventListener('touchstart', onTouchStart, { passive: true });
-        element.addEventListener('touchmove', onTouchMove, { passive: false });
-        element.addEventListener('touchend', onTouchEnd, { passive: true });
-        element.addEventListener('touchcancel', onTouchCancel, { passive: true });
+        touchTarget.addEventListener('touchstart', onTouchStart, { passive: true });
+        touchTarget.addEventListener('touchmove', onTouchMove, { passive: false });
+        touchTarget.addEventListener('touchend', onTouchEnd, { passive: true });
+        touchTarget.addEventListener('touchcancel', onTouchCancel, { passive: true });
 
-        _carouselRegistry.set(element, {
-            onTouchStart, onTouchMove, onTouchEnd, onTouchCancel,
-            dotNetRef, state, cancelScheduledTranslate
+        _carouselRegistry.set(touchTarget, {
+            onTouchStart, onTouchMove, onTouchEnd, onTouchCancel, onResize,
+            dotNetRef, state, cancelScheduledTranslate,
+            sliderTrack, leftArrow, rightArrow, carousel
         });
     };
 
@@ -362,9 +457,9 @@
         });
     };
 
-    happie.disposeSwipeCarousel = function (element) {
-        if (!element) return;
-        var entry = _carouselRegistry.get(element);
+    happie.disposeSwipeCarousel = function (touchTarget) {
+        if (!touchTarget) return;
+        var entry = _carouselRegistry.get(touchTarget);
         if (!entry) return;
 
         // Cancel any in-progress snap-back animation.
@@ -376,19 +471,38 @@
         // Cancel any pending rAF from scheduleTranslate.
         entry.cancelScheduledTranslate();
 
-        // Reset inline styles.
-        element.style.transform = '';
-        element.style.transition = '';
-        element.style.willChange = '';
-        if (element.parentElement)
-            element.parentElement.style.minHeight = '';
+        // Reset inline styles on the carousel element.
+        if (entry.carousel) {
+            entry.carousel.style.transform = '';
+            entry.carousel.style.transition = '';
+            entry.carousel.style.willChange = '';
+        }
+        if (entry.carousel && entry.carousel.parentElement)
+            entry.carousel.parentElement.style.minHeight = '';
+
+        // Reset slider track and arrow highlights.
+        if (entry.sliderTrack) {
+            // Reset to CSS default (JS sizing will be re-applied on next registration).
+            entry.sliderTrack.style.width = '';
+            entry.sliderTrack.style.transform = '';
+            var items = entry.sliderTrack.querySelectorAll('.date-nav__slider-item');
+            for (var i = 0; i < items.length; i++) {
+                items[i].style.flex = '';
+                items[i].style.width = '';
+            }
+        }
+        if (entry.leftArrow)
+            entry.leftArrow.classList.remove('date-nav__arrow--highlight');
+        if (entry.rightArrow)
+            entry.rightArrow.classList.remove('date-nav__arrow--highlight');
 
         // Remove all event listeners.
-        element.removeEventListener('touchstart', entry.onTouchStart);
-        element.removeEventListener('touchmove', entry.onTouchMove);
-        element.removeEventListener('touchend', entry.onTouchEnd);
-        element.removeEventListener('touchcancel', entry.onTouchCancel);
+        touchTarget.removeEventListener('touchstart', entry.onTouchStart);
+        touchTarget.removeEventListener('touchmove', entry.onTouchMove);
+        touchTarget.removeEventListener('touchend', entry.onTouchEnd);
+        touchTarget.removeEventListener('touchcancel', entry.onTouchCancel);
+        window.removeEventListener('resize', entry.onResize);
 
-        _carouselRegistry.delete(element);
+        _carouselRegistry.delete(touchTarget);
     };
 })();

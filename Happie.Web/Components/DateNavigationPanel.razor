@@ -10,33 +10,93 @@
 }
 
 <div class="date-nav">
-    <button class="date-nav__arrow" @onclick="OnPreviousDay" aria-label="Previous day">
+    <button class="date-nav__arrow date-nav__arrow--left" @onclick="OnPreviousDay" aria-label="Previous day">
         <svg class="date-nav__arrow-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="m15 18-6-6 6-6" />
         </svg>
     </button>
 
-    <button class="date-nav__center @(OnCenterClicked.HasDelegate ? "" : "date-nav__center--static")"
-            @onclick="OnCenterClicked"
-            disabled="@(!OnCenterClicked.HasDelegate)"
-            aria-label="@(OnCenterClicked.HasDelegate ? "Open calendar" : null)">
-        @if (CenterText is not null)
-        {
-            <span class="date-nav__title date-nav__title--bold">@CenterText</span>
-        }
-        else if (label.Title is not null)
-        {
-            <span class="date-nav__title @(label.TitleIsBold ? "date-nav__title--bold" : "")">@label.Title</span>
-            <span class="date-nav__date">@label.FormattedDate</span>
-        }
-        else
-        {
-            <span class="date-nav__date @(label.DateIsBold ? "date-nav__date--bold" : "")">@label.FormattedDate</span>
-        }
-    </button>
+    @if (EnableSliding)
+    {
+        var prevLabel = DateLabelService.GetLabel(PreviousDate, DateOnly.FromDateTime(DateTime.Today), culture,
+            Localizer["DateNav_Today"], Localizer["DateNav_Yesterday"], Localizer["DateNav_Tomorrow"]);
+        var nextLabel = DateLabelService.GetLabel(NextDate, DateOnly.FromDateTime(DateTime.Today), culture,
+            Localizer["DateNav_Today"], Localizer["DateNav_Yesterday"], Localizer["DateNav_Tomorrow"]);
 
-    <button class="date-nav__arrow" @onclick="OnNextDay" aria-label="Next day">
+        <div class="date-nav__slider-viewport">
+            <div class="date-nav__slider-track">
+                @* Previous date label. *@
+                <div class="date-nav__center date-nav__slider-item" aria-hidden="true">
+                    @if (prevLabel.Title is not null)
+                    {
+                        <span class="date-nav__title @(prevLabel.TitleIsBold ? "date-nav__title--bold" : "")">@prevLabel.Title</span>
+                        <span class="date-nav__date">@prevLabel.FormattedDate</span>
+                    }
+                    else
+                    {
+                        <span class="date-nav__date @(prevLabel.DateIsBold ? "date-nav__date--bold" : "")">@prevLabel.FormattedDate</span>
+                    }
+                </div>
+
+                @* Current date label. *@
+                <button class="date-nav__center date-nav__slider-item @(OnCenterClicked.HasDelegate ? "" : "date-nav__center--static")"
+                        @onclick="OnCenterClicked"
+                        disabled="@(!OnCenterClicked.HasDelegate)"
+                        aria-label="@(OnCenterClicked.HasDelegate ? "Open calendar" : null)">
+                    @if (CenterText is not null)
+                    {
+                        <span class="date-nav__title date-nav__title--bold">@CenterText</span>
+                    }
+                    else if (label.Title is not null)
+                    {
+                        <span class="date-nav__title @(label.TitleIsBold ? "date-nav__title--bold" : "")">@label.Title</span>
+                        <span class="date-nav__date">@label.FormattedDate</span>
+                    }
+                    else
+                    {
+                        <span class="date-nav__date @(label.DateIsBold ? "date-nav__date--bold" : "")">@label.FormattedDate</span>
+                    }
+                </button>
+
+                @* Next date label. *@
+                <div class="date-nav__center date-nav__slider-item" aria-hidden="true">
+                    @if (nextLabel.Title is not null)
+                    {
+                        <span class="date-nav__title @(nextLabel.TitleIsBold ? "date-nav__title--bold" : "")">@nextLabel.Title</span>
+                        <span class="date-nav__date">@nextLabel.FormattedDate</span>
+                    }
+                    else
+                    {
+                        <span class="date-nav__date @(nextLabel.DateIsBold ? "date-nav__date--bold" : "")">@nextLabel.FormattedDate</span>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <button class="date-nav__center @(OnCenterClicked.HasDelegate ? "" : "date-nav__center--static")"
+                @onclick="OnCenterClicked"
+                disabled="@(!OnCenterClicked.HasDelegate)"
+                aria-label="@(OnCenterClicked.HasDelegate ? "Open calendar" : null)">
+            @if (CenterText is not null)
+            {
+                <span class="date-nav__title date-nav__title--bold">@CenterText</span>
+            }
+            else if (label.Title is not null)
+            {
+                <span class="date-nav__title @(label.TitleIsBold ? "date-nav__title--bold" : "")">@label.Title</span>
+                <span class="date-nav__date">@label.FormattedDate</span>
+            }
+            else
+            {
+                <span class="date-nav__date @(label.DateIsBold ? "date-nav__date--bold" : "")">@label.FormattedDate</span>
+            }
+        </button>
+    }
+
+    <button class="date-nav__arrow date-nav__arrow--right" @onclick="OnNextDay" aria-label="Next day">
         <svg class="date-nav__arrow-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="m9 18 6-6-6-6" />
@@ -64,4 +124,16 @@
     /// <summary>Callback invoked when the user clicks the center date area.</summary>
     [Parameter]
     public EventCallback OnCenterClicked { get; set; }
+
+    /// <summary>When true, the center text area supports horizontal sliding for swipe preview.</summary>
+    [Parameter]
+    public bool EnableSliding { get; set; }
+
+    /// <summary>The previous day's date, used for the sliding label.</summary>
+    [Parameter]
+    public DateOnly PreviousDate { get; set; }
+
+    /// <summary>The next day's date, used for the sliding label.</summary>
+    [Parameter]
+    public DateOnly NextDate { get; set; }
 }

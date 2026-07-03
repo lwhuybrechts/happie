@@ -3,6 +3,15 @@
     position: relative;
 }
 
+/* Static header: stays in place above the carousel during swipe. */
+.day-plan-page__static-header {
+    position: relative;
+    width: 100vw;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 16px 32px 0;
+}
+
 /* Desktop (≥641px): center content within available space, max-width 600px. */
 @media (min-width: 641px) {
     .day-plan-page {
@@ -15,6 +24,16 @@
 @media (max-width: 640.98px) {
     .day-plan-page {
         width: 100%;
+    }
+}
+
+/* Desktop (≥641px): constrain static header to page width. */
+@media (min-width: 641px) {
+    .day-plan-page__static-header {
+        width: 100%;
+        left: 0;
+        transform: none;
+        padding: 24px 32px 0;
     }
 }
 
@@ -76,13 +95,13 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    padding: 16px 32px;
+    padding: 20px 32px 16px;
 }
 
 /* Desktop (≥641px): adjust panel content padding. */
 @media (min-width: 641px) {
     .swipe-carousel__panel-content {
-        padding: 24px 32px;
+        padding: 20px 32px 24px;
     }
 }
 

@@ -27,6 +27,10 @@
     background-color: #f0f0f0;
 }
 
+.date-nav__arrow--highlight {
+    background-color: #f0f0f0;
+}
+
 .date-nav__arrow-icon {
     color: #333333;
 }
@@ -77,4 +81,27 @@
     font-size: 16px;
     font-weight: 700;
     color: #333333;
+}
+
+/* Slider viewport: clips overflow so adjacent date labels are hidden. */
+.date-nav__slider-viewport {
+    flex: 1;
+    overflow: hidden;
+    min-width: 0;
+}
+
+/* Slider track: three items side by side. On mobile, JS sets item widths to match
+   the carousel panel width (100vw) so dates slide in perfect sync with the page.
+   The default CSS is a fallback for when JS hasn't initialized or on desktop. */
+.date-nav__slider-track {
+    display: flex;
+    width: 300%;
+    transform: translateX(-33.333%);
+}
+
+/* Each slider item takes one-third of the track width by default. */
+.date-nav__slider-item {
+    flex: 0 0 33.333%;
+    width: 33.333%;
+    justify-content: center;
 }
