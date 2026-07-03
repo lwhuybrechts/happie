@@ -118,6 +118,7 @@
     private bool _hasPointerDevice;
     private bool _isNarrowViewport;
     private bool _outsideClickRegistered;
+    private bool _disposed;
 
     protected override void OnInitialized()
     {
@@ -268,7 +269,7 @@
 
     private async Task HandleMouseEnterAsync(Guid housemateId)
     {
-        if (!_hasPointerDevice || !_isNarrowViewport)
+        if (_disposed || !_hasPointerDevice || !_isNarrowViewport)
             return;
 
         await _stateManager.HandleMouseEnterAsync(housemateId);
@@ -278,7 +279,7 @@
 
     private async Task HandleMouseLeaveAsync(Guid housemateId)
     {
-        if (!_hasPointerDevice || !_isNarrowViewport)
+        if (_disposed || !_hasPointerDevice || !_isNarrowViewport)
             return;
 
         await _stateManager.HandleMouseLeaveAsync(housemateId);
@@ -288,6 +289,9 @@
 
     private async Task UpdateOutsideClickRegistrationAsync()
     {
+        if (_disposed)
+            return;
+
         var hasExpandedRow = _stateManager.IsCollapseEnabled &&
             Attendance.Any(x => _stateManager.IsExpanded(x.HousemateId));
 
@@ -459,6 +463,7 @@
             }
         }
 
+        _disposed = true;
         _dotNetRef?.Dispose();
         _stateManager.Dispose();
     }

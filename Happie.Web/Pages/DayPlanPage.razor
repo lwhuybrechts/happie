@@ -401,6 +401,23 @@
                 }
             }
 
+            // Render the first adjacent panel before proceeding to the second.
+            // This satisfies requirement 10.2/10.3: if rendering causes frame drops or input lag,
+            // defer remaining rendering until idle time (200ms timeout).
+            if (!_isSwiping && _prevLoaded)
+                await InvokeAsync(StateHasChanged);
+
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            // Wait for browser idle time before rendering the second adjacent panel.
+            // Uses requestIdleCallback with a 200ms timeout fallback to avoid blocking the main thread.
+            if (nextTask is not null)
+                await JsRuntime.InvokeVoidAsync("happie.waitForIdle");
+
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
             if (nextTask is not null)
             {
                 var nextResult = await nextTask;
@@ -424,7 +441,7 @@
                 }
             }
 
-            if (!_isSwiping && (_prevLoaded || _nextLoaded))
+            if (!_isSwiping && _nextLoaded)
                 await InvokeAsync(StateHasChanged);
         }
         catch (OperationCanceledException)

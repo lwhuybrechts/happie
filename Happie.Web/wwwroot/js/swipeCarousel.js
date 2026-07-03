@@ -17,6 +17,7 @@
     const _carouselRegistry = new Map();
 
     // Rubber-band physics: linear up to viewport width, then diminishing returns.
+    // Mirror: SwipeCarouselMath.RubberBand — update that C# class if this logic changes.
     function rubberBand(dragDistance, viewportWidth) {
         var absolute = Math.abs(dragDistance);
         if (absolute <= viewportWidth)
@@ -29,11 +30,13 @@
     }
 
     // Check if the touch target is an excluded input element.
+    // Mirror: SwipeCarouselMath.IsInEdgeExclusionZone handles the edge zone part — update that C# class if exclusion logic changes.
     function isExcludedTarget(target) {
         return target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]');
     }
 
     // Check if clientX is in the edge exclusion zone.
+    // Mirror: SwipeCarouselMath.IsInEdgeExclusionZone — update that C# class if this logic changes.
     function isInEdgeExclusionZone(clientX, viewportWidth) {
         return clientX <= EDGE_EXCLUSION || clientX >= viewportWidth - EDGE_EXCLUSION;
     }
@@ -215,6 +218,7 @@
             var deltaY = touch.clientY - state.startY;
 
             // Direction lock: first significant movement (>10px on any axis) determines direction.
+            // Mirror: SwipeCarouselMath.DetermineDirectionLock — update that C# class if this logic changes.
             if (!state.directionLocked) {
                 if (Math.abs(deltaX) < DEAD_ZONE && Math.abs(deltaY) < DEAD_ZONE)
                     return;
@@ -302,6 +306,7 @@
 
             if (absDelta >= SWIPE_THRESHOLD) {
                 // Threshold met — completion animation.
+                // Mirror: SwipeCarouselMath.ShouldNavigate — update that C# class if this logic changes.
                 var direction = currentTranslateX > 0 ? 1 : -1;
                 animateCompletion(direction);
             } else {
@@ -340,6 +345,18 @@
         _carouselRegistry.set(element, {
             onTouchStart, onTouchMove, onTouchEnd, onTouchCancel,
             dotNetRef, state, cancelScheduledTranslate
+        });
+    };
+
+    // Returns a promise that resolves when the browser is idle (or after 200ms timeout).
+    // Used to defer adjacent panel rendering so the active panel stays responsive.
+    happie.waitForIdle = function () {
+        return new Promise(function (resolve) {
+            if (typeof requestIdleCallback === 'function') {
+                requestIdleCallback(resolve, { timeout: 200 });
+            } else {
+                setTimeout(resolve, 200);
+            }
         });
     };
 

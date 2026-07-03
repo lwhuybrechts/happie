@@ -15,27 +15,27 @@ This plan implements a three-panel swipe carousel on `DayPlanPage` that shows li
     - Implement `ShouldNavigate(double dragDistance)` — returns true if |dragDistance| ≥ 60px
     - _Requirements: 2.1, 2.4, 2.5, 2.6, 3.1, 4.1, 9.1_
 
-  - [ ]* 1.2 Write property test: Linear translation matches drag distance
+  - [x] 1.2 Write property test: Linear translation matches drag distance
     - **Property 1: Linear translation matches drag distance**
     - For drag distances in [0, viewportWidth], verify RubberBand output equals the input drag distance
     - **Validates: Requirements 2.1**
 
-  - [ ]* 1.3 Write property test: Rubber-band never exceeds 1.2× viewport width
+  - [x] 1.3 Write property test: Rubber-band never exceeds 1.2× viewport width
     - **Property 2: Rubber-band never exceeds 1.2× viewport width**
     - Generate random drag distances (up to 10× viewport width) and viewport widths in [320, 1920], verify |RubberBand(D, W)| ≤ 1.2 × W
     - **Validates: Requirements 2.4**
 
-  - [ ]* 1.4 Write property test: Direction lock decision consistent with first axis to exceed 10px
+  - [x] 1.4 Write property test: Direction lock decision consistent with first axis to exceed 10px
     - **Property 3: Direction lock decision is consistent with first axis to exceed 10px**
     - Generate random (deltaX, deltaY) pairs, verify lock decision matches which axis exceeds 10px first
     - **Validates: Requirements 2.5, 2.6**
 
-  - [ ]* 1.5 Write property test: Swipe outcome determined by threshold comparison
+  - [x] 1.5 Write property test: Swipe outcome determined by threshold comparison
     - **Property 4: Swipe outcome determined by threshold comparison**
     - Generate random drag distances in [0, 300], verify ≥ 60 produces navigate and < 60 produces snap-back
     - **Validates: Requirements 3.1, 4.1**
 
-  - [ ]* 1.6 Write property test: Edge exclusion rejects touches within 20px of viewport edges
+  - [x] 1.6 Write property test: Edge exclusion rejects touches within 20px of viewport edges
     - **Property 6: Edge exclusion rejects touches within 20px of viewport edges**
     - Generate random (clientX, viewportWidth) pairs with viewportWidth in [320, 1920], verify accept/reject matches the 20px edge rule
     - **Validates: Requirements 9.1**
@@ -112,7 +112,7 @@ This plan implements a three-panel swipe carousel on `DayPlanPage` that shows li
     - Discard results of outdated pre-fetches (cancellation token prevents stale assignment)
     - _Requirements: 5.4_
 
-  - [ ]* 5.3 Write property test: Pre-fetch results discarded on navigation away
+  - [x] 5.3 Write property test: Pre-fetch results discarded on navigation away
     - **Property 5: Pre-fetch results discarded on navigation away**
     - Simulate rapid date navigations with pending pre-fetches, verify only the final date's adjacent data is applied
     - **Validates: Requirements 5.4**
@@ -131,7 +131,7 @@ This plan implements a three-panel swipe carousel on `DayPlanPage` that shows li
     - Panel roles must be consistent before next swipe is accepted
     - _Requirements: 8.5_
 
-- [ ]* 7. Checkpoint - Ensure all tests pass
+- [x] 7. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 8. Implement swipe completion and cancellation behavior
@@ -147,13 +147,13 @@ This plan implements a three-panel swipe carousel on `DayPlanPage` that shows li
     - _Requirements: 7.2, 6.4_
 
 - [x] 9. Implement touch exclusion zones and performance safeguards
-  - [~] 9.1 Verify edge exclusion and input element exclusion in JS handler
+  - [x] 9.1 Verify edge exclusion and input element exclusion in JS handler
     - Ensure touches within 20px of left/right viewport edges are ignored
     - Ensure touches on input, textarea, select, contenteditable, role="dialog" elements are ignored
     - Exclusion evaluated only at touch start — subsequent movement does not change the determination
     - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-  - [~] 9.2 Implement deferred adjacent panel rendering for performance
+  - [x] 9.2 Implement deferred adjacent panel rendering for performance
     - Render Active_Panel content to DOM before initiating Adjacent_Panel rendering
     - If Adjacent_Panel rendering causes frame drops (>16ms) or input lag (>100ms): defer remaining rendering until 200ms of idle time
     - Use `requestIdleCallback` or equivalent scheduling to avoid blocking the main thread
@@ -167,7 +167,7 @@ This plan implements a three-panel swipe carousel on `DayPlanPage` that shows li
     - Keep `happie.registerSwipe` available for other pages if used elsewhere
     - _Requirements: 2.1, 3.3, 3.4_
 
-  - [ ]* 10.2 Write unit tests for carousel state management
+  - [x] 10.2 Write unit tests for carousel state management
     - Test panel state transitions on navigation (recycling)
     - Test pre-fetch ordering (current day before ±1)
     - Test pre-fetch cancellation on date change
@@ -176,7 +176,7 @@ This plan implements a three-panel swipe carousel on `DayPlanPage` that shows li
     - Test fallback navigation when adjacent data not loaded
     - _Requirements: 1.1, 5.1, 5.4, 7.1, 7.2, 8.1, 8.2, 8.3_
 
-- [~] 11. Final checkpoint - Ensure all tests pass
+- [x] 11. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
