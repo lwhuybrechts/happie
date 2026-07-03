@@ -140,10 +140,11 @@
             state.snapBackAnimationId = requestAnimationFrame(step);
         }
 
-        // Completion animation (slide full viewport width).
+        // Completion animation (slide full carousel width).
         function animateCompletion(direction) {
             state.animating = true;
-            var targetX = direction * window.innerWidth;
+            var carouselWidth = viewport.offsetWidth || window.innerWidth;
+            var targetX = direction * carouselWidth;
             var startX = getCurrentTranslateX();
             var startTime = null;
 
@@ -249,12 +250,13 @@
             if (!state.isHorizontal) return;
 
             // Prevent vertical scrolling while horizontal swipe is active.
-            e.preventDefault();
+            if (e.cancelable)
+                e.preventDefault();
 
             // Accumulate drag including any offset from interrupted snap-back.
             var totalDrag = deltaX + state.currentX;
-            var viewportWidth = window.innerWidth;
-            var translated = rubberBand(totalDrag, viewportWidth);
+            var carouselWidth = viewport.offsetWidth || window.innerWidth;
+            var translated = rubberBand(totalDrag, carouselWidth);
 
             scheduleTranslate(translated);
 
