@@ -617,4 +617,372 @@
 
         _carouselRegistry.delete(touchTarget);
     };
+
+    // ========================================================================
+    // Month Slider — standalone swipe handler for CalendarPage month navigation.
+    // Only moves the date-nav slider track (month/year label); no page-content carousel.
+    // ========================================================================
+
+    const _monthSliderRegistry = new Map();
+
+    happie.registerMonthSlider = function (navElement, dotNetRef) {
+        if (!navElement) return;
+
+        // If already registered for this element, skip (idempotent).
+        if (_monthSliderRegistry.has(navElement)) return;
+
+        var sliderTrack = navElement.querySelector('.date-nav__slider-track');
+        var sliderViewport = sliderTrack ? sliderTrack.parentElement : null;
+        var leftArrow = navElement.querySelector('.date-nav__arrow--left');
+        var rightArrow = navElement.querySelector('.date-nav__arrow--right');
+        var sliderRestOffset = 0;
+
+        // Use the slider viewport width (space between the arrows) for the slide distance
+        // so the month label slides behind the arrows rather than traversing the full nav width.
+        function getSlideWidth() {
+            return sliderViewport ? sliderViewport.offsetWidth : (navElement.offsetWidth || window.innerWidth);
+        }
+
+        function recalcSliderSizing() {
+            var cw = getSlideWidth();
+            var vpW = sliderViewport ? sliderViewport.offsetWidth : cw;
+            sliderRestOffset = vpW / 2 - 1.5 * cw;
+            if (sliderTrack) {
+                sliderTrack.style.width = (cw * 3) + 'px';
+                sliderTrack.style.transform = 'translateX(' + sliderRestOffset + 'px)';
+                var items = sliderTrack.querySelectorAll('.date-nav__slider-item');
+                for (var i = 0; i < items.length; i++) {
+                    items[i].style.flex = '0 0 ' + cw + 'px';
+                    items[i].style.width = cw + 'px';
+                }
+            }
+        }
+
+        recalcSliderSizing();
+
+        var onResize = function () { recalcSliderSizing(); };
+        window.addEventListener('resize', onResize);
+
+        var state = {
+            startX: 0,
+            startY: 0,
+            currentX: 0,
+            tracking: false,
+            directionLocked: false,
+            isHorizontal: false,
+            animating: false,
+            snapBackAnimationId: null,
+            completionAnimationId: null,
+            disposed: false
+        };
+
+        var rafId = null;
+        var pendingTranslateX = null;
+
+        function scheduleTranslate(translateValue) {
+            pendingTranslateX = translateValue;
+            if (rafId === null) {
+                rafId = requestAnimationFrame(function () {
+                    if (pendingTranslateX !== null && sliderTrack)
+                        sliderTrack.style.transform = 'translateX(' + (sliderRestOffset + pendingTranslateX) + 'px)';
+                    rafId = null;
+                });
+            }
+        }
+
+        function cancelScheduledTranslate() {
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+            pendingTranslateX = null;
+        }
+
+        function getCurrentTranslateX() {
+            if (!sliderTrack) return 0;
+            var style = window.getComputedStyle(sliderTrack);
+            var matrix = style.transform;
+            if (!matrix || matrix === 'none') return 0;
+            var values = matrix.match(/matrix\((.+)\)/);
+            if (values) {
+                var parts = values[1].split(',');
+                return (parseFloat(parts[4]) || 0) - sliderRestOffset;
+            }
+            return 0;
+        }
+
+        function animateSnapBack(fromX) {
+            var startTime = null;
+
+            function step(timestamp) {
+                if (startTime === null) startTime = timestamp;
+                var elapsed = timestamp - startTime;
+                var progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+                var eased = 1 - Math.pow(1 - progress, 3);
+                var currentValue = fromX * (1 - eased);
+
+                if (sliderTrack)
+                    sliderTrack.style.transform = 'translateX(' + (sliderRestOffset + currentValue) + 'px)';
+
+                if (progress < 1) {
+                    state.snapBackAnimationId = requestAnimationFrame(step);
+                } else {
+                    if (sliderTrack)
+                        sliderTrack.style.transform = 'translateX(' + sliderRestOffset + 'px)';
+                    state.snapBackAnimationId = null;
+                }
+            }
+
+            state.snapBackAnimationId = requestAnimationFrame(step);
+        }
+
+        function animateCompletion(direction) {
+            state.animating = true;
+            var cw = getSlideWidth();
+            var targetX = direction * cw;
+            var startX = getCurrentTranslateX();
+            var startTime = null;
+
+            function step(timestamp) {
+                if (startTime === null) startTime = timestamp;
+                var elapsed = timestamp - startTime;
+                var progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+                var eased = 1 - Math.pow(1 - progress, 3);
+                var currentValue = startX + (targetX - startX) * eased;
+
+                if (sliderTrack)
+                    sliderTrack.style.transform = 'translateX(' + (sliderRestOffset + currentValue) + 'px)';
+
+                if (progress < 1) {
+                    state.completionAnimationId = requestAnimationFrame(step);
+                } else {
+                    state.completionAnimationId = null;
+                    // Do NOT reset the slider track here — leave it off-screen.
+                    // Blazor's @key will destroy and recreate the element with the new month text.
+
+                    if (state.disposed) {
+                        state.animating = false;
+                        return;
+                    }
+
+                    // direction > 0 means dragged right → go to previous month.
+                    // direction < 0 means dragged left → go to next month.
+                    if (direction < 0)
+                        dotNetRef.invokeMethodAsync('SlideLeftAsync').then(function () { state.animating = false; }).catch(function () { state.animating = false; });
+                    else
+                        dotNetRef.invokeMethodAsync('SlideRightAsync').then(function () { state.animating = false; }).catch(function () { state.animating = false; });
+                }
+            }
+
+            state.completionAnimationId = requestAnimationFrame(step);
+        }
+
+        var onTouchStart = function (e) {
+            if (state.animating) return;
+            var touch = e.touches[0];
+            var clientX = touch.clientX;
+
+            // Input element exclusion.
+            if (isExcludedTarget(e.target)) return;
+
+            // If snap-back is in progress, cancel it and resume from current position.
+            if (state.snapBackAnimationId !== null) {
+                var currentPos = getCurrentTranslateX();
+                cancelAnimationFrame(state.snapBackAnimationId);
+                state.snapBackAnimationId = null;
+                state.currentX = currentPos;
+            } else {
+                state.currentX = 0;
+            }
+
+            state.startX = clientX;
+            state.startY = touch.clientY;
+            state.tracking = true;
+            state.directionLocked = false;
+            state.isHorizontal = false;
+        };
+
+        var onTouchMove = function (e) {
+            if (!state.tracking || state.animating) return;
+
+            var touch = e.touches[0];
+            var deltaX = touch.clientX - state.startX;
+            var deltaY = touch.clientY - state.startY;
+
+            if (!state.directionLocked) {
+                if (Math.abs(deltaX) < DEAD_ZONE && Math.abs(deltaY) < DEAD_ZONE) return;
+                state.directionLocked = true;
+                if (Math.abs(deltaX) >= Math.abs(deltaY)) {
+                    state.isHorizontal = true;
+                } else {
+                    state.isHorizontal = false;
+                    state.tracking = false;
+                    return;
+                }
+            }
+
+            if (!state.isHorizontal) return;
+
+            if (e.cancelable) e.preventDefault();
+
+            var totalDrag = deltaX + state.currentX;
+            var cw = getSlideWidth();
+            var translated = rubberBand(totalDrag, cw);
+
+            scheduleTranslate(translated);
+
+            // Highlight arrow when threshold is met.
+            var absDrag = Math.abs(totalDrag);
+            if (absDrag >= SWIPE_THRESHOLD) {
+                if (totalDrag > 0 && leftArrow)
+                    leftArrow.classList.add('date-nav__arrow--highlight');
+                else if (totalDrag < 0 && rightArrow)
+                    rightArrow.classList.add('date-nav__arrow--highlight');
+            } else {
+                if (leftArrow) leftArrow.classList.remove('date-nav__arrow--highlight');
+                if (rightArrow) rightArrow.classList.remove('date-nav__arrow--highlight');
+            }
+        };
+
+        var onTouchEnd = function () {
+            if (!state.tracking) return;
+            state.tracking = false;
+            cancelScheduledTranslate();
+
+            if (leftArrow) leftArrow.classList.remove('date-nav__arrow--highlight');
+            if (rightArrow) rightArrow.classList.remove('date-nav__arrow--highlight');
+
+            var currentTranslateX = getCurrentTranslateX();
+            var absDelta = Math.abs(currentTranslateX);
+
+            if (absDelta >= SWIPE_THRESHOLD) {
+                var direction = currentTranslateX > 0 ? 1 : -1;
+                animateCompletion(direction);
+            } else if (currentTranslateX !== 0) {
+                animateSnapBack(currentTranslateX);
+            }
+        };
+
+        var onTouchCancel = function () {
+            if (!state.tracking) return;
+            state.tracking = false;
+            cancelScheduledTranslate();
+
+            if (leftArrow) leftArrow.classList.remove('date-nav__arrow--highlight');
+            if (rightArrow) rightArrow.classList.remove('date-nav__arrow--highlight');
+
+            var currentTranslateX = getCurrentTranslateX();
+            if (currentTranslateX !== 0)
+                animateSnapBack(currentTranslateX);
+        };
+
+        navElement.addEventListener('touchstart', onTouchStart, { passive: true });
+        navElement.addEventListener('touchmove', onTouchMove, { passive: false });
+        navElement.addEventListener('touchend', onTouchEnd, { passive: true });
+        navElement.addEventListener('touchcancel', onTouchCancel, { passive: true });
+
+        _monthSliderRegistry.set(navElement, {
+            onTouchStart, onTouchMove, onTouchEnd, onTouchCancel, onResize,
+            dotNetRef, state, cancelScheduledTranslate, sliderTrack, leftArrow, rightArrow
+        });
+    };
+
+    // Programmatically trigger month slide animation (for arrow clicks on touch devices).
+    // direction: -1 = slide left (next month), 1 = slide right (previous month).
+    happie.triggerMonthSlide = function (navElement, direction) {
+        if (!navElement) return false;
+        var entry = _monthSliderRegistry.get(navElement);
+        if (!entry) return false;
+        if (entry.state.animating) return false;
+
+        // Cancel any in-progress snap-back.
+        if (entry.state.snapBackAnimationId !== null) {
+            cancelAnimationFrame(entry.state.snapBackAnimationId);
+            entry.state.snapBackAnimationId = null;
+        }
+
+        // Use slider viewport width (space between arrows) for the slide distance.
+        var sliderViewport = entry.sliderTrack ? entry.sliderTrack.parentElement : null;
+        var cw = sliderViewport ? sliderViewport.offsetWidth : (navElement.offsetWidth || window.innerWidth);
+        var vpW = cw;
+        var sliderRestOffset = vpW / 2 - 1.5 * cw;
+
+        if (entry.sliderTrack)
+            entry.sliderTrack.style.transform = 'translateX(' + sliderRestOffset + 'px)';
+
+        // Start completion animation.
+        entry.state.animating = true;
+        var targetX = direction * cw;
+        var startTime = null;
+
+        function step(timestamp) {
+            if (startTime === null) startTime = timestamp;
+            var elapsed = timestamp - startTime;
+            var progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+            var eased = 1 - Math.pow(1 - progress, 3);
+            var currentValue = targetX * eased;
+
+            if (entry.sliderTrack)
+                entry.sliderTrack.style.transform = 'translateX(' + (sliderRestOffset + currentValue) + 'px)';
+
+            if (progress < 1) {
+                entry.state.completionAnimationId = requestAnimationFrame(step);
+            } else {
+                entry.state.completionAnimationId = null;
+                // Do NOT reset the slider track here — leave it off-screen.
+                // Blazor's @key will destroy and recreate the element with the new month text.
+
+                if (entry.state.disposed) {
+                    entry.state.animating = false;
+                    return;
+                }
+
+                if (direction < 0)
+                    entry.dotNetRef.invokeMethodAsync('SlideLeftAsync').then(function () { entry.state.animating = false; }).catch(function () { entry.state.animating = false; });
+                else
+                    entry.dotNetRef.invokeMethodAsync('SlideRightAsync').then(function () { entry.state.animating = false; }).catch(function () { entry.state.animating = false; });
+            }
+        }
+
+        entry.state.completionAnimationId = requestAnimationFrame(step);
+        return true;
+    };
+
+    happie.disposeMonthSlider = function (navElement) {
+        if (!navElement) return;
+        var entry = _monthSliderRegistry.get(navElement);
+        if (!entry) return;
+
+        entry.state.disposed = true;
+
+        if (entry.state.snapBackAnimationId !== null) {
+            cancelAnimationFrame(entry.state.snapBackAnimationId);
+            entry.state.snapBackAnimationId = null;
+        }
+        if (entry.state.completionAnimationId !== null) {
+            cancelAnimationFrame(entry.state.completionAnimationId);
+            entry.state.completionAnimationId = null;
+        }
+        entry.cancelScheduledTranslate();
+
+        if (entry.sliderTrack) {
+            entry.sliderTrack.style.width = '';
+            entry.sliderTrack.style.transform = '';
+            var items = entry.sliderTrack.querySelectorAll('.date-nav__slider-item');
+            for (var i = 0; i < items.length; i++) {
+                items[i].style.flex = '';
+                items[i].style.width = '';
+            }
+        }
+        if (entry.leftArrow) entry.leftArrow.classList.remove('date-nav__arrow--highlight');
+        if (entry.rightArrow) entry.rightArrow.classList.remove('date-nav__arrow--highlight');
+
+        navElement.removeEventListener('touchstart', entry.onTouchStart);
+        navElement.removeEventListener('touchmove', entry.onTouchMove);
+        navElement.removeEventListener('touchend', entry.onTouchEnd);
+        navElement.removeEventListener('touchcancel', entry.onTouchCancel);
+        window.removeEventListener('resize', entry.onResize);
+
+        _monthSliderRegistry.delete(navElement);
+    };
 })();

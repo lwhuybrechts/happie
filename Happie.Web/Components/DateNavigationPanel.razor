@@ -2,6 +2,8 @@
 @using Happie.Shared.Domain
 @inject LocaleService LocaleService
 @inject IStringLocalizer<AppStrings> Localizer
+@inject IJSRuntime JsRuntime
+@implements IAsyncDisposable
 
 @{
     var culture = new CultureInfo(LocaleService.CurrentLocale.ToCultureCode());
@@ -9,7 +11,7 @@
         Localizer["DateNav_Today"], Localizer["DateNav_Yesterday"], Localizer["DateNav_Tomorrow"]);
 }
 
-<div class="date-nav">
+<div class="date-nav" @ref="_navElement">
     <button class="date-nav__arrow date-nav__arrow--left" @onclick="OnPreviousDay" aria-label="Previous day">
         <svg class="date-nav__arrow-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -29,7 +31,11 @@
                 @* Previous date label. *@
                 <div class="date-nav__slider-item" aria-hidden="true">
                     <div class="date-nav__center date-nav__center--static">
-                        @if (prevLabel.Title is not null)
+                        @if (PreviousCenterText is not null)
+                        {
+                            <span class="date-nav__title date-nav__title--bold">@PreviousCenterText</span>
+                        }
+                        else if (prevLabel.Title is not null)
                         {
                             <span class="date-nav__title @(prevLabel.TitleIsBold ? "date-nav__title--bold" : "")">@prevLabel.Title</span>
                             <span class="date-nav__date">@prevLabel.FormattedDate</span>
@@ -66,7 +72,11 @@
                 @* Next date label. *@
                 <div class="date-nav__slider-item" aria-hidden="true">
                     <div class="date-nav__center date-nav__center--static">
-                        @if (nextLabel.Title is not null)
+                        @if (NextCenterText is not null)
+                        {
+                            <span class="date-nav__title date-nav__title--bold">@NextCenterText</span>
+                        }
+                        else if (nextLabel.Title is not null)
                         {
                             <span class="date-nav__title @(nextLabel.TitleIsBold ? "date-nav__title--bold" : "")">@nextLabel.Title</span>
                             <span class="date-nav__date">@nextLabel.FormattedDate</span>
@@ -142,4 +152,48 @@
     /// <summary>The next day's date, used for the sliding label.</summary>
     [Parameter]
     public DateOnly NextDate { get; set; }
+
+    /// <summary>Optional override text for the previous slider item (e.g., previous month label).</summary>
+    [Parameter]
+    public string? PreviousCenterText { get; set; }
+
+    /// <summary>Optional override text for the next slider item (e.g., next month label).</summary>
+    [Parameter]
+    public string? NextCenterText { get; set; }
+
+    private ElementReference _navElement;
+    private DotNetObjectReference<DateNavigationPanel>? _dotNetRef;
+    private bool _wheelRegistered;
+
+    /// <summary>Exposes the root element reference for external JS interop registration.</summary>
+    public ElementReference NavElement => _navElement;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("happie.registerWheelNavigation", _navElement, _dotNetRef);
+            _wheelRegistered = true;
+        }
+    }
+
+    [JSInvokable]
+    public async Task WheelPreviousAsync()
+    {
+        await OnPreviousDay.InvokeAsync();
+    }
+
+    [JSInvokable]
+    public async Task WheelNextAsync()
+    {
+        await OnNextDay.InvokeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_wheelRegistered)
+            await JsRuntime.InvokeVoidAsync("happie.unregisterWheelNavigation", _navElement);
+        _dotNetRef?.Dispose();
+    }
 }

@@ -332,6 +332,49 @@
             _calendarScrollRegistry.delete(element);
         };
 
+        // Date navigation scroll: wheel events on the date-nav component change the day.
+        const _wheelNavRegistry = new Map();
+
+        happie.registerWheelNavigation = function (element, dotNetRef) {
+            if (!element) return;
+
+            let accumulated = 0;
+            const STEP_THRESHOLD = 50;
+            let cooldown = false;
+
+            const onWheel = (e) => {
+                e.preventDefault();
+                if (cooldown) return;
+
+                accumulated += e.deltaY;
+
+                if (Math.abs(accumulated) >= STEP_THRESHOLD) {
+                    const direction = Math.sign(accumulated);
+                    accumulated = 0;
+                    cooldown = true;
+
+                    // Cooldown prevents rapid-fire navigation from trackpad inertia.
+                    setTimeout(() => { cooldown = false; accumulated = 0; }, 300);
+
+                    if (direction > 0)
+                        dotNetRef.invokeMethodAsync('WheelNextAsync');
+                    else
+                        dotNetRef.invokeMethodAsync('WheelPreviousAsync');
+                }
+            };
+
+            element.addEventListener('wheel', onWheel, { passive: false });
+            _wheelNavRegistry.set(element, { onWheel, dotNetRef });
+        };
+
+        happie.unregisterWheelNavigation = function (element) {
+            if (!element) return;
+            const entry = _wheelNavRegistry.get(element);
+            if (!entry) return;
+            element.removeEventListener('wheel', entry.onWheel);
+            _wheelNavRegistry.delete(element);
+        };
+
         // Listen for navigation messages from the service worker (notification click while app is open).
         if (navigator.serviceWorker) {
             navigator.serviceWorker.addEventListener('message', function (event) {

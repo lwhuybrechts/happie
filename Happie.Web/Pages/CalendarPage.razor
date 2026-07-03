@@ -20,18 +20,28 @@
 }
 
 <div class="calendar-page" @ref="_calendarElement">
-    @if (_selectedDate.HasValue && _selectedDate.Value.Year == _viewedMonth.Year && _selectedDate.Value.Month == _viewedMonth.Month)
+    @if (HasSelectedDateInViewedMonth())
     {
-        <DateNavigationPanel ViewedDate="@GetViewedDate()"
+        <DateNavigationPanel @ref="_navPanel"
+                             @key="@_viewedMonth"
+                             ViewedDate="@GetViewedDate()"
                              CenterText="@GetMonthLabel()"
+                             PreviousCenterText="@GetPreviousMonthLabel()"
+                             NextCenterText="@GetNextMonthLabel()"
+                             EnableSliding="true"
                              OnPreviousDay="GoToPreviousMonth"
                              OnNextDay="GoToNextMonth"
                              OnCenterClicked="NavigateToDayPlan" />
     }
     else
     {
-        <DateNavigationPanel ViewedDate="@GetViewedDate()"
+        <DateNavigationPanel @ref="_navPanel"
+                             @key="@_viewedMonth"
+                             ViewedDate="@GetViewedDate()"
                              CenterText="@GetMonthLabel()"
+                             PreviousCenterText="@GetPreviousMonthLabel()"
+                             NextCenterText="@GetNextMonthLabel()"
+                             EnableSliding="true"
                              OnPreviousDay="GoToPreviousMonth"
                              OnNextDay="GoToNextMonth" />
     }
@@ -79,6 +89,7 @@
     private bool _noDataOffline;
     private ElementReference _calendarElement;
     private DotNetObjectReference<CalendarPage>? _dotNetRef;
+    private DateNavigationPanel? _navPanel;
 
     protected override void OnInitialized()
     {
@@ -118,6 +129,11 @@
             _dotNetRef = DotNetObjectReference.Create(this);
             await JsRuntime.InvokeVoidAsync("happie.registerCalendarScroll", _calendarElement, _dotNetRef);
         }
+
+        // Re-register the month slider after every render because @key recreates the DateNavigationPanel
+        // on month change, which destroys the previous element reference.
+        if (_navPanel is not null)
+            await JsRuntime.InvokeVoidAsync("happie.registerMonthSlider", _navPanel.NavElement, _dotNetRef);
     }
 
     [JSInvokable]
@@ -166,22 +182,89 @@
         return _viewedMonth.ToDateTime(TimeOnly.MinValue).ToString("MMMM yyyy", culture);
     }
 
+    private string GetPreviousMonthLabel()
+    {
+        var culture = new CultureInfo(LocaleService.CurrentLocale.ToCultureCode());
+        return _viewedMonth.AddMonths(-1).ToDateTime(TimeOnly.MinValue).ToString("MMMM yyyy", culture);
+    }
+
+    private string GetNextMonthLabel()
+    {
+        var culture = new CultureInfo(LocaleService.CurrentLocale.ToCultureCode());
+        return _viewedMonth.AddMonths(1).ToDateTime(TimeOnly.MinValue).ToString("MMMM yyyy", culture);
+    }
+
     private DateOnly GetViewedDate()
     {
         // Use the selected date if available, otherwise the first of the viewed month.
         return _selectedDate ?? _viewedMonth;
     }
 
-    private Task GoToPreviousMonth()
+    private bool HasSelectedDateInViewedMonth()
     {
-        _viewedMonth = _viewedMonth.AddMonths(-1);
-        return LoadCalendarDataAsync();
+        return _selectedDate.HasValue
+            && _selectedDate.Value.Year == _viewedMonth.Year
+            && _selectedDate.Value.Month == _viewedMonth.Month;
     }
 
-    private Task GoToNextMonth()
+    private async Task GoToPreviousMonth()
+    {
+        if (await TryMonthSlideAsync(1))
+            return;
+
+        _viewedMonth = _viewedMonth.AddMonths(-1);
+        await LoadCalendarDataAsync();
+        StateHasChanged();
+    }
+
+    private async Task GoToNextMonth()
+    {
+        if (await TryMonthSlideAsync(-1))
+            return;
+
+        _viewedMonth = _viewedMonth.AddMonths(1);
+        await LoadCalendarDataAsync();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Attempts to trigger the month slide animation programmatically on touch-capable devices.
+    /// Returns true if the animation was started (navigation will happen via SlideLeftAsync/SlideRightAsync callback).
+    /// </summary>
+    private async Task<bool> TryMonthSlideAsync(int direction)
+    {
+        try
+        {
+            var hasTouch = await JsRuntime.InvokeAsync<bool>("happie.hasTouchSupport");
+            if (!hasTouch)
+                return false;
+
+            if (_navPanel is null)
+                return false;
+
+            var started = await JsRuntime.InvokeAsync<bool>("happie.triggerMonthSlide", _navPanel.NavElement, direction);
+            return started;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    [JSInvokable]
+    public async Task SlideLeftAsync()
     {
         _viewedMonth = _viewedMonth.AddMonths(1);
-        return LoadCalendarDataAsync();
+        await LoadCalendarDataAsync();
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task SlideRightAsync()
+    {
+        _viewedMonth = _viewedMonth.AddMonths(-1);
+        await LoadCalendarDataAsync();
+        StateHasChanged();
     }
 
     private void NavigateToDayPlan()
@@ -268,6 +351,8 @@
     public async ValueTask DisposeAsync()
     {
         CachedApi.OnCalendarUpdated -= HandleCalendarUpdated;
+        if (_navPanel is not null)
+            await JsRuntime.InvokeVoidAsync("happie.disposeMonthSlider", _navPanel.NavElement);
         await JsRuntime.InvokeVoidAsync("happie.unregisterCalendarScroll", _calendarElement);
         _dotNetRef?.Dispose();
     }
