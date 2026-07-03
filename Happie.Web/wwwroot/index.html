@@ -408,22 +408,26 @@
         };
 
         // Viewport width detection — registers a matchMedia listener for the mobile breakpoint.
+        // Viewport width detection — per-instance registry keyed by element reference.
+        // Multiple components can register independently without interfering with each other.
+        const _viewportRegistry = new Map();
+
         // Returns the initial matches value (true = narrow viewport).
-        happie.registerViewportListener = function (dotNetRef) {
+        happie.registerViewportListener = function (element, dotNetRef) {
             const mql = window.matchMedia('(max-width: 479.98px)');
-            happie._viewportMql = mql;
             const handler = (e) => dotNetRef.invokeMethodAsync('HandleViewportChangeAsync', e.matches);
             mql.addEventListener('change', handler);
-            happie._viewportHandler = handler;
+            _viewportRegistry.set(element, { mql, handler });
             return mql.matches;
         };
 
-        // Removes the viewport matchMedia listener.
-        happie.unregisterViewportListener = function () {
-            if (happie._viewportMql && happie._viewportHandler)
-                happie._viewportMql.removeEventListener('change', happie._viewportHandler);
-            happie._viewportMql = null;
-            happie._viewportHandler = null;
+        // Removes the viewport matchMedia listener for a specific element.
+        happie.unregisterViewportListener = function (element) {
+            if (!element) return;
+            const entry = _viewportRegistry.get(element);
+            if (!entry) return;
+            entry.mql.removeEventListener('change', entry.handler);
+            _viewportRegistry.delete(element);
         };
 
         // Pointer device detection — one-time check.
@@ -475,7 +479,10 @@
             setTimeout(cleanup, 350);
         };
 
-        // Outside-click detection — registers a document-level click listener.
+        // Outside-click detection — per-instance registry keyed by elementId.
+        // Multiple components can register independently without interfering with each other.
+        const _outsideClickRegistry = new Map();
+
         // Invokes HandleOutsideClickAsync on the .NET reference when a click occurs
         // outside the element with the given elementId.
         happie.registerOutsideClick = function (dotNetRef, elementId) {
@@ -485,14 +492,16 @@
                     dotNetRef.invokeMethodAsync('HandleOutsideClickAsync');
             };
             document.addEventListener('click', handler);
-            happie._outsideClickHandler = handler;
+            _outsideClickRegistry.set(elementId, handler);
         };
 
-        // Removes the outside-click document listener.
-        happie.unregisterOutsideClick = function () {
-            if (happie._outsideClickHandler)
-                document.removeEventListener('click', happie._outsideClickHandler);
-            happie._outsideClickHandler = null;
+        // Removes the outside-click document listener for a specific elementId.
+        happie.unregisterOutsideClick = function (elementId) {
+            const handler = _outsideClickRegistry.get(elementId);
+            if (handler) {
+                document.removeEventListener('click', handler);
+                _outsideClickRegistry.delete(elementId);
+            }
         };
 
         // Connectivity detection — wraps navigator.onLine and online/offline events.

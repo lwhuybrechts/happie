@@ -166,7 +166,7 @@
         if (firstRender)
         {
             _dotNetRef = DotNetObjectReference.Create(this);
-            _isNarrowViewport = await JS.InvokeAsync<bool>("happie.registerViewportListener", _dotNetRef);
+            _isNarrowViewport = await JS.InvokeAsync<bool>("happie.registerViewportListener", _sectionRef, _dotNetRef);
             _hasPointerDevice = await JS.InvokeAsync<bool>("happie.hasPointerDevice");
             _stateManager.Configure(_isNarrowViewport, _hasPointerDevice);
             StateHasChanged();
@@ -182,7 +182,7 @@
         // Unregister outside click if we're no longer in narrow mode or nothing expanded.
         if (!isNarrow && _outsideClickRegistered)
         {
-            await JS.InvokeVoidAsync("happie.unregisterOutsideClick");
+            await JS.InvokeVoidAsync("happie.unregisterOutsideClick", "attendance-section");
             _outsideClickRegistered = false;
         }
 
@@ -302,7 +302,7 @@
         }
         else if (!hasExpandedRow && _outsideClickRegistered)
         {
-            await JS.InvokeVoidAsync("happie.unregisterOutsideClick");
+            await JS.InvokeVoidAsync("happie.unregisterOutsideClick", "attendance-section");
             _outsideClickRegistered = false;
         }
     }
@@ -444,7 +444,7 @@
 
         try
         {
-            await JS.InvokeVoidAsync("happie.unregisterViewportListener");
+            await JS.InvokeVoidAsync("happie.unregisterViewportListener", _sectionRef);
         }
         catch (JSDisconnectedException)
         {
@@ -455,7 +455,7 @@
         {
             try
             {
-                await JS.InvokeVoidAsync("happie.unregisterOutsideClick");
+                await JS.InvokeVoidAsync("happie.unregisterOutsideClick", "attendance-section");
             }
             catch (JSDisconnectedException)
             {
