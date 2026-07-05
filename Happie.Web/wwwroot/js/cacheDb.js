@@ -204,6 +204,78 @@
         });
     }
 
+    // Computes month offsets for cluster calculation.
+    // Returns {year, month} from a "yyyy-MM" string.
+    function parseMonth(monthStr) {
+        var parts = monthStr.split("-");
+        return { year: parseInt(parts[0], 10), month: parseInt(parts[1], 10) };
+    }
+
+    // Converts {year, month} to absolute months for distance calculation.
+    function toAbsoluteMonths(parsed) {
+        return parsed.year * 12 + (parsed.month - 1);
+    }
+
+    // Adds an offset to a "yyyy-MM" string and returns a new "yyyy-MM" string.
+    function addMonths(monthStr, offset) {
+        var parsed = parseMonth(monthStr);
+        var total = toAbsoluteMonths(parsed) + offset;
+        var year = Math.floor(total / 12);
+        var month = (total % 12) + 1;
+        return year.toString().padStart(4, "0") + "-" + month.toString().padStart(2, "0");
+    }
+
+    // Returns the key of the calendar entry farthest from viewedMonth
+    // that is NOT in the today cluster or viewed cluster.
+    // Returns null if no eligible entry exists.
+    function getEvictableCalendarKey(householdId, todayMonth, viewedMonth) {
+        return new Promise(function (resolve, reject) {
+            var tx = _db.transaction(STORE_CALENDAR, "readonly");
+            var store = tx.objectStore(STORE_CALENDAR);
+            var index = store.index("byHousehold");
+            var request = index.openCursor(IDBKeyRange.only(householdId));
+
+            // Build protected sets.
+            var todayCluster = {};
+            todayCluster[todayMonth] = true;
+            todayCluster[addMonths(todayMonth, -1)] = true;
+            todayCluster[addMonths(todayMonth, 1)] = true;
+
+            var viewedCluster = {};
+            viewedCluster[viewedMonth] = true;
+            viewedCluster[addMonths(viewedMonth, -1)] = true;
+            viewedCluster[addMonths(viewedMonth, 1)] = true;
+
+            var viewedAbsolute = toAbsoluteMonths(parseMonth(viewedMonth));
+
+            var farthestKey = null;
+            var farthestDistance = -1;
+
+            request.onsuccess = function (e) {
+                var cursor = e.target.result;
+                if (cursor) {
+                    var entryMonth = cursor.value.month;
+                    // Skip entries in either protected cluster.
+                    if (!todayCluster[entryMonth] && !viewedCluster[entryMonth]) {
+                        var entryAbsolute = toAbsoluteMonths(parseMonth(entryMonth));
+                        var distance = Math.abs(entryAbsolute - viewedAbsolute);
+                        if (distance > farthestDistance) {
+                            farthestDistance = distance;
+                            farthestKey = cursor.value.key;
+                        }
+                    }
+                    cursor.continue();
+                } else {
+                    resolve(farthestKey);
+                }
+            };
+
+            request.onerror = function () {
+                reject(request.error);
+            };
+        });
+    }
+
     // Returns all calendar keys for the given householdId.
     function getCalendarKeys(householdId) {
         return new Promise(function (resolve, reject) {
@@ -370,6 +442,7 @@
         getCalendar: getCalendar,
         putCalendar: putCalendar,
         deleteCalendar: deleteCalendar,
+        getEvictableCalendarKey: getEvictableCalendarKey,
         getCalendarKeys: getCalendarKeys,
         enqueueMutation: enqueueMutation,
         dequeueMutation: dequeueMutation,

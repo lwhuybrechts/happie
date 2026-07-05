@@ -80,7 +80,7 @@ public class CacheStoreRoundTripPropertyTests
                 var jsRuntime = new FakeJsRuntime();
                 var sut = CreateInitializedCacheStore(jsRuntime);
 
-                sut.PutCalendarAsync(householdId, month, responseJson).GetAwaiter().GetResult();
+                sut.PutCalendarAsync(householdId, month, responseJson, month).GetAwaiter().GetResult();
                 var result = sut.GetCalendarAsync(householdId, month).GetAwaiter().GetResult();
 
                 return (result is not null && result.ResponseJson == responseJson)
@@ -119,6 +119,7 @@ public class CacheStoreRoundTripPropertyTests
                 "window.happieCache.getCalendar" => GetCalendar(args),
                 "window.happieCache.putCalendar" => PutCalendar(args),
                 "window.happieCache.getCalendarKeys" => GetCalendarKeys(args),
+                "window.happieCache.getEvictableCalendarKey" => GetEvictableCalendarKey(args),
                 "window.happieCache.deleteCalendar" => DeleteCalendar(args),
                 "window.happieCache.clearAll" => ClearAll(args),
                 _ => default(TValue)
@@ -238,6 +239,15 @@ public class CacheStoreRoundTripPropertyTests
             return _calendarStore.Keys
                 .Where(x => x.StartsWith($"{householdId}_"))
                 .ToArray();
+        }
+
+        private object? GetEvictableCalendarKey(object?[]? args)
+        {
+            // Simple implementation: return the first key found (eviction won't trigger in round-trip tests).
+            var householdId = args?[0]?.ToString() ?? string.Empty;
+            return _calendarStore.Keys
+                .Where(x => x.StartsWith($"{householdId}_"))
+                .FirstOrDefault();
         }
 
         private object? DeleteCalendar(object?[]? args)

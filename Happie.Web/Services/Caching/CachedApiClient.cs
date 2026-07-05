@@ -14,7 +14,6 @@ public class CachedApiClient : ICachedApiClient
     private readonly ICacheStore _cacheStore;
     private readonly IMutationQueue _mutationQueue;
     private readonly IConnectivityService _connectivityService;
-    private readonly LoadingIndicatorState _loadingIndicatorState;
     private readonly HttpClient _httpClient;
     private readonly IJSRuntime _jsRuntime;
     private readonly NavigationManager _navigationManager;
@@ -30,7 +29,6 @@ public class CachedApiClient : ICachedApiClient
         ICacheStore cacheStore,
         IMutationQueue mutationQueue,
         IConnectivityService connectivityService,
-        LoadingIndicatorState loadingIndicatorState,
         HttpClient httpClient,
         IJSRuntime jsRuntime,
         NavigationManager navigationManager,
@@ -39,21 +37,19 @@ public class CachedApiClient : ICachedApiClient
         _cacheStore = cacheStore;
         _mutationQueue = mutationQueue;
         _connectivityService = connectivityService;
-        _loadingIndicatorState = loadingIndicatorState;
         _httpClient = httpClient;
         _jsRuntime = jsRuntime;
         _navigationManager = navigationManager;
         _sessionService = sessionService;
     }
 
-    public async Task<DayPlanResponse?> GetDayPlanAsync(string date)
+    public async Task<DayPlanFetchResult> GetDayPlanAsync(string date)
     {
-        HasLoadError = false;
         var householdId = await GetHouseholdIdAsync();
         if (householdId is null)
         {
             await RedirectToLoginAsync();
-            return null;
+            return new DayPlanFetchResult(null, false, false, null);
         }
 
         var cached = await _cacheStore.GetDayPlanAsync(householdId, date);
@@ -61,27 +57,29 @@ public class CachedApiClient : ICachedApiClient
         if (cached is not null)
         {
             // Stale-while-revalidate: return cached immediately, background refresh if online.
-            IsColdCacheFetch = false;
             var cachedResponse = JsonSerializer.Deserialize<DayPlanResponse>(cached.ResponseJson);
 
+            Task? backgroundRefreshTask = null;
             if (_connectivityService.IsOnline)
-                _ = BackgroundRefreshDayPlanAsync(householdId, date, cached.ResponseJson);
+                backgroundRefreshTask = BackgroundRefreshDayPlanAsync(householdId, date, cached.ResponseJson);
 
-            return cachedResponse;
+            return new DayPlanFetchResult(cachedResponse, false, false, backgroundRefreshTask);
         }
 
         // Cold cache path.
-        IsColdCacheFetch = true;
-
         if (!_connectivityService.IsOnline)
-            return null;
+            return new DayPlanFetchResult(null, true, false, null);
 
-        return await FetchAndCacheDayPlanAsync(householdId, date);
+        var hasLoadError = false;
+        var data = await FetchAndCacheDayPlanAsync(householdId, date);
+        if (data is null)
+            hasLoadError = true;
+
+        return new DayPlanFetchResult(data, true, hasLoadError, null);
     }
 
     public async Task<DayPlanResponse?> RetryDayPlanAsync(string date)
     {
-        HasLoadError = false;
         var householdId = await GetHouseholdIdAsync();
         if (householdId is null)
         {
@@ -89,18 +87,16 @@ public class CachedApiClient : ICachedApiClient
             return null;
         }
 
-        IsColdCacheFetch = true;
         return await FetchAndCacheDayPlanAsync(householdId, date);
     }
 
-    public async Task<CalendarResponse?> GetCalendarAsync(DateOnly viewedMonth)
+    public async Task<CalendarFetchResult> GetCalendarAsync(DateOnly viewedMonth)
     {
-        HasLoadError = false;
         var householdId = await GetHouseholdIdAsync();
         if (householdId is null)
         {
             await RedirectToLoginAsync();
-            return null;
+            return new CalendarFetchResult(null, false, false, null);
         }
 
         var month = viewedMonth.ToString("yyyy-MM");
@@ -109,27 +105,29 @@ public class CachedApiClient : ICachedApiClient
         if (cached is not null)
         {
             // Stale-while-revalidate: return cached immediately, background refresh if online.
-            IsColdCacheFetch = false;
             var cachedResponse = JsonSerializer.Deserialize<CalendarResponse>(cached.ResponseJson);
 
+            Task? backgroundRefreshTask = null;
             if (_connectivityService.IsOnline)
-                _ = BackgroundRefreshCalendarAsync(householdId, viewedMonth, month, cached.ResponseJson);
+                backgroundRefreshTask = BackgroundRefreshCalendarAsync(householdId, viewedMonth, month, cached.ResponseJson);
 
-            return cachedResponse;
+            return new CalendarFetchResult(cachedResponse, false, false, backgroundRefreshTask);
         }
 
         // Cold cache path.
-        IsColdCacheFetch = true;
-
         if (!_connectivityService.IsOnline)
-            return null;
+            return new CalendarFetchResult(null, true, false, null);
 
-        return await FetchAndCacheCalendarAsync(householdId, viewedMonth, month);
+        var hasLoadError = false;
+        var data = await FetchAndCacheCalendarAsync(householdId, viewedMonth, month);
+        if (data is null)
+            hasLoadError = true;
+
+        return new CalendarFetchResult(data, true, hasLoadError, null);
     }
 
     public async Task<CalendarResponse?> RetryCalendarAsync(DateOnly viewedMonth)
     {
-        HasLoadError = false;
         var householdId = await GetHouseholdIdAsync();
         if (householdId is null)
         {
@@ -138,7 +136,6 @@ public class CachedApiClient : ICachedApiClient
         }
 
         var month = viewedMonth.ToString("yyyy-MM");
-        IsColdCacheFetch = true;
         return await FetchAndCacheCalendarAsync(householdId, viewedMonth, month);
     }
 
@@ -320,10 +317,7 @@ public class CachedApiClient : ICachedApiClient
             }
 
             if (!response.IsSuccessStatusCode)
-            {
-                HasLoadError = true;
                 return null;
-            }
 
             var json = await response.Content.ReadAsStringAsync();
             await _cacheStore.PutDayPlanAsync(householdId, date, json);
@@ -331,7 +325,6 @@ public class CachedApiClient : ICachedApiClient
         }
         catch
         {
-            HasLoadError = true;
             return null;
         }
     }
@@ -350,25 +343,20 @@ public class CachedApiClient : ICachedApiClient
             }
 
             if (!response.IsSuccessStatusCode)
-            {
-                HasLoadError = true;
                 return null;
-            }
 
             var json = await response.Content.ReadAsStringAsync();
-            await _cacheStore.PutCalendarAsync(householdId, month, json);
+            await _cacheStore.PutCalendarAsync(householdId, month, json, viewedMonth.ToString("yyyy-MM"));
             return JsonSerializer.Deserialize<CalendarResponse>(json);
         }
         catch
         {
-            HasLoadError = true;
             return null;
         }
     }
 
     private async Task BackgroundRefreshDayPlanAsync(string householdId, string date, string previousJson)
     {
-        _loadingIndicatorState.IncrementAsync();
         try
         {
             var response = await _httpClient.GetAsync($"days/{date}");
@@ -407,15 +395,10 @@ public class CachedApiClient : ICachedApiClient
         {
             // Network error or timeout: retain cached data silently.
         }
-        finally
-        {
-            _loadingIndicatorState.DecrementAsync();
-        }
     }
 
     private async Task BackgroundRefreshCalendarAsync(string householdId, DateOnly viewedMonth, string month, string previousJson)
     {
-        _loadingIndicatorState.IncrementAsync();
         try
         {
             var (startDate, endDate) = CalendarGridService.GetVisibleDateRange(viewedMonth);
@@ -443,7 +426,7 @@ public class CachedApiClient : ICachedApiClient
             // Only update cache and notify if no optimistic update has occurred since we started.
             if (currentJson == previousJson)
             {
-                await _cacheStore.PutCalendarAsync(householdId, month, freshJson);
+                await _cacheStore.PutCalendarAsync(householdId, month, freshJson, viewedMonth.ToString("yyyy-MM"));
 
                 var freshResponse = JsonSerializer.Deserialize<CalendarResponse>(freshJson);
                 if (freshResponse is not null)
@@ -453,10 +436,6 @@ public class CachedApiClient : ICachedApiClient
         catch
         {
             // Network error or timeout: retain cached data silently.
-        }
-        finally
-        {
-            _loadingIndicatorState.DecrementAsync();
         }
     }
 
@@ -517,7 +496,7 @@ public class CachedApiClient : ICachedApiClient
 
         var updatedCalendar = calendar with { Days = updatedDays };
         var updatedJson = JsonSerializer.Serialize(updatedCalendar);
-        await _cacheStore.PutCalendarAsync(householdId, month, updatedJson);
+        await _cacheStore.PutCalendarAsync(householdId, month, updatedJson, month);
     }
 
     private async Task ApplyDishOptimisticUpdate(string householdId, string date, string description, int? dinnerTimeHour, int? dinnerTimeMinute)

@@ -7,6 +7,7 @@ using Happie.Web.Pages;
 using Happie.Web.Resources;
 using Happie.Web.Services;
 using Happie.Web.Services.Caching;
+using Happie.Web.Tests.Helpers;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -37,6 +38,7 @@ public class DayPlanPageCarouselTests : BunitContext
         Services.AddSingleton(_syncServiceMock.Object);
         Services.AddSingleton(_connectivityServiceMock.Object);
         Services.AddSingleton(_localizerMock.Object);
+        Services.AddSingleton(new LoadingIndicatorState(new FakeDelayService()));
 
         Services.AddSingleton(serviceProvider =>
             new LocaleService(serviceProvider.GetRequiredService<IJSRuntime>()));
@@ -122,7 +124,7 @@ public class DayPlanPageCarouselTests : BunitContext
             .Returns((string date) =>
             {
                 _getDayPlanCallOrder.Add(date);
-                return Task.FromResult<DayPlanResponse?>(CreateDayPlan(DateOnly.ParseExact(date, "yyyy-MM-dd")));
+                return Task.FromResult(new DayPlanFetchResult(CreateDayPlan(DateOnly.ParseExact(date, "yyyy-MM-dd")), false, false, null));
             });
 
         // Act.
@@ -145,12 +147,12 @@ public class DayPlanPageCarouselTests : BunitContext
         var tomorrowStr = tomorrow.ToString("yyyy-MM-dd");
 
         // Use a TaskCompletionSource to keep the initial pre-fetch hanging.
-        var prevFetchTcs = new TaskCompletionSource<DayPlanResponse?>();
-        var nextFetchTcs = new TaskCompletionSource<DayPlanResponse?>();
+        var prevFetchTcs = new TaskCompletionSource<DayPlanFetchResult>();
+        var nextFetchTcs = new TaskCompletionSource<DayPlanFetchResult>();
 
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(todayStr))
-            .ReturnsAsync(CreateDayPlan(today));
+            .ReturnsAsync(new DayPlanFetchResult(CreateDayPlan(today), false, false, null));
 
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(today.AddDays(-1).ToString("yyyy-MM-dd")))
@@ -165,19 +167,19 @@ public class DayPlanPageCarouselTests : BunitContext
         // Act — navigate to a different date while pre-fetches are pending.
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(tomorrowStr))
-            .ReturnsAsync(CreateDayPlan(tomorrow));
+            .ReturnsAsync(new DayPlanFetchResult(CreateDayPlan(tomorrow), false, false, null));
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(tomorrow.AddDays(-1).ToString("yyyy-MM-dd")))
-            .ReturnsAsync(CreateDayPlan(today));
+            .ReturnsAsync(new DayPlanFetchResult(CreateDayPlan(today), false, false, null));
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(tomorrow.AddDays(1).ToString("yyyy-MM-dd")))
-            .ReturnsAsync(CreateDayPlan(tomorrow.AddDays(1)));
+            .ReturnsAsync(new DayPlanFetchResult(CreateDayPlan(tomorrow.AddDays(1)), false, false, null));
 
         cut.Render(p => p.Add(x => x.Date, tomorrowStr));
 
         // Complete the old pre-fetches after navigation — these should be discarded.
-        prevFetchTcs.SetResult(CreateDayPlan(today.AddDays(-1)));
-        nextFetchTcs.SetResult(CreateDayPlan(today.AddDays(1)));
+        prevFetchTcs.SetResult(new DayPlanFetchResult(CreateDayPlan(today.AddDays(-1)), false, false, null));
+        nextFetchTcs.SetResult(new DayPlanFetchResult(CreateDayPlan(today.AddDays(1)), false, false, null));
 
         // Assert — the new date's adjacent data should load, not the old one.
         // The active panel should show tomorrow's content (verify it rendered without error).
@@ -194,15 +196,15 @@ public class DayPlanPageCarouselTests : BunitContext
 
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(todayStr))
-            .ReturnsAsync(CreateDayPlan(today));
+            .ReturnsAsync(new DayPlanFetchResult(CreateDayPlan(today), false, false, null));
 
         // Adjacent fetches return null — not loaded.
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(today.AddDays(-1).ToString("yyyy-MM-dd")))
-            .ReturnsAsync((DayPlanResponse?)null);
+            .ReturnsAsync(new DayPlanFetchResult(null, true, false, null));
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(today.AddDays(1).ToString("yyyy-MM-dd")))
-            .ReturnsAsync((DayPlanResponse?)null);
+            .ReturnsAsync(new DayPlanFetchResult(null, true, false, null));
 
         // Act.
         var cut = RenderDayPlanPage(todayStr);
@@ -226,15 +228,15 @@ public class DayPlanPageCarouselTests : BunitContext
 
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(todayStr))
-            .ReturnsAsync(CreateDayPlan(today));
+            .ReturnsAsync(new DayPlanFetchResult(CreateDayPlan(today), false, false, null));
 
         // Adjacent fetches return null — not loaded.
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(today.AddDays(-1).ToString("yyyy-MM-dd")))
-            .ReturnsAsync((DayPlanResponse?)null);
+            .ReturnsAsync(new DayPlanFetchResult(null, true, false, null));
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(today.AddDays(1).ToString("yyyy-MM-dd")))
-            .ReturnsAsync((DayPlanResponse?)null);
+            .ReturnsAsync(new DayPlanFetchResult(null, true, false, null));
 
         // Act.
         var cut = RenderDayPlanPage(todayStr);
@@ -259,12 +261,12 @@ public class DayPlanPageCarouselTests : BunitContext
 
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(todayStr))
-            .ReturnsAsync(CreateDayPlan(today));
+            .ReturnsAsync(new DayPlanFetchResult(CreateDayPlan(today), false, false, null));
 
         // Adjacent fetches return null — simulate unloaded data.
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(It.Is<string>(d => d != todayStr)))
-            .ReturnsAsync((DayPlanResponse?)null);
+            .ReturnsAsync(new DayPlanFetchResult(null, true, false, null));
 
         var cut = RenderDayPlanPage(todayStr);
 
@@ -288,12 +290,12 @@ public class DayPlanPageCarouselTests : BunitContext
 
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(todayStr))
-            .ReturnsAsync(CreateDayPlan(today));
+            .ReturnsAsync(new DayPlanFetchResult(CreateDayPlan(today), false, false, null));
 
         // Adjacent fetches return null — simulate unloaded data.
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(It.Is<string>(d => d != todayStr)))
-            .ReturnsAsync((DayPlanResponse?)null);
+            .ReturnsAsync(new DayPlanFetchResult(null, true, false, null));
 
         var cut = RenderDayPlanPage(todayStr);
 
@@ -325,7 +327,7 @@ public class DayPlanPageCarouselTests : BunitContext
     {
         _cachedApiMock
             .Setup(x => x.GetDayPlanAsync(date))
-            .ReturnsAsync(response);
+            .ReturnsAsync(new DayPlanFetchResult(response, response is null, false, null));
     }
 
     private static DayPlanResponse CreateDayPlan(DateOnly date) =>

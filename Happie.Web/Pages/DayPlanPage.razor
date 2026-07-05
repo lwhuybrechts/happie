@@ -9,6 +9,7 @@
 @inject IJSRuntime JsRuntime
 @inject IStringLocalizer<AppStrings> Localizer
 @inject ActiveHousemateService ActiveHousemateService
+@inject LoadingIndicatorState LoadingIndicator
 @implements IAsyncDisposable
 
 <PageTitle>Happie</PageTitle>
@@ -356,14 +357,28 @@
 
         // Peek the cache first: if data exists for this date, swap it in without any loading flash.
         // CachedApiClient.GetDayPlanAsync returns synchronously from cache or awaits for a cold fetch.
-        var result = await CachedApi.GetDayPlanAsync(Date);
+        var fetchResult = await CachedApi.GetDayPlanAsync(Date);
 
-        if (result is not null)
+        if (fetchResult.Data is not null)
         {
-            _dayPlan = result;
+            _dayPlan = fetchResult.Data;
             _isLoading = false;
+
+            // Await background refresh for the active date with loading indicator.
+            if (fetchResult.BackgroundRefreshTask is not null)
+            {
+                LoadingIndicator.IncrementAsync();
+                try
+                {
+                    await fetchResult.BackgroundRefreshTask;
+                }
+                finally
+                {
+                    LoadingIndicator.DecrementAsync();
+                }
+            }
         }
-        else if (CachedApi.IsColdCacheFetch && CachedApi.HasLoadError)
+        else if (fetchResult.IsColdCacheFetch && fetchResult.HasLoadError)
         {
             _dayPlan = null;
             _loadError = true;
@@ -398,8 +413,8 @@
                 return;
 
             // Only fetch adjacent days that are not already loaded from panel recycling.
-            Task<DayPlanResponse?>? prevTask = _prevLoaded ? null : CachedApi.GetDayPlanAsync(_prevDate.ToString("yyyy-MM-dd"));
-            Task<DayPlanResponse?>? nextTask = _nextLoaded ? null : CachedApi.GetDayPlanAsync(_nextDate.ToString("yyyy-MM-dd"));
+            Task<DayPlanFetchResult>? prevTask = _prevLoaded ? null : CachedApi.GetDayPlanAsync(_prevDate.ToString("yyyy-MM-dd"));
+            Task<DayPlanFetchResult>? nextTask = _nextLoaded ? null : CachedApi.GetDayPlanAsync(_nextDate.ToString("yyyy-MM-dd"));
 
             if (prevTask is not null)
                 await prevTask;
@@ -411,7 +426,7 @@
 
             if (prevTask is not null)
             {
-                var prevResult = await prevTask;
+                var prevResult = (await prevTask).Data;
                 if (prevResult is not null)
                 {
                     // Defer panel update if a swipe gesture is in progress.
@@ -451,7 +466,7 @@
 
             if (nextTask is not null)
             {
-                var nextResult = await nextTask;
+                var nextResult = (await nextTask).Data;
                 if (nextResult is not null)
                 {
                     // Defer panel update if a swipe gesture is in progress.
@@ -564,25 +579,25 @@
         }
 
         // Refresh from cache to pick up the latest state after the child's mutation.
-        var result = await CachedApi.GetDayPlanAsync(Date);
-        if (result is not null)
-            _dayPlan = result;
+        var fetchResult = await CachedApi.GetDayPlanAsync(Date);
+        if (fetchResult.Data is not null)
+            _dayPlan = fetchResult.Data;
     }
 
     private async Task OnAttendanceChangedAsync((Guid HousemateId, AttendanceStatus Status) change)
     {
         // Refresh from cache to pick up the latest state after the child's mutation.
-        var result = await CachedApi.GetDayPlanAsync(Date);
-        if (result is not null)
-            _dayPlan = result;
+        var fetchResult = await CachedApi.GetDayPlanAsync(Date);
+        if (fetchResult.Data is not null)
+            _dayPlan = fetchResult.Data;
     }
 
     private async Task OnChefChangedAsync((Guid HousemateId, bool IsChef) change)
     {
         // Refresh from cache to pick up the latest state after the child's mutation.
-        var result = await CachedApi.GetDayPlanAsync(Date);
-        if (result is not null)
-            _dayPlan = result;
+        var fetchResult = await CachedApi.GetDayPlanAsync(Date);
+        if (fetchResult.Data is not null)
+            _dayPlan = fetchResult.Data;
     }
 
     private async Task OnCommentChangedAsync((Guid HousemateId, string? Text) change)
@@ -608,9 +623,9 @@
         }
 
         // Refresh from cache to pick up the latest state after the child's mutation.
-        var result = await CachedApi.GetDayPlanAsync(Date);
-        if (result is not null)
-            _dayPlan = result;
+        var fetchResult = await CachedApi.GetDayPlanAsync(Date);
+        if (fetchResult.Data is not null)
+            _dayPlan = fetchResult.Data;
     }
 
     public async ValueTask DisposeAsync()

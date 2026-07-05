@@ -100,7 +100,7 @@ public class CacheStoreHouseholdIsolationPropertyTests
                 var sut = CreateInitializedCacheStore(mockJsRuntime.Object);
 
                 // Act.
-                sut.PutCalendarAsync(households.HouseholdA, month, responseJson).GetAwaiter().GetResult();
+                sut.PutCalendarAsync(households.HouseholdA, month, responseJson, month).GetAwaiter().GetResult();
                 var result = sut.GetCalendarAsync(households.HouseholdB, month).GetAwaiter().GetResult();
 
                 // Assert.

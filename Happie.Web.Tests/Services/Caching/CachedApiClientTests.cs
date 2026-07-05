@@ -19,8 +19,6 @@ public class CachedApiClientTests
     private readonly Mock<IJSRuntime> _jsRuntimeMock = new();
     private readonly RichardSzalay.MockHttp.MockHttpMessageHandler _mockHttp = new();
     private readonly FakeNavigationManager _navigationManager = new();
-    private readonly FakeDelayService _fakeDelayService = new();
-    private readonly LoadingIndicatorState _loadingIndicatorState;
     private readonly CachedApiClient _sut;
 
     private const string HouseholdId = "test-household-id";
@@ -28,8 +26,6 @@ public class CachedApiClientTests
 
     public CachedApiClientTests()
     {
-        _loadingIndicatorState = new LoadingIndicatorState(_fakeDelayService);
-
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("http://localhost/api/");
 
@@ -41,7 +37,6 @@ public class CachedApiClientTests
             _cacheStoreMock.Object,
             _mutationQueueMock.Object,
             _connectivityServiceMock.Object,
-            _loadingIndicatorState,
             httpClient,
             _jsRuntimeMock.Object,
             _navigationManager,
@@ -64,7 +59,7 @@ public class CachedApiClientTests
         var result = await _sut.GetDayPlanAsync(TestDate);
 
         // Assert.
-        Assert.True(_sut.IsColdCacheFetch);
+        Assert.True(result.IsColdCacheFetch);
         Assert.NotNull(result);
         _cacheStoreMock.Verify(x => x.PutDayPlanAsync(HouseholdId, TestDate, It.IsAny<string>()), Times.Once);
     }
@@ -88,7 +83,7 @@ public class CachedApiClientTests
         var result = await _sut.GetDayPlanAsync(TestDate);
 
         // Assert.
-        Assert.False(_sut.IsColdCacheFetch);
+        Assert.False(result.IsColdCacheFetch);
         Assert.NotNull(result);
     }
 
@@ -152,7 +147,7 @@ public class CachedApiClientTests
         var result = await _sut.GetDayPlanAsync(TestDate);
 
         // Assert.
-        Assert.Null(result);
+        Assert.Null(result.Data);
         _cacheStoreMock.Verify(x => x.ClearAllAsync(HouseholdId), Times.Once);
         _jsRuntimeMock.Verify(
             x => x.InvokeAsync<Microsoft.JSInterop.Infrastructure.IJSVoidResult>(
@@ -199,7 +194,7 @@ public class CachedApiClientTests
         var result = await _sut.GetDayPlanAsync(TestDate);
 
         // Assert.
-        Assert.Null(result);
+        Assert.Null(result.Data);
         _jsRuntimeMock.Verify(
             x => x.InvokeAsync<Microsoft.JSInterop.Infrastructure.IJSVoidResult>(
                 "localStorage.removeItem",

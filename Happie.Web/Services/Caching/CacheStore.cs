@@ -6,7 +6,7 @@ namespace Happie.Web.Services.Caching;
 public class CacheStore : ICacheStore
 {
     private const int MaxDayPlanEntries = 30;
-    private const int MaxCalendarEntries = 2;
+    private const int MaxCalendarEntries = 6;
 
     private readonly IJSRuntime _jsRuntime;
     private bool _isAvailable;
@@ -120,7 +120,7 @@ public class CacheStore : ICacheStore
     }
 
     /// <inheritdoc />
-    public async Task PutCalendarAsync(string householdId, string month, string responseJson)
+    public async Task PutCalendarAsync(string householdId, string month, string responseJson, string viewedMonth)
     {
         if (!_isAvailable)
             return;
@@ -132,12 +132,10 @@ public class CacheStore : ICacheStore
 
             if (existingKeys.Length >= MaxCalendarEntries && !existingKeys.Contains(newKey))
             {
-                // Determine the current month to preserve it.
-                var currentMonth = DateTime.Now.ToString("yyyy-MM");
-                var currentMonthKey = $"{householdId}_{currentMonth}";
+                // Use cluster-based eviction: today cluster (today ± 1) and viewed cluster (viewed ± 1) are protected.
+                var todayMonth = DateTime.Now.ToString("yyyy-MM");
+                var keyToEvict = await _jsRuntime.InvokeAsync<string?>("window.happieCache.getEvictableCalendarKey", householdId, todayMonth, viewedMonth);
 
-                // Find the non-current-month entry to evict.
-                var keyToEvict = existingKeys.FirstOrDefault(x => x != currentMonthKey);
                 if (keyToEvict is not null)
                 {
                     // Key format: {householdId}_{month} — extract the month part.
@@ -148,6 +146,7 @@ public class CacheStore : ICacheStore
                         await _jsRuntime.InvokeVoidAsync("window.happieCache.deleteCalendar", householdId, monthToEvict);
                     }
                 }
+                // If keyToEvict is null, all entries are in protected clusters — allow cache to temporarily exceed limit.
             }
 
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();

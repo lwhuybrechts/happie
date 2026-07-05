@@ -18,8 +18,8 @@ public interface ICacheStore
     /// <summary>Gets a cached Calendar entry, or null if not found or unavailable.</summary>
     Task<CachedCalendar?> GetCalendarAsync(string householdId, string month);
 
-    /// <summary>Stores a Calendar entry, enforcing the 2-entry limit per household.</summary>
-    Task PutCalendarAsync(string householdId, string month, string responseJson);
+    /// <summary>Stores a Calendar entry, enforcing the 6-entry limit per household with cluster-based protection.</summary>
+    Task PutCalendarAsync(string householdId, string month, string responseJson, string viewedMonth);
 
     /// <summary>Deletes a cached Calendar entry.</summary>
     Task DeleteCalendarAsync(string householdId, string month);

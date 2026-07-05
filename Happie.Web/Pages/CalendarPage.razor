@@ -10,6 +10,7 @@
 @inject IJSRuntime JsRuntime
 @inject IStringLocalizer<AppStrings> Localizer
 @inject LocaleService LocaleService
+@inject LoadingIndicatorState LoadingIndicator
 @implements IAsyncDisposable
 
 <PageTitle>Happie</PageTitle>
@@ -46,11 +47,7 @@
                              OnNextDay="GoToNextMonth" />
     }
 
-    @if (_isLoading)
-    {
-        <p>@Localizer["DayPlan_Loading"]</p>
-    }
-    else if (_loadError)
+    @if (_loadError)
     {
         <p role="alert">@Localizer["DayPlan_LoadError"]</p>
         <button @onclick="RetryAsync">@Localizer["Calendar_Retry"]</button>
@@ -84,9 +81,10 @@
     private IReadOnlyList<CalendarDayDto> _days = [];
     private DateOnly _viewedMonth;
     private DateOnly? _selectedDate;
-    private bool _isLoading = true;
+    private bool _isGracefulLoading;
     private bool _loadError;
     private bool _noDataOffline;
+    private CancellationTokenSource? _prefetchCts;
     private ElementReference _calendarElement;
     private DotNetObjectReference<CalendarPage>? _dotNetRef;
     private DateNavigationPanel? _navPanel;
@@ -290,56 +288,146 @@
 
     private async Task LoadCalendarDataAsync()
     {
+        // Cancel any in-flight prefetches from the previous month.
+        _prefetchCts?.Cancel();
+        _prefetchCts?.Dispose();
+        _prefetchCts = new CancellationTokenSource();
+
         _loadError = false;
         _noDataOffline = false;
 
-        var result = await CachedApi.GetCalendarAsync(_viewedMonth);
+        // Clear dots but keep the grid visible so the new month renders immediately.
+        _days = [];
+        _isGracefulLoading = true;
+        LoadingIndicator.IncrementAsync();
 
-        if (result is not null)
+        // Yield to allow the UI to render the new month's grid (empty dots) before fetching.
+        StateHasChanged();
+        await Task.Yield();
+
+        var fetchResult = await CachedApi.GetCalendarAsync(_viewedMonth);
+
+        if (fetchResult.Data is not null)
         {
-            _days = result.Days;
-            _isLoading = false;
+            _days = fetchResult.Data.Days;
+            _isGracefulLoading = false;
+
+            if (fetchResult.BackgroundRefreshTask is not null)
+            {
+                // Stale-while-revalidate: let background refresh complete without blocking UI.
+                _ = fetchResult.BackgroundRefreshTask;
+            }
+
+            LoadingIndicator.DecrementAsync();
+            _ = PrefetchAdjacentMonthsAsync();
         }
-        else if (CachedApi.HasLoadError)
+        else if (fetchResult.HasLoadError)
         {
             _loadError = true;
-            _isLoading = false;
+            _isGracefulLoading = false;
+            LoadingIndicator.DecrementAsync();
         }
         else if (!ConnectivityService.IsOnline)
         {
             _noDataOffline = true;
-            _isLoading = false;
+            _isGracefulLoading = false;
+            LoadingIndicator.DecrementAsync();
         }
         else
         {
             // Null result with no error and online — treat as load error.
             _loadError = true;
-            _isLoading = false;
+            _isGracefulLoading = false;
+            LoadingIndicator.DecrementAsync();
+        }
+    }
+
+    private async Task PrefetchAdjacentMonthsAsync()
+    {
+        var cancellationToken = _prefetchCts?.Token ?? CancellationToken.None;
+
+        try
+        {
+            // Yield to ensure the active month renders and paints before prefetch network requests start.
+            await Task.Yield();
+
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            // Skip prefetch entirely when offline.
+            if (!ConnectivityService.IsOnline)
+                return;
+
+            // Prefetch next month first (users more commonly navigate forward).
+            var nextMonth = _viewedMonth.AddMonths(1);
+            try
+            {
+                var nextResult = await CachedApi.GetCalendarAsync(nextMonth);
+                // Discard the BackgroundRefreshTask (fire-and-forget for prefetch).
+                _ = nextResult.BackgroundRefreshTask;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                // Next month prefetch failed — continue to previous month per Requirement 4.3.
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            // Prefetch previous month.
+            var prevMonth = _viewedMonth.AddMonths(-1);
+            var prevResult = await CachedApi.GetCalendarAsync(prevMonth);
+            // Discard the BackgroundRefreshTask (fire-and-forget for prefetch).
+            _ = prevResult.BackgroundRefreshTask;
+        }
+        catch (OperationCanceledException)
+        {
+            // Navigation or dispose cancelled the prefetch — expected, swallow silently.
+        }
+        catch
+        {
+            // Prefetch failures are silent — do not surface errors.
         }
     }
 
     private async Task RetryAsync()
     {
         _loadError = false;
-        _isLoading = true;
+        _isGracefulLoading = true;
+        _days = [];
+        LoadingIndicator.IncrementAsync();
 
         var result = await CachedApi.RetryCalendarAsync(_viewedMonth);
 
         if (result is not null)
+        {
             _days = result.Days;
-        else if (CachedApi.HasLoadError)
-            _loadError = true;
+            _isGracefulLoading = false;
+            LoadingIndicator.DecrementAsync();
+            _ = PrefetchAdjacentMonthsAsync();
+        }
         else if (!ConnectivityService.IsOnline)
+        {
             _noDataOffline = true;
+            _isGracefulLoading = false;
+            LoadingIndicator.DecrementAsync();
+        }
         else
+        {
             _loadError = true;
-
-        _isLoading = false;
+            _isGracefulLoading = false;
+            LoadingIndicator.DecrementAsync();
+        }
     }
 
     private void HandleCalendarUpdated(CalendarResponse updatedCalendar)
     {
         _days = updatedCalendar.Days;
+        _isGracefulLoading = false;
         InvokeAsync(StateHasChanged);
     }
 
@@ -351,6 +439,8 @@
     public async ValueTask DisposeAsync()
     {
         CachedApi.OnCalendarUpdated -= HandleCalendarUpdated;
+        _prefetchCts?.Cancel();
+        _prefetchCts?.Dispose();
         if (_navPanel is not null)
             await JsRuntime.InvokeVoidAsync("happie.disposeMonthSlider", _navPanel.NavElement, _calendarElement);
         await JsRuntime.InvokeVoidAsync("happie.unregisterCalendarScroll", _calendarElement);

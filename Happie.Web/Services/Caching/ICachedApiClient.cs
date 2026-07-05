@@ -12,11 +12,17 @@ public interface ICachedApiClient
     /// <summary>Raised when a background refresh returns a new CalendarResponse that differs from the cached version.</summary>
     event Action<CalendarResponse>? OnCalendarUpdated;
 
-    /// <summary>Gets the day plan for the given date using stale-while-revalidate. Returns null only when offline with no cache.</summary>
-    Task<DayPlanResponse?> GetDayPlanAsync(string date);
+    /// <summary>Whether the last fetch was a cold cache fetch (no cached data available).</summary>
+    bool IsColdCacheFetch { get; }
 
-    /// <summary>Gets the calendar for the given month using stale-while-revalidate. Returns null only when offline with no cache.</summary>
-    Task<CalendarResponse?> GetCalendarAsync(DateOnly viewedMonth);
+    /// <summary>Whether the last fetch resulted in a load error.</summary>
+    bool HasLoadError { get; }
+
+    /// <summary>Gets the day plan for the given date using stale-while-revalidate. Returns a result record with cached data and an optional background refresh task.</summary>
+    Task<DayPlanFetchResult> GetDayPlanAsync(string date);
+
+    /// <summary>Gets the calendar for the given month using stale-while-revalidate. Returns a result record with cached data and an optional background refresh task.</summary>
+    Task<CalendarFetchResult> GetCalendarAsync(DateOnly viewedMonth);
 
     /// <summary>Saves an attendance change. Online: sends HTTP and updates cache. Offline: queues mutation and applies optimistically.</summary>
     Task<bool> SaveAttendanceAsync(string date, Guid housemateId, AttendanceStatus status);
@@ -35,12 +41,6 @@ public interface ICachedApiClient
 
     /// <summary>Deletes a comment. Online: sends HTTP and updates cache. Offline: queues mutation and applies optimistically.</summary>
     Task<bool> DeleteCommentAsync(string date, Guid housemateId);
-
-    /// <summary>Whether the last GET operation resulted in a cold cache miss (no cached data available).</summary>
-    bool IsColdCacheFetch { get; }
-
-    /// <summary>Whether the last cold cache fetch failed.</summary>
-    bool HasLoadError { get; }
 
     /// <summary>Retries the last failed cold cache fetch.</summary>
     Task<DayPlanResponse?> RetryDayPlanAsync(string date);
