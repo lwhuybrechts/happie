@@ -301,11 +301,28 @@
         _isGracefulLoading = true;
         LoadingIndicator.IncrementAsync();
 
+        // Capture the month we're loading so we can detect stale results after await.
+        var targetMonth = _viewedMonth;
+
         // Yield to allow the UI to render the new month's grid (empty dots) before fetching.
         StateHasChanged();
         await Task.Yield();
 
-        var fetchResult = await CachedApi.GetCalendarAsync(_viewedMonth);
+        // If the user navigated away while we yielded, abandon this load.
+        if (_viewedMonth != targetMonth)
+        {
+            LoadingIndicator.DecrementAsync();
+            return;
+        }
+
+        var fetchResult = await CachedApi.GetCalendarAsync(targetMonth);
+
+        // If the user navigated to a different month while we were fetching, discard the result.
+        if (_viewedMonth != targetMonth)
+        {
+            LoadingIndicator.DecrementAsync();
+            return;
+        }
 
         if (fetchResult.Data is not null)
         {

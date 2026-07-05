@@ -188,7 +188,7 @@ public class DayPlanPageCarouselTests : BunitContext
     }
 
     [Fact]
-    public void Render_PrevPanelNotLoaded_ShowsLeftArrowPlaceholder()
+    public void Render_PrevPanelNotLoaded_ShowsLoadingState()
     {
         // Arrange.
         var today = DateOnly.FromDateTime(DateTime.Today);
@@ -209,18 +209,14 @@ public class DayPlanPageCarouselTests : BunitContext
         // Act.
         var cut = RenderDayPlanPage(todayStr);
 
-        // Assert — prev panel shows left arrow (polyline points "15 18 9 12 15 6").
+        // Assert — prev panel shows loading text instead of arrow placeholder.
         var prevPanel = cut.Find(".swipe-carousel__panel--prev");
-        var arrowPlaceholder = prevPanel.QuerySelector(".swipe-carousel__arrow-placeholder");
-        Assert.NotNull(arrowPlaceholder);
-
-        var polyline = arrowPlaceholder!.QuerySelector("polyline");
-        Assert.NotNull(polyline);
-        Assert.Equal("15 18 9 12 15 6", polyline!.GetAttribute("points"));
+        var loadingContent = prevPanel.QuerySelector(".swipe-carousel__panel-content--loading");
+        Assert.NotNull(loadingContent);
     }
 
     [Fact]
-    public void Render_NextPanelNotLoaded_ShowsRightArrowPlaceholder()
+    public void Render_NextPanelNotLoaded_ShowsLoadingState()
     {
         // Arrange.
         var today = DateOnly.FromDateTime(DateTime.Today);
@@ -241,14 +237,10 @@ public class DayPlanPageCarouselTests : BunitContext
         // Act.
         var cut = RenderDayPlanPage(todayStr);
 
-        // Assert — next panel shows right arrow (polyline points "9 18 15 12 9 6").
+        // Assert — next panel shows loading text instead of arrow placeholder.
         var nextPanel = cut.Find(".swipe-carousel__panel--next");
-        var arrowPlaceholder = nextPanel.QuerySelector(".swipe-carousel__arrow-placeholder");
-        Assert.NotNull(arrowPlaceholder);
-
-        var polyline = arrowPlaceholder!.QuerySelector("polyline");
-        Assert.NotNull(polyline);
-        Assert.Equal("9 18 15 12 9 6", polyline!.GetAttribute("points"));
+        var loadingContent = nextPanel.QuerySelector(".swipe-carousel__panel-content--loading");
+        Assert.NotNull(loadingContent);
     }
 
     [Fact]
@@ -273,7 +265,7 @@ public class DayPlanPageCarouselTests : BunitContext
         // Act — invoke SwipeLeftAsync (simulates swipe-left gesture completing).
         await cut.InvokeAsync(() => cut.Instance.SwipeLeftAsync());
 
-        // Assert — navigation to next day should occur.
+        // Assert — swipe always navigates even without prefetched data.
         var navigationManager = Services.GetRequiredService<NavigationManager>();
         var bunitNav = (BunitNavigationManager)navigationManager;
         var lastNav = bunitNav.History.Last();
@@ -302,7 +294,7 @@ public class DayPlanPageCarouselTests : BunitContext
         // Act — invoke SwipeRightAsync (simulates swipe-right gesture completing).
         await cut.InvokeAsync(() => cut.Instance.SwipeRightAsync());
 
-        // Assert — navigation to previous day should occur.
+        // Assert — swipe always navigates even without prefetched data.
         var navigationManager = Services.GetRequiredService<NavigationManager>();
         var bunitNav = (BunitNavigationManager)navigationManager;
         var lastNav = bunitNav.History.Last();

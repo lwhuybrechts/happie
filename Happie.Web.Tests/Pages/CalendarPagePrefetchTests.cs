@@ -136,7 +136,9 @@ public class CalendarPagePrefetchTests : BunitContext
         junePrefetchTcs.SetResult(new CalendarFetchResult(CreateCalendarResponse(julyMonth), false, false, null));
 
         // Assert — August navigation successfully completed with its own prefetches.
-        Assert.Equal(augustMonth, _getCalendarCallOrder[0]);
+        Assert.Contains(augustMonth, _getCalendarCallOrder);
+        Assert.Contains(septMonth, _getCalendarCallOrder);
+        Assert.Contains(julyMonthForAugPrev, _getCalendarCallOrder);
     }
 
     [Fact]

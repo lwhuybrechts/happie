@@ -61,10 +61,8 @@
             }
             else
             {
-                <div class="swipe-carousel__arrow-placeholder">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
+                <div class="swipe-carousel__panel-content swipe-carousel__panel-content--loading">
+                    <p>@Localizer["DayPlan_Loading"]</p>
                 </div>
             }
         </div>
@@ -138,10 +136,8 @@
             }
             else
             {
-                <div class="swipe-carousel__arrow-placeholder">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
+                <div class="swipe-carousel__panel-content swipe-carousel__panel-content--loading">
+                    <p>@Localizer["DayPlan_Loading"]</p>
                 </div>
             }
         </div>
@@ -206,6 +202,11 @@
         _prefetchCts?.Dispose();
         _prefetchCts = new CancellationTokenSource();
 
+        // Update adjacent dates immediately so the DateNavigationPanel shows correct labels
+        // even while LoadDayPlanAsync is in progress.
+        _prevDate = _parsedDate.AddDays(-1);
+        _nextDate = _parsedDate.AddDays(1);
+
         // Determine navigation direction relative to the previous date.
         var dayDifference = _parsedDate.DayNumber - _previousParsedDate.DayNumber;
 
@@ -240,11 +241,13 @@
             _nextLoaded = false;
             _prevDayPlan = null;
             _nextDayPlan = null;
-            await LoadDayPlanAsync();
+            _dayPlan = null;
+            _isLoading = true;
+            // Fire-and-forget: don't block OnParametersSetAsync so rapid navigation
+            // (e.g. pressing the arrow multiple times) isn't queued behind slow loads.
+            _ = LoadDayPlanAsync();
         }
 
-        _prevDate = _parsedDate.AddDays(-1);
-        _nextDate = _parsedDate.AddDays(1);
         _previousParsedDate = _parsedDate;
 
         // Fire-and-forget pre-fetch of adjacent days after active day has loaded.
@@ -269,7 +272,9 @@
             return Task.CompletedTask;
 
         _isSwiping = true;
-        return GoToNextDay();
+        var next = _parsedDate.AddDays(1).ToString("yyyy-MM-dd");
+        NavigationManager.NavigateTo($"/day/{next}");
+        return Task.CompletedTask;
     }
 
     [JSInvokable]
@@ -279,7 +284,9 @@
             return Task.CompletedTask;
 
         _isSwiping = true;
-        return GoToPreviousDay();
+        var previous = _parsedDate.AddDays(-1).ToString("yyyy-MM-dd");
+        NavigationManager.NavigateTo($"/day/{previous}");
+        return Task.CompletedTask;
     }
 
     [JSInvokable]
@@ -355,14 +362,25 @@
         _loadError = false;
         _noDataOffline = false;
 
+        // Capture the date we're loading so we can detect stale results after await.
+        var targetDate = Date;
+
         // Peek the cache first: if data exists for this date, swap it in without any loading flash.
         // CachedApiClient.GetDayPlanAsync returns synchronously from cache or awaits for a cold fetch.
-        var fetchResult = await CachedApi.GetDayPlanAsync(Date);
+        var fetchResult = await CachedApi.GetDayPlanAsync(targetDate);
+
+        // If the user navigated away while we were fetching, discard the result.
+        if (Date != targetDate)
+            return;
 
         if (fetchResult.Data is not null)
         {
             _dayPlan = fetchResult.Data;
             _isLoading = false;
+            await InvokeAsync(StateHasChanged);
+
+            // Fire-and-forget pre-fetch of adjacent days now that we have data.
+            _ = PreFetchAdjacentDaysAsync();
 
             // Await background refresh for the active date with loading indicator.
             if (fetchResult.BackgroundRefreshTask is not null)
@@ -383,12 +401,14 @@
             _dayPlan = null;
             _loadError = true;
             _isLoading = false;
+            await InvokeAsync(StateHasChanged);
         }
         else if (!ConnectivityService.IsOnline)
         {
             _dayPlan = null;
             _noDataOffline = true;
             _isLoading = false;
+            await InvokeAsync(StateHasChanged);
         }
         else
         {
@@ -396,6 +416,7 @@
             _dayPlan = null;
             _loadError = true;
             _isLoading = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 
