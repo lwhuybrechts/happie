@@ -133,11 +133,14 @@ public class CalendarPageGracefulLoadingTests : BunitContext
 
         var cut = RenderCalendarPage();
 
+        // Wait for the grid to render cells (async lifecycle yields before blocking on the TCS).
+        cut.WaitForState(() => cut.FindAll(".calendar-grid__cell").Count > 0, TimeSpan.FromSeconds(2));
+
         // Act — click a day button during graceful loading.
         var dayButtons = cut.FindAll(".calendar-grid__cell");
         Assert.NotEmpty(dayButtons);
 
-        dayButtons[0].Click();
+        dayButtons.Last().Click();
 
         // Assert — navigation occurred to the DayPlanPage.
         var navigationManager = Services.GetRequiredService<NavigationManager>();

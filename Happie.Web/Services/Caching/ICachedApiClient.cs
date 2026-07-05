@@ -10,7 +10,7 @@ public interface ICachedApiClient
     event Action<DayPlanResponse>? OnDayPlanUpdated;
 
     /// <summary>Raised when a background refresh returns a new CalendarResponse that differs from the cached version.</summary>
-    event Action<CalendarResponse>? OnCalendarUpdated;
+    event Action<DateOnly, CalendarResponse>? OnCalendarUpdated;
 
     /// <summary>Whether the last fetch was a cold cache fetch (no cached data available).</summary>
     bool IsColdCacheFetch { get; }

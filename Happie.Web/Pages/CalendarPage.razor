@@ -424,8 +424,12 @@
         }
     }
 
-    private void HandleCalendarUpdated(CalendarResponse updatedCalendar)
+    private void HandleCalendarUpdated(DateOnly month, CalendarResponse updatedCalendar)
     {
+        // Only apply the update if it's for the currently viewed month.
+        if (month != _viewedMonth)
+            return;
+
         _days = updatedCalendar.Days;
         _isGracefulLoading = false;
         InvokeAsync(StateHasChanged);

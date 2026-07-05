@@ -525,16 +525,35 @@
         {
             // Defer state update until the swipe gesture completes.
             _deferredUpdates ??= new List<Action>();
-            _deferredUpdates.Add(() =>
-            {
-                _dayPlan = updatedDayPlan;
-                InvokeAsync(StateHasChanged);
-            });
+            _deferredUpdates.Add(() => ApplyDayPlanUpdate(updatedDayPlan));
             return;
         }
 
-        _dayPlan = updatedDayPlan;
-        InvokeAsync(StateHasChanged);
+        ApplyDayPlanUpdate(updatedDayPlan);
+    }
+
+    private void ApplyDayPlanUpdate(DayPlanResponse updatedDayPlan)
+    {
+        // Only apply the update to the panel that matches the response date.
+        // A background refresh for a previously viewed or prefetched date must not
+        // overwrite the active day's data.
+        if (updatedDayPlan.Date == _parsedDate)
+        {
+            _dayPlan = updatedDayPlan;
+            InvokeAsync(StateHasChanged);
+        }
+        else if (updatedDayPlan.Date == _prevDate)
+        {
+            _prevDayPlan = updatedDayPlan;
+            _prevLoaded = true;
+            InvokeAsync(StateHasChanged);
+        }
+        else if (updatedDayPlan.Date == _nextDate)
+        {
+            _nextDayPlan = updatedDayPlan;
+            _nextLoaded = true;
+            InvokeAsync(StateHasChanged);
+        }
     }
 
     private void HandleDayPlanRolledBack(string date, DayPlanResponse rolledBackDayPlan)

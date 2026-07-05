@@ -36,7 +36,7 @@ public class CalendarPagePrefetchTests : BunitContext
     }
 
     [Fact]
-    public void LoadCalendarDataAsync_CacheHit_PrefetchesNextAndPrevMonth()
+    public async Task LoadCalendarDataAsync_CacheHit_PrefetchesNextAndPrevMonth()
     {
         // Arrange.
         var viewedMonth = new DateOnly(2025, 6, 1);
@@ -51,7 +51,8 @@ public class CalendarPagePrefetchTests : BunitContext
         var cut = RenderCalendarPage("2025-06-15");
 
         // Assert — wait for prefetch calls to complete (next + prev).
-        cut.WaitForState(() => _getCalendarCallOrder.Count >= 3, TimeSpan.FromSeconds(2));
+        // Poll because fire-and-forget prefetch doesn't trigger re-renders.
+        await WaitForConditionAsync(() => _getCalendarCallOrder.Count >= 3);
 
         Assert.Equal(viewedMonth, _getCalendarCallOrder[0]);
         Assert.Contains(nextMonth, _getCalendarCallOrder);
@@ -82,7 +83,7 @@ public class CalendarPagePrefetchTests : BunitContext
     }
 
     [Fact]
-    public void OnParametersSetAsync_MonthChanges_CancelsPreviousPrefetch()
+    public async Task OnParametersSetAsync_MonthChanges_CancelsPreviousPrefetch()
     {
         // Arrange.
         var juneMonth = new DateOnly(2025, 6, 1);
@@ -128,8 +129,8 @@ public class CalendarPagePrefetchTests : BunitContext
 
         cut.Render(p => p.Add(x => x.Date, "2025-08-15"));
 
-        // Wait for August's prefetches to complete.
-        cut.WaitForState(() => _getCalendarCallOrder.Count >= 3, TimeSpan.FromSeconds(2));
+        // Wait for August's prefetches to complete (poll because fire-and-forget doesn't trigger re-renders).
+        await WaitForConditionAsync(() => _getCalendarCallOrder.Count >= 3);
 
         // Now complete the old hanging prefetch — it should not cause issues.
         junePrefetchTcs.SetResult(new CalendarFetchResult(CreateCalendarResponse(julyMonth), false, false, null));
@@ -139,7 +140,7 @@ public class CalendarPagePrefetchTests : BunitContext
     }
 
     [Fact]
-    public void PrefetchAdjacentMonths_FetchesNextMonthBeforePreviousMonth()
+    public async Task PrefetchAdjacentMonths_FetchesNextMonthBeforePreviousMonth()
     {
         // Arrange.
         var viewedMonth = new DateOnly(2025, 6, 1);
@@ -157,8 +158,8 @@ public class CalendarPagePrefetchTests : BunitContext
         // Act.
         var cut = RenderCalendarPage("2025-06-15");
 
-        // Wait for all three calls to complete.
-        cut.WaitForState(() => _getCalendarCallOrder.Count >= 3, TimeSpan.FromSeconds(2));
+        // Wait for all three calls to complete (poll because fire-and-forget doesn't trigger re-renders).
+        await WaitForConditionAsync(() => _getCalendarCallOrder.Count >= 3);
 
         // Assert — next month (July) is fetched before previous month (May).
         var nextIndex = _getCalendarCallOrder.IndexOf(nextMonth);
@@ -168,7 +169,7 @@ public class CalendarPagePrefetchTests : BunitContext
     }
 
     [Fact]
-    public void PrefetchAdjacentMonths_NextMonthFails_StillPrefetchesPreviousMonth()
+    public async Task PrefetchAdjacentMonths_NextMonthFails_StillPrefetchesPreviousMonth()
     {
         // Arrange.
         var viewedMonth = new DateOnly(2025, 6, 1);
@@ -192,7 +193,8 @@ public class CalendarPagePrefetchTests : BunitContext
         var cut = RenderCalendarPage("2025-06-15");
 
         // Assert — previous month is still fetched even though next month failed.
-        cut.WaitForState(() =>
+        // Poll because fire-and-forget prefetch doesn't trigger re-renders.
+        await WaitForConditionAsync(() =>
         {
             try
             {
@@ -203,7 +205,7 @@ public class CalendarPagePrefetchTests : BunitContext
             {
                 return false;
             }
-        }, TimeSpan.FromSeconds(2));
+        });
 
         _cachedApiMock.Verify(x => x.GetCalendarAsync(prevMonth), Times.Once);
     }
@@ -280,4 +282,16 @@ public class CalendarPagePrefetchTests : BunitContext
         {
             new(month, new List<string> { "#FF0000" }),
         });
+
+    private static async Task WaitForConditionAsync(Func<bool> predicate, int timeoutMs = 2000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (!predicate())
+        {
+            if (DateTime.UtcNow > deadline)
+                throw new TimeoutException("The condition was not met before the timeout period passed.");
+
+            await Task.Delay(10);
+        }
+    }
 }

@@ -20,7 +20,7 @@ public class CachedApiClient : ICachedApiClient
     private readonly SessionService _sessionService;
 
     public event Action<DayPlanResponse>? OnDayPlanUpdated;
-    public event Action<CalendarResponse>? OnCalendarUpdated;
+    public event Action<DateOnly, CalendarResponse>? OnCalendarUpdated;
 
     public bool IsColdCacheFetch { get; private set; }
     public bool HasLoadError { get; private set; }
@@ -430,7 +430,7 @@ public class CachedApiClient : ICachedApiClient
 
                 var freshResponse = JsonSerializer.Deserialize<CalendarResponse>(freshJson);
                 if (freshResponse is not null)
-                    OnCalendarUpdated?.Invoke(freshResponse);
+                    OnCalendarUpdated?.Invoke(viewedMonth, freshResponse);
             }
         }
         catch
