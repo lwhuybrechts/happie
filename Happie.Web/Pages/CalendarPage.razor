@@ -133,7 +133,7 @@
         // Re-register the month slider after every render because @key recreates the DateNavigationPanel
         // on month change, which destroys the previous element reference.
         if (_navPanel is not null)
-            await JsRuntime.InvokeVoidAsync("happie.registerMonthSlider", _navPanel.NavElement, _dotNetRef);
+            await JsRuntime.InvokeVoidAsync("happie.registerMonthSlider", _navPanel.NavElement, _dotNetRef, _calendarElement);
     }
 
     [JSInvokable]
@@ -242,7 +242,7 @@
             if (_navPanel is null)
                 return false;
 
-            var started = await JsRuntime.InvokeAsync<bool>("happie.triggerMonthSlide", _navPanel.NavElement, direction);
+            var started = await JsRuntime.InvokeAsync<bool>("happie.triggerMonthSlide", _navPanel.NavElement, direction, _calendarElement);
             return started;
         }
         catch
@@ -352,7 +352,7 @@
     {
         CachedApi.OnCalendarUpdated -= HandleCalendarUpdated;
         if (_navPanel is not null)
-            await JsRuntime.InvokeVoidAsync("happie.disposeMonthSlider", _navPanel.NavElement);
+            await JsRuntime.InvokeVoidAsync("happie.disposeMonthSlider", _navPanel.NavElement, _calendarElement);
         await JsRuntime.InvokeVoidAsync("happie.unregisterCalendarScroll", _calendarElement);
         _dotNetRef?.Dispose();
     }

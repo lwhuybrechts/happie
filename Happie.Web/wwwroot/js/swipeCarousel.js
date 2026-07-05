@@ -32,7 +32,7 @@
     // Check if the touch target is an excluded input element.
     // Mirror: SwipeCarouselMath.IsInEdgeExclusionZone handles the edge zone part — update that C# class if exclusion logic changes.
     function isExcludedTarget(target) {
-        return target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]');
+        return target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"], .nudge-modal__overlay');
     }
 
     // Check if clientX is in the edge exclusion zone.
@@ -625,11 +625,21 @@
 
     const _monthSliderRegistry = new Map();
 
-    happie.registerMonthSlider = function (navElement, dotNetRef) {
+    happie.registerMonthSlider = function (navElement, dotNetRef, touchTarget) {
         if (!navElement) return;
 
-        // If already registered for this element, skip (idempotent).
-        if (_monthSliderRegistry.has(navElement)) return;
+        // touchTarget defaults to navElement if not provided (backwards-compatible).
+        var eventTarget = touchTarget || navElement;
+
+        // If already registered for this event target, check if the nav element changed
+        // (Blazor's @key may have recreated it). If unchanged, skip (idempotent).
+        var existing = _monthSliderRegistry.get(eventTarget);
+        if (existing) {
+            if (existing.navElement === navElement)
+                return;
+            // Nav element changed — dispose old registration and re-register with new slider track.
+            happie.disposeMonthSlider(existing.navElement, touchTarget);
+        }
 
         var sliderTrack = navElement.querySelector('.date-nav__slider-track');
         var sliderViewport = sliderTrack ? sliderTrack.parentElement : null;
@@ -876,22 +886,24 @@
                 animateSnapBack(currentTranslateX);
         };
 
-        navElement.addEventListener('touchstart', onTouchStart, { passive: true });
-        navElement.addEventListener('touchmove', onTouchMove, { passive: false });
-        navElement.addEventListener('touchend', onTouchEnd, { passive: true });
-        navElement.addEventListener('touchcancel', onTouchCancel, { passive: true });
+        eventTarget.addEventListener('touchstart', onTouchStart, { passive: true });
+        eventTarget.addEventListener('touchmove', onTouchMove, { passive: false });
+        eventTarget.addEventListener('touchend', onTouchEnd, { passive: true });
+        eventTarget.addEventListener('touchcancel', onTouchCancel, { passive: true });
 
-        _monthSliderRegistry.set(navElement, {
+        _monthSliderRegistry.set(eventTarget, {
             onTouchStart, onTouchMove, onTouchEnd, onTouchCancel, onResize,
-            dotNetRef, state, cancelScheduledTranslate, sliderTrack, leftArrow, rightArrow
+            dotNetRef, state, cancelScheduledTranslate, sliderTrack, leftArrow, rightArrow,
+            navElement
         });
     };
 
     // Programmatically trigger month slide animation (for arrow clicks on touch devices).
     // direction: -1 = slide left (next month), 1 = slide right (previous month).
-    happie.triggerMonthSlide = function (navElement, direction) {
+    happie.triggerMonthSlide = function (navElement, direction, touchTarget) {
         if (!navElement) return false;
-        var entry = _monthSliderRegistry.get(navElement);
+        var eventTarget = touchTarget || navElement;
+        var entry = _monthSliderRegistry.get(eventTarget);
         if (!entry) return false;
         if (entry.state.animating) return false;
 
@@ -948,9 +960,10 @@
         return true;
     };
 
-    happie.disposeMonthSlider = function (navElement) {
+    happie.disposeMonthSlider = function (navElement, touchTarget) {
         if (!navElement) return;
-        var entry = _monthSliderRegistry.get(navElement);
+        var eventTarget = touchTarget || navElement;
+        var entry = _monthSliderRegistry.get(eventTarget);
         if (!entry) return;
 
         entry.state.disposed = true;
@@ -977,12 +990,12 @@
         if (entry.leftArrow) entry.leftArrow.classList.remove('date-nav__arrow--highlight');
         if (entry.rightArrow) entry.rightArrow.classList.remove('date-nav__arrow--highlight');
 
-        navElement.removeEventListener('touchstart', entry.onTouchStart);
-        navElement.removeEventListener('touchmove', entry.onTouchMove);
-        navElement.removeEventListener('touchend', entry.onTouchEnd);
-        navElement.removeEventListener('touchcancel', entry.onTouchCancel);
+        eventTarget.removeEventListener('touchstart', entry.onTouchStart);
+        eventTarget.removeEventListener('touchmove', entry.onTouchMove);
+        eventTarget.removeEventListener('touchend', entry.onTouchEnd);
+        eventTarget.removeEventListener('touchcancel', entry.onTouchCancel);
         window.removeEventListener('resize', entry.onResize);
 
-        _monthSliderRegistry.delete(navElement);
+        _monthSliderRegistry.delete(eventTarget);
     };
 })();
