@@ -7,6 +7,7 @@
 @inject SessionService SessionService
 @inject ActiveHousemateService ActiveHousemateService
 @inject PushNotificationService PushNotificationService
+@inject SyncToastState SyncToastState
 @inject IConfiguration Configuration
 
 <PageTitle>Happie</PageTitle>
@@ -409,6 +410,9 @@
 
         await ActiveHousemateService.SetActiveHousemateAsync(housemate.Id, housemate.Name, housemate.Color);
         _activeHousemateId = housemate.Id;
+
+        // Show confirmation toast.
+        SyncToastState.ShowToast(Localizer["Housemates_SwitchedTo", housemate.Name], ToastType.Info);
 
         // Re-register push subscription under the new housemate.
         await PushNotificationService.ReRegisterSubscriptionAsync();

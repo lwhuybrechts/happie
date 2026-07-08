@@ -7,7 +7,7 @@
     <div class="sync-toast-container" aria-live="polite">
         @foreach (var toast in SyncToastState.VisibleToasts)
         {
-            <div class="sync-toast" role="alert">
+            <div class="sync-toast @(toast.Type == ToastType.Info ? "sync-toast--info" : "")" role="alert">
                 <span class="sync-toast__message">@toast.Message</span>
                 <button class="sync-toast__close"
                         aria-label="@Localizer["SyncToast_CloseAriaLabel"]"

@@ -22,11 +22,18 @@
     animation: slide-in 0.25s ease-out;
 }
 
+.sync-toast--info {
+    background: #f0f7ff;
+    border-color: #64b5f6;
+}
+
 .sync-toast__message {
     flex: 1;
     font-size: 0.875rem;
     line-height: 1.4;
     color: #1a1a2e;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .sync-toast__close {

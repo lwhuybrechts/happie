@@ -212,6 +212,9 @@
   <data name="Housemates_SwitchTo" xml:space="preserve">
     <value>Switch to {0}</value>
   </data>
+  <data name="Housemates_SwitchedTo" xml:space="preserve">
+    <value>Switched to {0}</value>
+  </data>
   <data name="Housemates_Rename" xml:space="preserve">
     <value>Rename {0}</value>
   </data>

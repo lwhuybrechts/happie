@@ -192,8 +192,12 @@ h2 {
     font-size: 1rem;
 }
 
-/* Housemate name — bold, fills remaining row space. */
+/* Housemate name — bold, fills remaining row space, truncated if too long. */
 .housemate-name {
     font-weight: bold;
     flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

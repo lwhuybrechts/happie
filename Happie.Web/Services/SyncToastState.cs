@@ -21,9 +21,9 @@ public class SyncToastState
     public event Action? OnStateChanged;
 
     /// <summary>Adds a toast to the queue. If fewer than 3 are visible, it is shown immediately.</summary>
-    public void ShowToast(string message)
+    public void ShowToast(string message, ToastType type = ToastType.Error)
     {
-        var toast = new SyncToastItem(Guid.NewGuid(), message);
+        var toast = new SyncToastItem(Guid.NewGuid(), message, type);
 
         if (_visibleToasts.Count < MaxVisibleToasts)
             ShowToastImmediately(toast);
