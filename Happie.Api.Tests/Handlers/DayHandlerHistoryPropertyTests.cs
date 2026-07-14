@@ -32,7 +32,7 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow);
+                var existingDish = new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow, null);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
@@ -63,7 +63,7 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, oldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow);
+                var existingDish = new DishRecord(householdId, date, oldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow, null);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
@@ -102,7 +102,7 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow);
+                var existingDish = new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow, null);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
@@ -140,7 +140,7 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow);
+                var existingDish = new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow, null);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
@@ -179,7 +179,7 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, oldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow);
+                var existingDish = new DishRecord(householdId, date, oldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow, null);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
@@ -219,7 +219,7 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, oldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow);
+                var existingDish = new DishRecord(householdId, date, oldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow, null);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
@@ -255,7 +255,7 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, input.OldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, input.OldDinnerTime, DateTimeOffset.UtcNow);
+                var existingDish = new DishRecord(householdId, date, input.OldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, input.OldDinnerTime, DateTimeOffset.UtcNow, null);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.

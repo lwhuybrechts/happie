@@ -220,7 +220,7 @@ public class DayHandlerTests
         var householdId = Guid.NewGuid();
         var actingHousemateId = Guid.NewGuid();
         var date = new DateOnly(2025, 7, 15);
-        var existingDish = new DishRecord(householdId, date, "Pasta", actingHousemateId, DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow);
+        var existingDish = new DishRecord(householdId, date, "Pasta", actingHousemateId, DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow, null);
 
         SetupGetDish(householdId, date, existingDish);
         SetupDishDelete();
@@ -246,7 +246,7 @@ public class DayHandlerTests
         var householdId = Guid.NewGuid();
         var actingHousemateId = Guid.NewGuid();
         var date = new DateOnly(2025, 7, 15);
-        var existingDish = new DishRecord(householdId, date, "Pasta", actingHousemateId, DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow);
+        var existingDish = new DishRecord(householdId, date, "Pasta", actingHousemateId, DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow, null);
 
         SetupGetDish(householdId, date, existingDish);
         SetupDishDelete();

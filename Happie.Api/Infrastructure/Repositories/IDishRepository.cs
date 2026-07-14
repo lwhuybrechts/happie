@@ -14,4 +14,7 @@ public interface IDishRepository
 
     /// <summary>Deletes the dish record for a specific date in a household.</summary>
     Task DeleteAsync(Guid householdId, DateOnly date, CancellationToken ct = default);
+
+    /// <summary>Gets all dish records for a household.</summary>
+    Task<IReadOnlyList<DishRecord>> GetAllByPartitionAsync(Guid householdId, CancellationToken ct = default);
 }

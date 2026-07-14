@@ -153,7 +153,7 @@ public class DayHandler : IDayHandler
         var dishChanged = existingDish is null || existingDish.Description != description;
         var dinnerTimeChanged = existingDish?.DinnerTime != dinnerTime;
 
-        var record = new DishRecord(householdId, date, description, actingHousemateId, DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow);
+        var record = new DishRecord(householdId, date, description, actingHousemateId, DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow, existingDish?.SavedDishId);
         await _dishRepository.UpsertAsync(record, ct);
 
         // Write a single history entry based on what changed.

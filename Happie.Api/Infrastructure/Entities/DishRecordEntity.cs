@@ -30,4 +30,7 @@ public class DishRecordEntity : MyTableEntity
 
     /// <summary>The timestamp when this record was last written (for conflict detection).</summary>
     public DateTimeOffset LastModified { get; set; }
+
+    // Guid.Empty is the sentinel for "not set" (same pattern as LastChangedByHousemateId).
+    public Guid SavedDishId { get; set; }
 }

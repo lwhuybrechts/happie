@@ -36,7 +36,8 @@ public class DishRecordMapperPropertyTests
                     Guid.NewGuid(),
                     DateTimeOffset.UtcNow,
                     dinnerTime,
-                    DateTimeOffset.UtcNow);
+                    DateTimeOffset.UtcNow,
+                    null);
 
                 // Act.
                 var entity = _sut.ToEntity(record);

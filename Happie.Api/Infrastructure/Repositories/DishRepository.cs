@@ -33,4 +33,11 @@ public class DishRepository : BaseRepository<DishRecordEntity>, IDishRepository
     /// <inheritdoc/>
     public Task DeleteAsync(Guid householdId, DateOnly date, CancellationToken ct = default)
         => DeleteAsync(householdId.ToString(), $"{date:yyyy-MM-dd}", ct);
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<DishRecord>> GetAllByPartitionAsync(Guid householdId, CancellationToken ct = default)
+    {
+        var entities = await QueryByPartitionAsync(householdId.ToString(), ct);
+        return entities.Select(x => _mapper.ToModel(householdId, DateOnly.ParseExact(x.RowKey, "yyyy-MM-dd"), x)).ToList();
+    }
 }
