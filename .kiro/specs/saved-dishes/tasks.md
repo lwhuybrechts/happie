@@ -108,11 +108,11 @@ This plan implements a household-level saved dishes collection with CRUD managem
     - Test DishRecordMapper extension for SavedDishId (Empty ↔ null mapping)
     - _Requirements: 2.2, 2.3, 2.5, 2.6, 9.6, 9.7, 12.8, 12.9_
 
-- [~] 5. Checkpoint - Ensure all tests pass
+- [x] 5. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Frontend — SavedDishesPage
-  - [~] 6.1 Create `SavedDishesPage` with add, edit, delete, and list
+- [x] 6. Frontend — SavedDishesPage
+  - [x] 6.1 Create `SavedDishesPage` with add, edit, delete, and list
     - Create `Happie.Web/Pages/SavedDishesPage.razor` at route `/saved-dishes`
     - Display all active saved dishes sorted alphabetically
     - Implement Add_Button with reveal-on-click input field pattern
@@ -124,26 +124,26 @@ This plan implements a household-level saved dishes collection with CRUD managem
     - All text via `IStringLocalizer<AppStrings>`
     - _Requirements: 3.1–3.14, 4.1–4.6, 13.1_
 
-  - [~] 6.2 Implement suggestions section on SavedDishesPage
+  - [x] 6.2 Implement suggestions section on SavedDishesPage
     - Display up to 5 suggestions below the saved dishes list
     - Tapping a suggestion calls `POST /api/saved-dishes` (same flow as promote)
     - Remove suggestion on success, show error on failure
     - Hide section when no suggestions available
     - _Requirements: 5.1–5.6_
 
-  - [~] 6.3 Implement Explanation_Section
+  - [x] 6.3 Implement Explanation_Section
     - Always-visible section below suggestions explaining current and future benefits
     - Positioned at the bottom of page content
     - All text via `IStringLocalizer<AppStrings>`
     - _Requirements: 4.1–4.6_
 
-  - [~] 6.4 Add localization keys for SavedDishesPage
+  - [x] 6.4 Add localization keys for SavedDishesPage
     - Add all required keys to `AppStrings.resx` (Dutch) and `AppStrings.en.resx` (English)
     - Include: page title, add button, edit/delete labels, error messages, explanation text, suggestion labels, offline error
     - _Requirements: 3.14, 4.5, 5.6, 13.1, 14.4_
 
 - [ ] 7. Frontend — DishPanel mode toggle and SavedDishModal
-  - [~] 7.1 Create `SavedDishModal` component
+  - [x] 7.1 Create `SavedDishModal` component
     - Create `Happie.Web/Components/SavedDishModal.razor`
     - Modal overlay with `role="dialog"`, z-index 1100/1101
     - Display alphabetically sorted list of active saved dishes as tappable items

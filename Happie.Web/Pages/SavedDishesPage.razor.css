@@ -1,0 +1,337 @@
+/* Base layout: vertical stack, matching HousematesPage. */
+.saved-dishes-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Desktop (≥641px): center content within available space, max-width 600px. */
+@media (min-width: 641px) {
+    .saved-dishes-page {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 24px 16px;
+    }
+}
+
+/* Mobile (<641px): full viewport width with 16px horizontal padding. */
+@media (max-width: 640.98px) {
+    .saved-dishes-page {
+        width: 100%;
+        padding: 16px;
+    }
+}
+
+/* Header: title + plus button. */
+.saved-dishes-page__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.saved-dishes-page__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.saved-dishes-page__add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background-color: #4CAF50;
+    color: #ffffff;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.saved-dishes-page__add-btn:hover {
+    background-color: #43A047;
+    transform: scale(1.05);
+}
+
+/* Add panel: input + ✓/✗ buttons. */
+.saved-dishes-page__add-panel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Shared input style. */
+.saved-dishes-page__input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 14px;
+    border: 2px solid #4CAF50;
+    border-radius: 12px;
+    font-size: 0.9375rem;
+    color: #333333;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.saved-dishes-page__input:focus {
+    border-color: #388E3C;
+}
+
+/* ✓/✗ action buttons. */
+.saved-dishes-page__action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease;
+}
+
+.saved-dishes-page__action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.saved-dishes-page__action-btn--accept {
+    color: #4CAF50;
+}
+
+.saved-dishes-page__action-btn--accept:hover:not(:disabled) {
+    background-color: rgba(76, 175, 80, 0.15);
+}
+
+.saved-dishes-page__action-btn--discard {
+    color: #F44336;
+}
+
+.saved-dishes-page__action-btn--discard:hover:not(:disabled) {
+    background-color: rgba(244, 67, 54, 0.15);
+}
+
+/* Saved dishes list. */
+.saved-dishes-page__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Individual dish item. */
+.saved-dishes-page__item {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: background-color 0.3s ease;
+}
+
+/* Highlight animation on newly added dish. */
+.saved-dishes-page__item--highlighted {
+    animation: highlight-fade 1.5s ease-out;
+}
+
+@keyframes highlight-fade {
+    0% {
+        background-color: rgba(76, 175, 80, 0.25);
+    }
+    100% {
+        background-color: #ffffff;
+    }
+}
+
+/* Display row: description on left, actions on right. */
+.saved-dishes-page__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.saved-dishes-page__name {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+/* Action buttons row. */
+.saved-dishes-page__actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* Icon buttons (edit, delete). */
+.saved-dishes-page__icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #9ca3af;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.saved-dishes-page__icon-btn:hover:not(:disabled) {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.saved-dishes-page__icon-btn--danger:hover:not(:disabled) {
+    background-color: rgba(244, 67, 54, 0.08);
+    color: #F44336;
+}
+
+/* Edit row (inline edit mode). */
+.saved-dishes-page__edit-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Error toast. */
+.toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    z-index: 2000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: toast-in 0.2s ease-out;
+}
+
+.toast--error {
+    background-color: #F44336;
+    color: #ffffff;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Explanation section — always visible at bottom. */
+.saved-dishes-page__explanation {
+    background-color: #f8faf8;
+    border-radius: 16px;
+    padding: 16px 20px;
+    border: 1px solid #e8f5e9;
+}
+
+.saved-dishes-page__explanation-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px 0;
+}
+
+.saved-dishes-page__explanation-text {
+    font-size: 0.875rem;
+    color: #4b5563;
+    margin: 0 0 6px 0;
+    line-height: 1.5;
+}
+
+.saved-dishes-page__explanation-text:last-child {
+    margin-bottom: 0;
+}
+
+.saved-dishes-page__explanation-text--future {
+    font-style: italic;
+    color: #6b7280;
+}
+
+/* Suggestions section. */
+.saved-dishes-page__suggestions {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.saved-dishes-page__suggestions-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 12px 0;
+}
+
+.saved-dishes-page__suggestions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.saved-dishes-page__suggestion-item {
+    margin: 0;
+}
+
+.saved-dishes-page__suggestion-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px dashed #4CAF50;
+    border-radius: 12px;
+    background: none;
+    cursor: pointer;
+    font-size: 0.9375rem;
+    color: #333333;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.saved-dishes-page__suggestion-btn:hover {
+    background-color: rgba(76, 175, 80, 0.06);
+    border-color: #388E3C;
+}
+
+.saved-dishes-page__suggestion-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.saved-dishes-page__suggestion-icon {
+    color: #4CAF50;
+    flex-shrink: 0;
+    margin-left: 8px;
+}

@@ -1,0 +1,555 @@
+@page "/saved-dishes"
+@using Happie.Shared.Contracts
+@inject HttpClient Http
+@inject IConnectivityService ConnectivityService
+@inject IStringLocalizer<AppStrings> Localizer
+@inject IJSRuntime JS
+
+<PageTitle>Happie</PageTitle>
+
+<div class="saved-dishes-page">
+
+    @* Title bar with plus button. *@
+    <div class="saved-dishes-page__header">
+        <h1 class="saved-dishes-page__title">@Localizer["SavedDishes_Title"]</h1>
+        <button class="saved-dishes-page__add-btn"
+                @onclick="ToggleAddForm"
+                aria-label="@Localizer["SavedDishes_AddButton"]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+        </button>
+    </div>
+
+    @* Add dish form — shown when plus is clicked. *@
+    @if (_showAddForm)
+    {
+        <div class="saved-dishes-page__add-panel">
+            <input class="saved-dishes-page__input"
+                   @ref="_addInputRef"
+                   @bind="_newDishDescription"
+                   @bind:event="oninput"
+                   @onkeydown="OnAddKeyDownAsync"
+                   maxlength="100"
+                   placeholder="@Localizer["SavedDishes_AddPlaceholder"]"
+                   aria-label="@Localizer["SavedDishes_AddPlaceholder"]" />
+            <button class="saved-dishes-page__action-btn saved-dishes-page__action-btn--accept"
+                    @onclick="AddDishAsync"
+                    disabled="@(!IsValidNewDescription)"
+                    aria-label="@Localizer["SavedDishes_SaveEdit"]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m9 12 2 2 4-4" />
+                </svg>
+            </button>
+            <button class="saved-dishes-page__action-btn saved-dishes-page__action-btn--discard"
+                    @onclick="CancelAdd"
+                    aria-label="@Localizer["SavedDishes_CancelEdit"]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m15 9-6 6" />
+                    <path d="m9 9 6 6" />
+                </svg>
+            </button>
+        </div>
+    }
+
+    @* Saved dishes list. *@
+    @if (_isLoading)
+    {
+        <p>@Localizer["DayPlan_Loading"]</p>
+    }
+    else if (_loadError)
+    {
+        <p role="alert">@Localizer["SavedDishes_LoadError"]</p>
+    }
+    else
+    {
+        <ul class="saved-dishes-page__list" aria-label="@Localizer["SavedDishes_Title"]">
+            @foreach (var dish in _dishes)
+            {
+                <li class="saved-dishes-page__item @(dish.Id == _highlightedDishId ? "saved-dishes-page__item--highlighted" : "")"
+                    @key="dish.Id"
+                    id="@($"dish-{dish.Id}")"
+                    @onanimationend="() => OnHighlightAnimationEnd(dish.Id)">
+
+                    @if (_editingDishId == dish.Id)
+                    {
+                        @* Edit mode: input + ✓/✗ buttons. *@
+                        <div class="saved-dishes-page__edit-row">
+                            <input class="saved-dishes-page__input"
+                                   @ref="_editInputRef"
+                                   @bind="_editDescription"
+                                   @bind:event="oninput"
+                                   @onkeydown="OnEditKeyDownAsync"
+                                   maxlength="100"
+                                   aria-label="@Localizer["SavedDishes_EditAriaLabel", dish.Description]" />
+                            <button class="saved-dishes-page__action-btn saved-dishes-page__action-btn--accept"
+                                    @onclick="() => SaveEditAsync(dish)"
+                                    disabled="@(!IsValidEdit(dish.Description))"
+                                    aria-label="@Localizer["SavedDishes_SaveEdit"]">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="m9 12 2 2 4-4" />
+                                </svg>
+                            </button>
+                            <button class="saved-dishes-page__action-btn saved-dishes-page__action-btn--discard"
+                                    @onclick="CancelEdit"
+                                    aria-label="@Localizer["SavedDishes_CancelEdit"]">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="m15 9-6 6" />
+                                    <path d="m9 9 6 6" />
+                                </svg>
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        @* Display mode: description on left, edit/delete buttons on right. *@
+                        <div class="saved-dishes-page__row">
+                            <span class="saved-dishes-page__name">@dish.Description</span>
+                            <div class="saved-dishes-page__actions">
+                                <button class="saved-dishes-page__icon-btn"
+                                        @onclick="() => StartEdit(dish)"
+                                        aria-label="@Localizer["SavedDishes_Edit", dish.Description]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                    </svg>
+                                </button>
+                                <button class="saved-dishes-page__icon-btn saved-dishes-page__icon-btn--danger"
+                                        @onclick="() => DeleteDishAsync(dish)"
+                                        aria-label="@Localizer["SavedDishes_Delete", dish.Description]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </li>
+            }
+        </ul>
+    }
+
+    @* Suggestions section — only shown when suggestions are available. *@
+    @if (_suggestions.Count > 0)
+    {
+        <div class="saved-dishes-page__suggestions">
+            <h2 class="saved-dishes-page__suggestions-title">@Localizer["SavedDishes_SuggestionsTitle"]</h2>
+            <ul class="saved-dishes-page__suggestions-list" aria-label="@Localizer["SavedDishes_SuggestionsTitle"]">
+                @foreach (var suggestion in _suggestions)
+                {
+                    <li class="saved-dishes-page__suggestion-item">
+                        <button class="saved-dishes-page__suggestion-btn" @onclick="() => PromoteSuggestionAsync(suggestion)">
+                            <span class="saved-dishes-page__suggestion-text">@suggestion.Description</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="saved-dishes-page__suggestion-icon">
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                        </button>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+
+    @* Explanation section — always visible. *@
+    <div class="saved-dishes-page__explanation">
+        <h2 class="saved-dishes-page__explanation-title">@Localizer["SavedDishes_ExplanationTitle"]</h2>
+        <p class="saved-dishes-page__explanation-text">@Localizer["SavedDishes_ExplanationCurrent"]</p>
+        <p class="saved-dishes-page__explanation-text saved-dishes-page__explanation-text--future">@Localizer["SavedDishes_ExplanationFuture"]</p>
+    </div>
+
+    @* Error toast. *@
+    @if (_errorMessage is not null)
+    {
+        <div class="toast toast--error" role="alert">
+            @_errorMessage
+        </div>
+    }
+</div>
+
+@code {
+    private List<SavedDishDto> _dishes = new();
+    private List<SavedDishSuggestionDto> _suggestions = new();
+    private bool _isLoading = true;
+    private bool _loadError;
+    private string? _errorMessage;
+
+    // Add form state.
+    private bool _showAddForm;
+    private string _newDishDescription = string.Empty;
+    private ElementReference _addInputRef;
+    private bool _shouldFocusAdd;
+
+    // Edit state.
+    private Guid? _editingDishId;
+    private string _editDescription = string.Empty;
+    private ElementReference _editInputRef;
+    private bool _shouldFocusEdit;
+
+    // Highlight animation state.
+    private Guid? _highlightedDishId;
+    private bool _shouldScrollToHighlighted;
+
+    private bool IsValidNewDescription => !string.IsNullOrWhiteSpace(_newDishDescription) && _newDishDescription.Trim().Length <= 100;
+
+    private bool IsValidEdit(string currentDescription)
+    {
+        var trimmed = _editDescription.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length > 100)
+            return false;
+        if (string.Equals(trimmed, currentDescription, StringComparison.Ordinal))
+            return false;
+        return true;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDishesAsync();
+        await LoadSuggestionsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldFocusAdd)
+        {
+            _shouldFocusAdd = false;
+            try { await _addInputRef.FocusAsync(); } catch { }
+        }
+
+        if (_shouldFocusEdit)
+        {
+            _shouldFocusEdit = false;
+            try { await _editInputRef.FocusAsync(); } catch { }
+        }
+
+        if (_shouldScrollToHighlighted && _highlightedDishId is not null)
+        {
+            _shouldScrollToHighlighted = false;
+            try
+            {
+                await JS.InvokeVoidAsync("eval", $"document.getElementById('dish-{_highlightedDishId}')?.scrollIntoView({{behavior:'smooth',block:'nearest'}})");
+            }
+            catch { }
+        }
+    }
+
+    private async Task LoadDishesAsync()
+    {
+        if (!ConnectivityService.IsOnline)
+        {
+            ShowError(Localizer["Error_RequiresInternet"]);
+            _isLoading = false;
+            _loadError = true;
+            return;
+        }
+
+        _isLoading = true;
+        _loadError = false;
+
+        try
+        {
+            var response = await Http.GetAsync("saved-dishes");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var dishes = await response.Content.ReadFromJsonAsync<List<SavedDishDto>>();
+                _dishes = dishes ?? new();
+            }
+            else
+            {
+                _loadError = true;
+            }
+        }
+        catch
+        {
+            _loadError = true;
+        }
+
+        _isLoading = false;
+    }
+
+    private async Task LoadSuggestionsAsync()
+    {
+        if (!ConnectivityService.IsOnline)
+            return;
+
+        try
+        {
+            var response = await Http.GetAsync("saved-dishes/suggestions");
+            if (response.IsSuccessStatusCode)
+            {
+                var suggestions = await response.Content.ReadFromJsonAsync<List<SavedDishSuggestionDto>>();
+                _suggestions = suggestions ?? new();
+            }
+        }
+        catch { }
+    }
+
+    private async Task PromoteSuggestionAsync(SavedDishSuggestionDto suggestion)
+    {
+        if (!ConnectivityService.IsOnline)
+        {
+            ShowError(Localizer["Error_RequiresInternet"]);
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("saved-dishes", new CreateSavedDishRequest(suggestion.Description));
+
+            if (response.IsSuccessStatusCode)
+            {
+                var newDish = await response.Content.ReadFromJsonAsync<SavedDishDto>();
+                _suggestions.RemoveAll(x => x.Description == suggestion.Description);
+
+                if (newDish is not null)
+                {
+                    // Insert at alphabetical position.
+                    var insertIndex = _dishes.FindIndex(x => string.Compare(x.Description, newDish.Description, StringComparison.OrdinalIgnoreCase) > 0);
+                    if (insertIndex < 0)
+                        _dishes.Add(newDish);
+                    else
+                        _dishes.Insert(insertIndex, newDish);
+
+                    // Highlight the new dish.
+                    _highlightedDishId = newDish.Id;
+                    _shouldScrollToHighlighted = true;
+                }
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                // Already saved (race condition) — remove from suggestions.
+                _suggestions.RemoveAll(x => x.Description == suggestion.Description);
+                ShowError(Localizer["SavedDishes_AlreadyExists"]);
+            }
+            else
+            {
+                ShowError(Localizer["SavedDishes_SuggestionError"]);
+            }
+        }
+        catch
+        {
+            ShowError(Localizer["SavedDishes_SuggestionError"]);
+        }
+    }
+
+    // --- Add dish ---
+
+    private void ToggleAddForm()
+    {
+        _showAddForm = !_showAddForm;
+        _newDishDescription = string.Empty;
+
+        if (_showAddForm)
+            _shouldFocusAdd = true;
+    }
+
+    private void CancelAdd()
+    {
+        _showAddForm = false;
+        _newDishDescription = string.Empty;
+    }
+
+    private async Task AddDishAsync()
+    {
+        if (!IsValidNewDescription)
+            return;
+
+        if (!ConnectivityService.IsOnline)
+        {
+            ShowError(Localizer["Error_RequiresInternet"]);
+            return;
+        }
+
+        var trimmedDescription = _newDishDescription.Trim();
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("saved-dishes", new CreateSavedDishRequest(trimmedDescription));
+
+            if (response.IsSuccessStatusCode)
+            {
+                var newDish = await response.Content.ReadFromJsonAsync<SavedDishDto>();
+                if (newDish is not null)
+                {
+                    _showAddForm = false;
+                    _newDishDescription = string.Empty;
+
+                    // Insert at the correct alphabetical position.
+                    var insertIndex = _dishes.FindIndex(x => string.Compare(x.Description, newDish.Description, StringComparison.OrdinalIgnoreCase) > 0);
+                    if (insertIndex < 0)
+                        _dishes.Add(newDish);
+                    else
+                        _dishes.Insert(insertIndex, newDish);
+
+                    // Trigger highlight animation.
+                    _highlightedDishId = newDish.Id;
+                    _shouldScrollToHighlighted = true;
+                }
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                ShowError(Localizer["SavedDishes_AlreadyExists"]);
+            }
+            else
+            {
+                ShowError(Localizer["SavedDishes_SaveError"]);
+            }
+        }
+        catch
+        {
+            ShowError(Localizer["SavedDishes_SaveError"]);
+        }
+    }
+
+    private async Task OnAddKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+            await AddDishAsync();
+        else if (args.Key == "Escape")
+            CancelAdd();
+    }
+
+    // --- Edit dish ---
+
+    private void StartEdit(SavedDishDto dish)
+    {
+        _editingDishId = dish.Id;
+        _editDescription = dish.Description;
+        _shouldFocusEdit = true;
+    }
+
+    private void CancelEdit()
+    {
+        _editingDishId = null;
+        _editDescription = string.Empty;
+    }
+
+    private async Task SaveEditAsync(SavedDishDto dish)
+    {
+        var trimmedDescription = _editDescription.Trim();
+
+        if (string.IsNullOrWhiteSpace(trimmedDescription) || trimmedDescription.Length > 100)
+            return;
+
+        if (!ConnectivityService.IsOnline)
+        {
+            ShowError(Localizer["Error_RequiresInternet"]);
+            return;
+        }
+
+        _editingDishId = null;
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"saved-dishes/{dish.Id}", new UpdateSavedDishRequest(trimmedDescription));
+
+            if (response.IsSuccessStatusCode)
+            {
+                var updatedDish = await response.Content.ReadFromJsonAsync<SavedDishDto>();
+                if (updatedDish is not null)
+                {
+                    // Remove the old entry and re-insert at the correct alphabetical position.
+                    _dishes.RemoveAll(x => x.Id == dish.Id);
+                    var insertIndex = _dishes.FindIndex(x => string.Compare(x.Description, updatedDish.Description, StringComparison.OrdinalIgnoreCase) > 0);
+                    if (insertIndex < 0)
+                        _dishes.Add(updatedDish);
+                    else
+                        _dishes.Insert(insertIndex, updatedDish);
+                }
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                ShowError(Localizer["SavedDishes_AlreadyExists"]);
+            }
+            else
+            {
+                ShowError(Localizer["SavedDishes_SaveError"]);
+            }
+        }
+        catch
+        {
+            ShowError(Localizer["SavedDishes_SaveError"]);
+        }
+    }
+
+    private async Task OnEditKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            var dish = _dishes.FirstOrDefault(x => x.Id == _editingDishId);
+            if (dish is not null)
+                await SaveEditAsync(dish);
+        }
+        else if (args.Key == "Escape")
+        {
+            CancelEdit();
+        }
+    }
+
+    // --- Delete dish ---
+
+    private async Task DeleteDishAsync(SavedDishDto dish)
+    {
+        if (!ConnectivityService.IsOnline)
+        {
+            ShowError(Localizer["Error_RequiresInternet"]);
+            return;
+        }
+
+        try
+        {
+            var response = await Http.DeleteAsync($"saved-dishes/{dish.Id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                _dishes.RemoveAll(x => x.Id == dish.Id);
+            }
+            else
+            {
+                ShowError(Localizer["SavedDishes_SaveError"]);
+            }
+        }
+        catch
+        {
+            ShowError(Localizer["SavedDishes_SaveError"]);
+        }
+    }
+
+    // --- Highlight animation ---
+
+    private void OnHighlightAnimationEnd(Guid dishId)
+    {
+        if (_highlightedDishId == dishId)
+            _highlightedDishId = null;
+    }
+
+    // --- Error toast ---
+
+    private void ShowError(string message)
+    {
+        _errorMessage = message;
+        _ = DismissErrorAsync();
+    }
+
+    private async Task DismissErrorAsync()
+    {
+        await Task.Delay(4000);
+        _errorMessage = null;
+        StateHasChanged();
+    }
+}

@@ -504,4 +504,55 @@
   <data name="Error_RequiresInternet" xml:space="preserve">
     <value>Deze actie vereist een internetverbinding.</value>
   </data>
+  <data name="SavedDishes_Title" xml:space="preserve">
+    <value>Opgeslagen gerechten</value>
+  </data>
+  <data name="Nav_SavedDishes" xml:space="preserve">
+    <value>Opgeslagen gerechten</value>
+  </data>
+  <data name="SavedDishes_AddButton" xml:space="preserve">
+    <value>Gerecht toevoegen</value>
+  </data>
+  <data name="SavedDishes_AddPlaceholder" xml:space="preserve">
+    <value>Naam nieuw gerecht</value>
+  </data>
+  <data name="SavedDishes_Edit" xml:space="preserve">
+    <value>Bewerk {0}</value>
+  </data>
+  <data name="SavedDishes_EditAriaLabel" xml:space="preserve">
+    <value>Nieuwe naam voor {0}</value>
+  </data>
+  <data name="SavedDishes_SaveEdit" xml:space="preserve">
+    <value>Naam opslaan</value>
+  </data>
+  <data name="SavedDishes_CancelEdit" xml:space="preserve">
+    <value>Bewerken annuleren</value>
+  </data>
+  <data name="SavedDishes_Delete" xml:space="preserve">
+    <value>Verwijder {0}</value>
+  </data>
+  <data name="SavedDishes_AlreadyExists" xml:space="preserve">
+    <value>Dit gerecht bestaat al.</value>
+  </data>
+  <data name="SavedDishes_SaveError" xml:space="preserve">
+    <value>Opslaan mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="SavedDishes_LoadError" xml:space="preserve">
+    <value>Gerechten laden mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="SavedDishes_ExplanationTitle" xml:space="preserve">
+    <value>Waarom gerechten opslaan?</value>
+  </data>
+  <data name="SavedDishes_ExplanationCurrent" xml:space="preserve">
+    <value>Sla gerechten op om ze snel te hergebruiken op het dagplan.</value>
+  </data>
+  <data name="SavedDishes_ExplanationFuture" xml:space="preserve">
+    <value>Binnenkort: bewerkingsgeschiedenis, delen met andere huishoudens, recepten toevoegen en statistieken bekijken.</value>
+  </data>
+  <data name="SavedDishes_SuggestionsTitle" xml:space="preserve">
+    <value>Suggesties</value>
+  </data>
+  <data name="SavedDishes_SuggestionError" xml:space="preserve">
+    <value>Toevoegen mislukt. Probeer het opnieuw.</value>
+  </data>
 </root>

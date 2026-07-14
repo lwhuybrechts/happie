@@ -1,0 +1,134 @@
+@using Happie.Shared.Contracts
+@inject IStringLocalizer<AppStrings> Localizer
+
+@if (_isOpen)
+{
+    <div class="saved-dish-modal__overlay" @onclick="Close" aria-hidden="true"></div>
+
+    <div class="saved-dish-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="saved-dish-modal-title">
+
+        <div class="saved-dish-modal__header">
+            <h2 id="saved-dish-modal-title" class="saved-dish-modal__title">@Localizer["SavedDish_ModalTitle"]</h2>
+            <button class="saved-dish-modal__close-btn"
+                    @onclick="Close"
+                    aria-label="@Localizer["NudgeModal_Close"]">
+                <span aria-hidden="true">✕</span>
+            </button>
+        </div>
+
+        <div class="saved-dish-modal__body">
+            @if (_promoteOption is not null)
+            {
+                <button class="saved-dish-modal__action-item saved-dish-modal__action-item--promote"
+                        @onclick="HandlePromote">
+                    @(string.Format(Localizer[_promoteLocalizationKey].Value, _promoteOption.Description))
+                </button>
+            }
+
+            @if (_sortedDishes.Count > 0)
+            {
+                <ul class="saved-dish-modal__list">
+                    @foreach (var dish in _sortedDishes)
+                    {
+                        <li class="saved-dish-modal__list-item">
+                            <button class="saved-dish-modal__dish-btn" @onclick="() => SelectDish(dish)">
+                                @dish.Description
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+            else if (_promoteOption is null)
+            {
+                <p class="saved-dish-modal__empty">@Localizer["SavedDish_EmptyState"]</p>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Callback invoked when the user selects a saved dish from the list or uses an existing match.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback<SavedDishDto> OnDishSelected { get; set; }
+
+    /// <summary>Callback invoked when the user promotes the current custom description to a saved dish.</summary>
+    [Parameter, EditorRequired]
+    public EventCallback<SavedDishDto> OnDishPromoted { get; set; }
+
+    private bool _isOpen;
+    private string _currentDescription = string.Empty;
+    private List<SavedDishDto> _sortedDishes = [];
+    private SavedDishDto? _promoteOption;
+    private string _promoteLocalizationKey = string.Empty;
+
+    /// <summary>Opens the modal with the current custom description and the list of active saved dishes.</summary>
+    public void Open(string currentDescription, IReadOnlyList<SavedDishDto> savedDishes)
+    {
+        _currentDescription = currentDescription;
+        _sortedDishes = savedDishes
+            .OrderBy(x => x.Description, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        DetermineTopAction();
+
+        _isOpen = true;
+        StateHasChanged();
+    }
+
+    /// <summary>Closes the modal without any action.</summary>
+    public void Close()
+    {
+        _isOpen = false;
+    }
+
+    private void DetermineTopAction()
+    {
+        _promoteOption = null;
+        _promoteLocalizationKey = string.Empty;
+
+        var trimmed = _currentDescription.Trim();
+
+        // No action if description is empty or exceeds 100 characters.
+        if (string.IsNullOrEmpty(trimmed) || trimmed.Length > 100)
+            return;
+
+        // Check if description matches an existing saved dish (case-insensitive).
+        var match = _sortedDishes.FirstOrDefault(x =>
+            string.Equals(x.Description.Trim(), trimmed, StringComparison.OrdinalIgnoreCase));
+
+        if (match is not null)
+        {
+            // "Use existing saved dish: {matched description}".
+            _promoteOption = match;
+            _promoteLocalizationKey = "SavedDish_UseExisting";
+        }
+        else
+        {
+            // "Add {description} to saved dishes".
+            _promoteOption = new SavedDishDto(Guid.Empty, trimmed);
+            _promoteLocalizationKey = "SavedDish_Promote";
+        }
+    }
+
+    private async Task HandlePromote()
+    {
+        if (_promoteOption is null)
+            return;
+
+        _isOpen = false;
+
+        if (_promoteLocalizationKey == "SavedDish_UseExisting")
+            await OnDishSelected.InvokeAsync(_promoteOption);
+        else
+            await OnDishPromoted.InvokeAsync(_promoteOption);
+    }
+
+    private async Task SelectDish(SavedDishDto dish)
+    {
+        _isOpen = false;
+        await OnDishSelected.InvokeAsync(dish);
+    }
+}
