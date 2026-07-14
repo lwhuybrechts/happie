@@ -58,6 +58,7 @@ builder.Services.AddSingleton<IDishRecordMapper, DishRecordMapper>();
 builder.Services.AddSingleton<ICommentMapper, CommentMapper>();
 builder.Services.AddSingleton<IDayHistoryEntryMapper, DayHistoryEntryMapper>();
 builder.Services.AddSingleton<IPushSubscriptionMapper, PushSubscriptionMapper>();
+builder.Services.AddSingleton<ISavedDishMapper, SavedDishMapper>();
 
 // Register all repositories as singletons.
 builder.Services.AddSingleton<IHouseholdRepository, HouseholdRepository>();
@@ -67,6 +68,7 @@ builder.Services.AddSingleton<IDishRepository, DishRepository>();
 builder.Services.AddSingleton<ICommentRepository, CommentRepository>();
 builder.Services.AddSingleton<IDayHistoryRepository, DayHistoryRepository>();
 builder.Services.AddSingleton<IPushSubscriptionRepository, PushSubscriptionRepository>();
+builder.Services.AddSingleton<ISavedDishRepository, SavedDishRepository>();
 
 // Register SentryOptions with startup validation.
 builder.Services
@@ -87,6 +89,9 @@ builder.Services.AddSingleton<IHousemateHandler, HousemateHandler>();
 
 // Register day handlers.
 builder.Services.AddSingleton<IDayHandler, DayHandler>();
+
+// Register saved dish handlers.
+builder.Services.AddSingleton<ISavedDishHandler, SavedDishHandler>();
 
 // Register the shared string resolver for server-side history and nudge translation resolution.
 builder.Services.AddSingleton<SharedStringResolver>();

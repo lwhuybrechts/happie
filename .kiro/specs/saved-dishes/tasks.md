@@ -36,8 +36,8 @@ This plan implements a household-level saved dishes collection with CRUD managem
     - **Property 1: SavedDish entity mapper round-trip**
     - **Validates: Requirements 1.1, 1.2**
 
-- [ ] 2. Implement `SavedDishHandler` business logic
-  - [~] 2.1 Create `ISavedDishHandler` / `SavedDishHandler`
+- [x] 2. Implement `SavedDishHandler` business logic
+  - [x] 2.1 Create `ISavedDishHandler` / `SavedDishHandler`
     - Implement `GetAllActiveAsync`: filter `IsDeleted == false`, sort alphabetically (case-insensitive)
     - Implement `CreateAsync`: validate description (1–100 chars, trimmed, not empty), check uniqueness (case-insensitive across active + soft-deleted), reactivate soft-deleted matches, create new if no match, trigger retroactive conversion
     - Implement `UpdateAsync`: validate description, check uniqueness excluding self, reject if target not found or soft-deleted
@@ -46,27 +46,27 @@ This plan implements a household-level saved dishes collection with CRUD managem
     - Register mapper, repositories, and handler as singletons in `Program.cs`
     - _Requirements: 1.3, 1.4, 1.5, 1.6, 3.2, 5.2, 5.3, 6.1, 6.5, 7.1, 7.2, 7.5, 11.1, 11.2, 11.4, 11.6_
 
-  - [ ]* 2.2 Write property test for create uniqueness and reactivation
+  - [x] 2.2 Write property test for create uniqueness and reactivation
     - **Property 3: Create enforces uniqueness and reactivates soft-deleted**
     - **Validates: Requirements 1.3, 1.4, 1.5, 6.5**
 
-  - [ ]* 2.3 Write property test for active list filtering and sorting
+  - [x] 2.3 Write property test for active list filtering and sorting
     - **Property 4: Active list excludes soft-deleted and is sorted alphabetically**
     - **Validates: Requirements 3.2, 6.2, 6.3**
 
-  - [ ]* 2.4 Write property test for suggestions computation
+  - [x] 2.4 Write property test for suggestions computation
     - **Property 5: Suggestions are distinct, unmatched, recent, and limited to 5**
     - **Validates: Requirements 5.2, 5.3**
 
-  - [ ]* 2.5 Write property test for retroactive conversion
+  - [x] 2.5 Write property test for retroactive conversion
     - **Property 6: Retroactive conversion links all matching DishRecords**
     - **Validates: Requirements 7.1, 7.2**
 
-  - [ ]* 2.6 Write property test for update rejection
+  - [x] 2.6 Write property test for update rejection
     - **Property 7: Update rejected when description unchanged**
     - **Validates: Requirements 11.1, 11.2**
 
-  - [ ]* 2.7 Write unit tests for `SavedDishHandler`
+  - [x] 2.7 Write unit tests for `SavedDishHandler`
     - Test all handler methods per the Testing Strategy in the design (CreateAsync, UpdateAsync, DeleteAsync, GetSuggestionsAsync edge cases)
     - _Requirements: 1.3, 1.4, 1.5, 1.6, 5.2, 5.3, 6.1, 11.1, 11.2, 11.6_
 
