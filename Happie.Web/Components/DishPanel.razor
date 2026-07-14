@@ -1,6 +1,7 @@
 @using Happie.Shared.Contracts
 @using Happie.Web.Services.Caching
 @inject ICachedApiClient CachedApi
+@inject HttpClient Http
 @inject IStringLocalizer<AppStrings> Localizer
 @inject IJSRuntime JS
 
@@ -59,15 +60,27 @@
     <div class="dish-panel__body @(HasDinnerTime && !_isEditing && !string.IsNullOrWhiteSpace(_committedValue) ? "dish-panel__body--has-time" : "")">
         @if (_isEditing)
         {
-            <input class="dish-panel__input"
-                   type="text"
-                   maxlength="100"
-                   placeholder="@Localizer["DishPanel_Placeholder"]"
-                   @bind="_editValue"
-                   @bind:event="oninput"
-                   @onkeydown="HandleKeyDownAsync"
-                   disabled="@_isSaving"
-                   aria-label="@Localizer["DishPanel_InputAriaLabel"]" />
+            <div class="dish-panel__input-row">
+                <input class="dish-panel__input @(_isSavedMode ? "dish-panel__input--saved" : "")"
+                       type="text"
+                       maxlength="100"
+                       placeholder="@Localizer["DishPanel_Placeholder"]"
+                       @bind="_editValue"
+                       @bind:event="oninput"
+                       @onkeydown="HandleKeyDownAsync"
+                       disabled="@(_isSaving || _isSavedMode)"
+                       aria-label="@Localizer["DishPanel_InputAriaLabel"]" />
+
+                <button class="dish-panel__mode-toggle @(_isSavedMode ? "dish-panel__mode-toggle--active" : "")"
+                        @onclick="HandleModeToggleAsync"
+                        disabled="@_isSaving"
+                        aria-label="@Localizer["DishPanel_ModeToggle"]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                    </svg>
+                </button>
+            </div>
 
             <div class="dish-panel__time-input-group">
                 <div class="dish-panel__time-header-row">
@@ -103,7 +116,18 @@
         else if (!string.IsNullOrWhiteSpace(_committedValue))
         {
             <div class="dish-panel__text-column">
-                <span class="dish-panel__dish-text">@_committedValue</span>
+                <span class="dish-panel__dish-text">
+                    @_committedValue
+                    @if (_committedSavedDishId is not null)
+                    {
+                        <span class="dish-panel__saved-indicator" aria-label="@Localizer["DishPanel_SavedDishIndicator"]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                            </svg>
+                        </span>
+                    }
+                </span>
                 @if (_lastEditorName is not null && Dish?.LastChangedAt is not null)
                 {
                     <span class="dish-panel__meta" title="@Dish.LastChangedAt.Value.ToLocalTime().ToString("HH:mm")">
@@ -140,6 +164,17 @@
     </div>
 }
 
+@if (_showPromoteError)
+{
+    <div class="dish-panel__toast" role="alert">
+        @_promoteErrorMessage
+    </div>
+}
+
+<SavedDishModal @ref="_savedDishModal"
+                OnDishSelected="HandleDishSelected"
+                OnDishPromoted="HandleDishPromoted" />
+
 @code {
     /// <summary>The date for which the dish is displayed, in yyyy-MM-dd format.</summary>
     [Parameter, EditorRequired]
@@ -162,21 +197,38 @@
     public EventCallback<string?> OnDishChanged { get; set; }
 
     private string _committedValue = string.Empty;
+    private Guid? _committedSavedDishId;
     private string _editValue = string.Empty;
     private string _editTimeValue = string.Empty;
     private string? _lastEditorName;
     private bool _isEditing;
     private bool _isSaving;
     private bool _showError;
+    private bool _showPromoteError;
+    private string _promoteErrorMessage = string.Empty;
     private bool _isAnimating;
     private ElementReference _panelRef;
+    private SavedDishModal _savedDishModal = default!;
+
+    // Mode toggle state.
+    private bool _isSavedMode;
+    private Guid? _selectedSavedDishId;
+    private string _selectedSavedDishDescription = string.Empty;
 
     private bool HasDinnerTime => Dish?.DinnerTimeHour is not null && Dish?.DinnerTimeMinute is not null;
 
     private bool _hasTimeValidationError => !IsTimeValueValid(_editTimeValue);
 
-    private bool HasUnsavedChanges =>
-        _editValue.Trim() != _committedValue || _editTimeValue != GetStoredTimeValue();
+    private bool HasUnsavedChanges
+    {
+        get
+        {
+            if (_isSavedMode)
+                return _selectedSavedDishId != _committedSavedDishId;
+
+            return _editValue.Trim() != _committedValue || _editTimeValue != GetStoredTimeValue();
+        }
+    }
 
     private string FormatDinnerTime() =>
         $"{Dish!.DinnerTimeHour:D2}:{Dish!.DinnerTimeMinute:D2}";
@@ -209,7 +261,10 @@
         // Don't overwrite the optimistic value while a save is in progress.
         // A background refresh could fire OnDayPlanUpdated with stale data during the PUT await.
         if (!_isSaving)
+        {
             _committedValue = Dish?.Description ?? string.Empty;
+            _committedSavedDishId = Dish?.SavedDishId;
+        }
 
         _lastEditorName = ResolveEditorName();
     }
@@ -228,12 +283,32 @@
         _editValue = _committedValue;
         _editTimeValue = GetStoredTimeValue();
         _showError = false;
+        _showPromoteError = false;
+
+        // Determine initial mode from the DishRecord's SavedDishId value.
+        if (_committedSavedDishId is not null)
+        {
+            _isSavedMode = true;
+            _selectedSavedDishId = _committedSavedDishId;
+            _selectedSavedDishDescription = _committedValue;
+            _editValue = _committedValue;
+        }
+        else
+        {
+            _isSavedMode = false;
+            _selectedSavedDishId = null;
+            _selectedSavedDishDescription = string.Empty;
+        }
+
         await AnimateHeightChangeAsync(() => _isEditing = true);
     }
 
     private async Task DiscardEdit()
     {
         _editTimeValue = GetStoredTimeValue();
+        _isSavedMode = _committedSavedDishId is not null;
+        _selectedSavedDishId = _committedSavedDishId;
+        _selectedSavedDishDescription = _committedSavedDishId is not null ? _committedValue : string.Empty;
         await AnimateHeightChangeAsync(() => _isEditing = false);
     }
 
@@ -272,14 +347,191 @@
             await DiscardEdit();
     }
 
+    private async Task HandleModeToggleAsync()
+    {
+        if (_isSavedMode)
+        {
+            // Switch from Saved_Mode to Custom_Mode: pre-fill with the saved dish description.
+            _isSavedMode = false;
+            _editValue = _selectedSavedDishDescription;
+            _selectedSavedDishId = null;
+            _selectedSavedDishDescription = string.Empty;
+        }
+        else
+        {
+            // Switch from Custom_Mode: open the SavedDishModal.
+            await OpenSavedDishModalAsync();
+        }
+    }
+
+    private async Task OpenSavedDishModalAsync()
+    {
+        _showPromoteError = false;
+
+        try
+        {
+            var response = await Http.GetAsync("saved-dishes");
+            if (response.IsSuccessStatusCode)
+            {
+                var dishes = await response.Content.ReadFromJsonAsync<SavedDishDto[]>() ?? [];
+                _savedDishModal.Open(_editValue, dishes);
+            }
+            else
+            {
+                _promoteErrorMessage = Localizer["SavedDish_LoadError"].Value;
+                _showPromoteError = true;
+            }
+        }
+        catch
+        {
+            _promoteErrorMessage = Localizer["SavedDish_LoadError"].Value;
+            _showPromoteError = true;
+        }
+    }
+
+    private void HandleDishSelected(SavedDishDto dish)
+    {
+        // Switch to Saved_Mode with the selected dish.
+        _isSavedMode = true;
+        _selectedSavedDishId = dish.Id;
+        _selectedSavedDishDescription = dish.Description;
+        _editValue = dish.Description;
+        StateHasChanged();
+    }
+
+    private async Task HandleDishPromoted(SavedDishDto dish)
+    {
+        // The promote option was selected — create the saved dish via API.
+        _showPromoteError = false;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("saved-dishes", new CreateSavedDishRequest(dish.Description));
+
+            if (response.IsSuccessStatusCode)
+            {
+                var created = await response.Content.ReadFromJsonAsync<SavedDishDto>();
+                if (created is not null)
+                {
+                    _isSavedMode = true;
+                    _selectedSavedDishId = created.Id;
+                    _selectedSavedDishDescription = created.Description;
+                    _editValue = created.Description;
+
+                    // Auto-save the DishRecord for the current day with the new SavedDishId.
+                    await AutoSaveAfterPromoteAsync(created);
+                }
+            }
+            else if ((int)response.StatusCode == 409)
+            {
+                // Dish already exists — find it and switch to saved mode.
+                _promoteErrorMessage = Localizer["SavedDish_PromoteAlreadyExists"].Value;
+                _showPromoteError = true;
+
+                // Try to fetch the list again to find the existing match.
+                var listResponse = await Http.GetAsync("saved-dishes");
+                if (listResponse.IsSuccessStatusCode)
+                {
+                    var dishes = await listResponse.Content.ReadFromJsonAsync<SavedDishDto[]>() ?? [];
+                    var match = dishes.FirstOrDefault(x =>
+                        string.Equals(x.Description.Trim(), dish.Description.Trim(), StringComparison.OrdinalIgnoreCase));
+                    if (match is not null)
+                    {
+                        _isSavedMode = true;
+                        _selectedSavedDishId = match.Id;
+                        _selectedSavedDishDescription = match.Description;
+                        _editValue = match.Description;
+
+                        // Auto-save the DishRecord for the current day with the existing SavedDishId.
+                        await AutoSaveAfterPromoteAsync(match);
+                    }
+                }
+            }
+            else
+            {
+                _promoteErrorMessage = Localizer["SavedDish_PromoteError"].Value;
+                _showPromoteError = true;
+            }
+        }
+        catch
+        {
+            _promoteErrorMessage = Localizer["SavedDish_PromoteError"].Value;
+            _showPromoteError = true;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task AutoSaveAfterPromoteAsync(SavedDishDto savedDish)
+    {
+        // Persist the DishRecord for the current day referencing the saved dish.
+        // Commit the new state optimistically.
+        _committedValue = savedDish.Description;
+        _committedSavedDishId = savedDish.Id;
+
+        // Collapse edit mode since the dish is now saved.
+        _isAnimating = true;
+        await JS.InvokeVoidAsync("happie.captureHeight", _panelRef);
+        _isEditing = false;
+        StateHasChanged();
+        await Task.Yield();
+        await JS.InvokeVoidAsync("happie.animateToContentHeight", _panelRef);
+        _ = Task.Delay(320).ContinueWith(_ =>
+        {
+            _isAnimating = false;
+            InvokeAsync(StateHasChanged);
+        });
+
+        // Preserve current dinner time when auto-saving after promote.
+        int? dinnerTimeHour = null;
+        int? dinnerTimeMinute = null;
+
+        if (!string.IsNullOrEmpty(_editTimeValue))
+        {
+            var timeParts = _editTimeValue.Split(':');
+            dinnerTimeHour = int.Parse(timeParts[0]);
+            dinnerTimeMinute = int.Parse(timeParts[1]);
+        }
+        else if (HasDinnerTime)
+        {
+            dinnerTimeHour = Dish!.DinnerTimeHour;
+            dinnerTimeMinute = Dish!.DinnerTimeMinute;
+        }
+
+        var timezoneOffsetMinutes = (int)DateTimeOffset.Now.Offset.TotalMinutes;
+
+        // Save through CachedApiClient with SavedDishId and resolved description for cache.
+        var success = await CachedApi.SaveDishAsync(Date, savedDish.Description, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes, savedDish.Id, savedDish.Description);
+
+        if (!success)
+        {
+            // Rollback on failure — remain in edit mode with error shown.
+            _committedValue = Dish?.Description ?? string.Empty;
+            _committedSavedDishId = Dish?.SavedDishId;
+            _showError = true;
+        }
+        else
+        {
+            // Auto-chef assignment after promote: if no chef is set, assign acting housemate.
+            var anyChef = Attendance.Any(x => x.IsChef);
+            if (!anyChef)
+                await CachedApi.SaveChefStatusAsync(Date, ActingHousemateId, true);
+
+            await OnDishChanged.InvokeAsync(savedDish.Description);
+        }
+    }
+
     private async Task SaveAsync()
     {
         var trimmed = _editValue.Trim();
 
         // Optimistic update: commit the new value immediately.
         var previousValue = _committedValue;
+        var previousSavedDishId = _committedSavedDishId;
         _committedValue = trimmed;
+        _committedSavedDishId = _isSavedMode ? _selectedSavedDishId : null;
         _showError = false;
+        _showPromoteError = false;
         _isSaving = true;
 
         // Animate the collapse from edit mode to read mode.
@@ -297,14 +549,13 @@
 
         bool success;
 
-        if (string.IsNullOrEmpty(trimmed))
+        if (string.IsNullOrEmpty(trimmed) && !_isSavedMode)
         {
             // Clear the dish.
             success = await CachedApi.DeleteDishAsync(Date);
         }
         else
         {
-            // Parse dinner time from the edit input.
             int? dinnerTimeHour = null;
             int? dinnerTimeMinute = null;
 
@@ -317,7 +568,16 @@
 
             var timezoneOffsetMinutes = (int)DateTimeOffset.Now.Offset.TotalMinutes;
 
-            success = await CachedApi.SaveDishAsync(Date, trimmed, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes);
+            if (_isSavedMode)
+            {
+                // Saved mode: send SavedDishId with null description, include resolved description for cache.
+                success = await CachedApi.SaveDishAsync(Date, _selectedSavedDishDescription, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes, _selectedSavedDishId, _selectedSavedDishDescription);
+            }
+            else
+            {
+                // Custom mode: send description with null SavedDishId (existing behavior).
+                success = await CachedApi.SaveDishAsync(Date, trimmed, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes);
+            }
         }
 
         _isSaving = false;
@@ -326,6 +586,7 @@
         {
             // Rollback to the previous value on failure.
             _committedValue = previousValue;
+            _committedSavedDishId = previousSavedDishId;
             _showError = true;
         }
         else

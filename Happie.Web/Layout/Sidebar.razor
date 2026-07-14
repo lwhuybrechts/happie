@@ -32,6 +32,13 @@
                 </svg>
                 @Localizer["Nav_Calendar"]
             </a>
+            <a class="sidebar__nav-item @(IsActive("saved-dishes") ? "sidebar__nav-item--active" : "")"
+               href="/saved-dishes" @onclick:preventDefault @onclick="NavigateToSavedDishes">
+                <svg class="sidebar__nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                </svg>
+                @Localizer["Nav_SavedDishes"]
+            </a>
             <a class="sidebar__nav-item @(IsActive("housemates") ? "sidebar__nav-item--active" : "")"
                href="/housemates" @onclick:preventDefault @onclick="NavigateToHousemates">
                 <svg class="sidebar__nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -93,6 +100,7 @@
         {
             "menu" => relativePath.StartsWith("day/"),
             "calendar" => relativePath.StartsWith("calendar"),
+            "saved-dishes" => relativePath.StartsWith("saved-dishes"),
             "housemates" => relativePath.StartsWith("housemates"),
             _ => false
         };
@@ -108,6 +116,11 @@
     private void NavigateToHousemates()
     {
         NavigationManager.NavigateTo("/housemates");
+    }
+
+    private void NavigateToSavedDishes()
+    {
+        NavigationManager.NavigateTo("/saved-dishes");
     }
 
     private void NavigateToCalendar()

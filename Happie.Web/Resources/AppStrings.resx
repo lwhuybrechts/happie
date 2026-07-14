@@ -555,4 +555,31 @@
   <data name="SavedDishes_SuggestionError" xml:space="preserve">
     <value>Toevoegen mislukt. Probeer het opnieuw.</value>
   </data>
+  <data name="DishPanel_ModeToggle" xml:space="preserve">
+    <value>Wissel tussen eigen gerecht en opgeslagen gerecht</value>
+  </data>
+  <data name="DishPanel_SavedDishIndicator" xml:space="preserve">
+    <value>Opgeslagen gerecht</value>
+  </data>
+  <data name="SavedDish_Promote" xml:space="preserve">
+    <value>Voeg {0} toe aan opgeslagen gerechten</value>
+  </data>
+  <data name="SavedDish_UseExisting" xml:space="preserve">
+    <value>Gebruik bestaand opgeslagen gerecht: {0}</value>
+  </data>
+  <data name="SavedDish_EmptyState" xml:space="preserve">
+    <value>Geen opgeslagen gerechten beschikbaar.</value>
+  </data>
+  <data name="SavedDish_PromoteAlreadyExists" xml:space="preserve">
+    <value>Dit gerecht is al opgeslagen.</value>
+  </data>
+  <data name="SavedDish_PromoteError" xml:space="preserve">
+    <value>Opslaan mislukt. Probeer het opnieuw.</value>
+  </data>
+  <data name="SavedDish_ModalTitle" xml:space="preserve">
+    <value>Kies een opgeslagen gerecht</value>
+  </data>
+  <data name="SavedDish_LoadError" xml:space="preserve">
+    <value>Gerechten laden mislukt.</value>
+  </data>
 </root>

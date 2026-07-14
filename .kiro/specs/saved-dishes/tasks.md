@@ -142,7 +142,7 @@ This plan implements a household-level saved dishes collection with CRUD managem
     - Include: page title, add button, edit/delete labels, error messages, explanation text, suggestion labels, offline error
     - _Requirements: 3.14, 4.5, 5.6, 13.1, 14.4_
 
-- [ ] 7. Frontend — DishPanel mode toggle and SavedDishModal
+- [x] 7. Frontend — DishPanel mode toggle and SavedDishModal
   - [x] 7.1 Create `SavedDishModal` component
     - Create `Happie.Web/Components/SavedDishModal.razor`
     - Modal overlay with `role="dialog"`, z-index 1100/1101
@@ -153,7 +153,7 @@ This plan implements a household-level saved dishes collection with CRUD managem
     - Add to swipe-guard selector in `index.html`
     - _Requirements: 8.3, 8.4, 8.5, 16.1, 16.2, 16.3, 16.7_
 
-  - [~] 7.2 Extend `DishPanel` with Mode_Toggle
+  - [x] 7.2 Extend `DishPanel` with Mode_Toggle
     - Add Mode_Toggle button adjacent to dish input on right side
     - Custom_Mode → activating toggle opens SavedDishModal
     - Saved_Mode → activating toggle switches back to Custom_Mode (pre-fill description)
@@ -162,41 +162,41 @@ This plan implements a household-level saved dishes collection with CRUD managem
     - Handle empty saved dishes state (localized empty message)
     - _Requirements: 8.1–8.10, 10.1–10.5_
 
-  - [~] 7.3 Implement promote flow from DishPanel
+  - [x] 7.3 Implement promote flow from DishPanel
     - On Promote_Option selection: `POST /api/saved-dishes`, switch to Saved_Mode on success
     - On 409: show localized message, switch to Saved_Mode with existing match
     - On network error: show localized error, remain in Custom_Mode
     - Save DishRecord with `SavedDishId` after successful promote
     - _Requirements: 16.3, 16.4, 16.5, 16.6_
 
-  - [~] 7.4 Implement saved-mode dish save through CachedApiClient
+  - [x] 7.4 Implement saved-mode dish save through CachedApiClient
     - Extend `CachedApiClient.SaveDishAsync` to accept optional `SavedDishId`
     - In saved mode: send `SavedDishId` with null description
     - Optimistic update includes resolved description in cached `DishDto`
     - Supports offline queueing via existing CachedApiClient mechanism
     - _Requirements: 9.1, 9.2, 9.4, 9.5, 13.2, 13.3, 13.4_
 
-  - [~] 7.5 Add localization keys for DishPanel and SavedDishModal
+  - [x] 7.5 Add localization keys for DishPanel and SavedDishModal
     - Add keys for mode toggle, saved dish indicator, promote option, empty state, error messages
     - Add `Nav_SavedDishes` key for navigation
     - _Requirements: 10.4, 14.4, 16.1_
 
-- [ ] 8. Frontend — Navigation and visual indicator
-  - [~] 8.1 Add "Saved Dishes" to NavMenu
+- [x] 8. Frontend — Navigation and visual indicator
+  - [x] 8.1 Add "Saved Dishes" to NavMenu
     - Position as third item: Calendar → Saved Dishes → Housemates
     - Route to `/saved-dishes`
     - Active state when route starts with `saved-dishes`
     - `aria-label` via `IStringLocalizer<AppStrings>` with `Nav_SavedDishes` key
     - _Requirements: 14.1, 14.2, 14.3, 14.4_
 
-  - [~] 8.2 Add saved dish visual indicator in DishPanel read mode
+  - [x] 8.2 Add saved dish visual indicator in DishPanel read mode
     - Display icon/badge when `SavedDishId` is non-null
     - Minimum 3:1 contrast ratio against both light and dark backgrounds
     - Include accessible `aria-label` via `IStringLocalizer<AppStrings>`
     - No indicator when `SavedDishId` is null (existing behavior)
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-- [~] 9. Checkpoint - Ensure all tests pass
+- [x] 9. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 10. Future feature prompt documents

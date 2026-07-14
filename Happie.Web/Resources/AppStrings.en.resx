@@ -555,4 +555,31 @@
   <data name="SavedDishes_SuggestionError" xml:space="preserve">
     <value>Failed to add. Please try again.</value>
   </data>
+  <data name="DishPanel_ModeToggle" xml:space="preserve">
+    <value>Switch between custom dish and saved dish</value>
+  </data>
+  <data name="DishPanel_SavedDishIndicator" xml:space="preserve">
+    <value>Saved dish</value>
+  </data>
+  <data name="SavedDish_Promote" xml:space="preserve">
+    <value>Add {0} to saved dishes</value>
+  </data>
+  <data name="SavedDish_UseExisting" xml:space="preserve">
+    <value>Use existing saved dish: {0}</value>
+  </data>
+  <data name="SavedDish_EmptyState" xml:space="preserve">
+    <value>No saved dishes available.</value>
+  </data>
+  <data name="SavedDish_PromoteAlreadyExists" xml:space="preserve">
+    <value>This dish is already saved.</value>
+  </data>
+  <data name="SavedDish_PromoteError" xml:space="preserve">
+    <value>Failed to save. Please try again.</value>
+  </data>
+  <data name="SavedDish_ModalTitle" xml:space="preserve">
+    <value>Choose a saved dish</value>
+  </data>
+  <data name="SavedDish_LoadError" xml:space="preserve">
+    <value>Failed to load dishes.</value>
+  </data>
 </root>
