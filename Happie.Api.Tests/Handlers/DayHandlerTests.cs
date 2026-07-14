@@ -18,6 +18,7 @@ public class DayHandlerTests
     private readonly Mock<ICommentRepository> _commentRepositoryMock = new();
     private readonly Mock<IDayHistoryRepository> _dayHistoryRepositoryMock = new();
     private readonly Mock<IPushHandler> _pushHandlerMock = new();
+    private readonly Mock<ISavedDishRepository> _savedDishRepositoryMock = new();
     private readonly DayHandler _sut;
 
     /// <summary>Initializes a new instance of <see cref="DayHandlerTests"/> with mocked dependencies.</summary>
@@ -33,7 +34,8 @@ public class DayHandlerTests
             _dishRepositoryMock.Object,
             _commentRepositoryMock.Object,
             _dayHistoryRepositoryMock.Object,
-            _pushHandlerMock.Object);
+            _pushHandlerMock.Object,
+            _savedDishRepositoryMock.Object);
     }
 
     /// <summary>A dish description of exactly 100 characters is accepted and saved.</summary>
@@ -50,7 +52,7 @@ public class DayHandlerTests
         SetupHistoryAdd();
 
         // Act.
-        await _sut.UpsertDishAsync(householdId, date, description, null, 0, actingHousemateId);
+        await _sut.UpsertDishAsync(householdId, date, description, null, null, 0, actingHousemateId);
 
         // Assert.
         _dishRepositoryMock.Verify(
@@ -312,7 +314,7 @@ public class DayHandlerTests
         SetupHistoryAddWithCapture(entry => capturedEntry = entry);
 
         // Act.
-        await _sut.UpsertDishAsync(householdId, date, description, null, 0, actingHousemateId);
+        await _sut.UpsertDishAsync(householdId, date, description, null, null, 0, actingHousemateId);
 
         // Assert.
         Assert.NotNull(capturedEntry);
@@ -514,6 +516,117 @@ public class DayHandlerTests
         var resolvedParams = JsonSerializer.Deserialize<Dictionary<string, string>>(historyDto.Parameters)!;
         Assert.Equal("Alice", resolvedParams["name"]);
         Assert.Equal("EatingIn", resolvedParams["status"]);
+    }
+
+    /// <summary>When the dish has a SavedDishId, the description is resolved from the saved dish.</summary>
+    [Fact]
+    public async Task GetDayPlanAsync_DishWithSavedDishId_ResolvesFromSavedDish()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var savedDishId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var savedDish = new SavedDish(savedDishId, householdId, "Spaghetti Bolognese", false);
+        var dishRecord = new DishRecord(householdId, date, string.Empty, housemateId, DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow, savedDishId);
+
+        SetupGetAllHousemates(householdId, new List<Housemate> { CreateHousemate(householdId, housemateId) });
+        SetupGetAttendanceByDate(householdId, date, new List<AttendanceRecord>());
+        SetupGetDish(householdId, date, dishRecord);
+        SetupGetCommentsByDate(householdId, date, new List<Comment>());
+        SetupGetHistoryByDate(householdId, date, new List<DayHistoryEntry>());
+        SetupGetSavedDish(householdId, savedDishId, savedDish);
+
+        // Act.
+        var result = await _sut.GetDayPlanAsync(householdId, date);
+
+        // Assert.
+        Assert.Equal(savedDish.Description, result.Dish!.Description);
+        Assert.Equal(savedDishId, result.Dish.SavedDishId);
+    }
+
+    /// <summary>When the dish has a null SavedDishId, the own description is used.</summary>
+    [Fact]
+    public async Task GetDayPlanAsync_DishWithNullSavedDishId_UsesOwnDescription()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var dishRecord = new DishRecord(householdId, date, "Custom Dish", housemateId, DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow, null);
+
+        SetupGetAllHousemates(householdId, new List<Housemate> { CreateHousemate(householdId, housemateId) });
+        SetupGetAttendanceByDate(householdId, date, new List<AttendanceRecord>());
+        SetupGetDish(householdId, date, dishRecord);
+        SetupGetCommentsByDate(householdId, date, new List<Comment>());
+        SetupGetHistoryByDate(householdId, date, new List<DayHistoryEntry>());
+
+        // Act.
+        var result = await _sut.GetDayPlanAsync(householdId, date);
+
+        // Assert.
+        Assert.Equal("Custom Dish", result.Dish!.Description);
+        Assert.Null(result.Dish.SavedDishId);
+    }
+
+    /// <summary>When the dish references a SavedDishId that does not exist, falls back to own description and returns null SavedDishId.</summary>
+    [Fact]
+    public async Task GetDayPlanAsync_DishWithOrphanedSavedDishId_FallsBackToOwnDescription()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var orphanedSavedDishId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var dishRecord = new DishRecord(householdId, date, "Fallback Description", housemateId, DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow, orphanedSavedDishId);
+
+        SetupGetAllHousemates(householdId, new List<Housemate> { CreateHousemate(householdId, housemateId) });
+        SetupGetAttendanceByDate(householdId, date, new List<AttendanceRecord>());
+        SetupGetDish(householdId, date, dishRecord);
+        SetupGetCommentsByDate(householdId, date, new List<Comment>());
+        SetupGetHistoryByDate(householdId, date, new List<DayHistoryEntry>());
+        SetupGetSavedDish(householdId, orphanedSavedDishId, null);
+
+        // Act.
+        var result = await _sut.GetDayPlanAsync(householdId, date);
+
+        // Assert.
+        Assert.Equal("Fallback Description", result.Dish!.Description);
+        Assert.Null(result.Dish.SavedDishId);
+    }
+
+    /// <summary>When the dish references a soft-deleted saved dish, the description is still resolved from it.</summary>
+    [Fact]
+    public async Task GetDayPlanAsync_DishWithSoftDeletedSavedDishId_ResolvesFromSoftDeleted()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var savedDishId = Guid.NewGuid();
+        var date = new DateOnly(2025, 7, 15);
+        var savedDish = new SavedDish(savedDishId, householdId, "Deleted Dish Name", true);
+        var dishRecord = new DishRecord(householdId, date, string.Empty, housemateId, DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow, savedDishId);
+
+        SetupGetAllHousemates(householdId, new List<Housemate> { CreateHousemate(householdId, housemateId) });
+        SetupGetAttendanceByDate(householdId, date, new List<AttendanceRecord>());
+        SetupGetDish(householdId, date, dishRecord);
+        SetupGetCommentsByDate(householdId, date, new List<Comment>());
+        SetupGetHistoryByDate(householdId, date, new List<DayHistoryEntry>());
+        SetupGetSavedDish(householdId, savedDishId, savedDish);
+
+        // Act.
+        var result = await _sut.GetDayPlanAsync(householdId, date);
+
+        // Assert.
+        Assert.Equal(savedDish.Description, result.Dish!.Description);
+        Assert.Equal(savedDishId, result.Dish.SavedDishId);
+    }
+
+    private void SetupGetSavedDish(Guid householdId, Guid savedDishId, SavedDish? returns)
+    {
+        _savedDishRepositoryMock
+            .Setup(x => x.GetAsync(householdId, savedDishId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(returns);
     }
 
     private void SetupGetHousemate(Guid householdId, Guid housemateId, Housemate? returns)

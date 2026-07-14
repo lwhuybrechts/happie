@@ -70,16 +70,16 @@ This plan implements a household-level saved dishes collection with CRUD managem
     - Test all handler methods per the Testing Strategy in the design (CreateAsync, UpdateAsync, DeleteAsync, GetSuggestionsAsync edge cases)
     - _Requirements: 1.3, 1.4, 1.5, 1.6, 5.2, 5.3, 6.1, 11.1, 11.2, 11.6_
 
-- [~] 3. Checkpoint - Ensure all tests pass
+- [x] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Implement `SavedDishesFunction` API endpoints and extend `DaysFunction`
-  - [~] 4.1 Create shared contracts
+- [x] 4. Implement `SavedDishesFunction` API endpoints and extend `DaysFunction`
+  - [x] 4.1 Create shared contracts
     - Create `Happie.Shared/Contracts/SavedDishDto.cs`, `CreateSavedDishRequest.cs`, `UpdateSavedDishRequest.cs`, `SavedDishSuggestionDto.cs`
     - Add `DishAlreadyExists` constant to `ApiErrorCodes.cs`
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-  - [~] 4.2 Create `SavedDishesFunction`
+  - [x] 4.2 Create `SavedDishesFunction`
     - Implement `GET /api/saved-dishes` → returns active saved dishes sorted alphabetically
     - Implement `POST /api/saved-dishes` → creates/reactivates, returns 201/409/422
     - Implement `PUT /api/saved-dishes/{id}` → updates description, returns 200/400/404/409/422
@@ -88,21 +88,21 @@ This plan implements a household-level saved dishes collection with CRUD managem
     - Use `RouteParser` for GUID validation, `RequestValidator` for body validation
     - _Requirements: 12.1–12.10_
 
-  - [~] 4.3 Extend `DayHandler` with description resolution
+  - [x] 4.3 Extend `DayHandler` with description resolution
     - In `GetDayPlanAsync`: when `DishRecord.SavedDishId` is non-null, resolve description from SavedDish; fall back to own description if not found
     - Extend `UpsertDishAsync` to accept optional `SavedDishId`; validate mutual exclusion (both set → 422, both null/empty → delete)
     - Update `DishDto` and `UpdateDishRequest` contracts with `SavedDishId` field
     - _Requirements: 2.2, 2.3, 2.5, 2.6, 2.7, 9.1, 9.2, 9.3, 9.5, 9.6, 9.7_
 
-  - [ ]* 4.4 Write property test for description resolution
+  - [x] 4.4 Write property test for description resolution
     - **Property 2: Description resolution correctness**
     - **Validates: Requirements 2.2, 2.3, 2.5, 2.6**
 
-  - [ ]* 4.5 Write property test for dish save mutual exclusion
+  - [x] 4.5 Write property test for dish save mutual exclusion
     - **Property 8: Dish save mutual exclusion**
     - **Validates: Requirements 9.6, 9.7**
 
-  - [ ]* 4.6 Write unit tests for `SavedDishesFunction` and `DayHandler` extensions
+  - [x] 4.6 Write unit tests for `SavedDishesFunction` and `DayHandler` extensions
     - Test function endpoint validation (invalid GUID, invalid body, etc.)
     - Test DayHandler description resolution (with/without SavedDishId, orphaned reference, soft-deleted reference)
     - Test DishRecordMapper extension for SavedDishId (Empty ↔ null mapping)
@@ -207,9 +207,6 @@ This plan implements a household-level saved dishes collection with CRUD managem
     - Create `prompt-statistics.md` describing per-dish frequency, per-housemate attribution, time ranges
     - Each document: one-paragraph summary, user story, key behaviors, affected components
     - _Requirements: 15.1–15.6_
-
-- [~] 11. Final checkpoint - Ensure all tests pass
-  - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
 

@@ -24,6 +24,9 @@ public static class ApiErrorCodes
     /// <summary>The resource has been modified since the specified timestamp.</summary>
     public const string Conflict = "CONFLICT";
 
+    /// <summary>A saved dish with the same description already exists in the household.</summary>
+    public const string DishAlreadyExists = "DISH_ALREADY_EXISTS";
+
     /// <summary>An unexpected server-side error occurred.</summary>
     public const string InternalError = "INTERNAL_ERROR";
 }

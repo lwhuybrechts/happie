@@ -49,7 +49,7 @@ public class DaysFunctionTests
                 var householdId = Guid.NewGuid();
                 var actingHousemateId = Guid.NewGuid();
                 var context = CreateFunctionContext(householdId, actingHousemateId);
-                var request = HttpRequestFactory.Create(new UpdateDishRequest(description, null, null, 0));
+                var request = HttpRequestFactory.Create(new UpdateDishRequest(description, null, null, 0, null));
 
                 // Act.
                 var result = await _sut.PutDishAsync(request, "2025-07-15", context, CancellationToken.None);
@@ -79,11 +79,11 @@ public class DaysFunctionTests
                 var householdId = Guid.NewGuid();
                 var actingHousemateId = Guid.NewGuid();
                 var context = CreateFunctionContext(householdId, actingHousemateId);
-                var request = HttpRequestFactory.Create(new UpdateDishRequest(description, null, null, 0));
+                var request = HttpRequestFactory.Create(new UpdateDishRequest(description, null, null, 0, null));
 
                 _dayHandlerMock
-                    .Setup(x => x.UpsertDishAsync(householdId, It.IsAny<DateOnly>(), It.IsAny<string>(), It.IsAny<TimeOnly?>(), It.IsAny<int>(), actingHousemateId, It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
+                    .Setup(x => x.UpsertDishAsync(householdId, It.IsAny<DateOnly>(), It.IsAny<string?>(), It.IsAny<Guid?>(), It.IsAny<TimeOnly?>(), It.IsAny<int>(), actingHousemateId, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(Happie.Api.Results.DishUpsertResult.Success);
 
                 // Act.
                 var result = await _sut.PutDishAsync(request, "2025-07-15", context, CancellationToken.None);

@@ -7,10 +7,12 @@ namespace Happie.Shared.Contracts;
 public record UpdateDishRequest(
     [property: JsonPropertyName("description")]
     [property: MaxLength(100, ErrorMessage = "Dish description must be at most 100 characters.")]
-    string Description,
+    string? Description,
     [property: JsonPropertyName("dinnerTimeHour")]
     int? DinnerTimeHour,
     [property: JsonPropertyName("dinnerTimeMinute")]
     int? DinnerTimeMinute,
     [property: JsonPropertyName("timezoneOffsetMinutes")]
-    int TimezoneOffsetMinutes);
+    int TimezoneOffsetMinutes,
+    [property: JsonPropertyName("savedDishId")]
+    Guid? SavedDishId);

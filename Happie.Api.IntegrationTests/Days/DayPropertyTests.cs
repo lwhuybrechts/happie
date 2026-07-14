@@ -21,6 +21,7 @@ public class DayPropertyTests
     private readonly IDishRepository _dishRepository;
     private readonly ICommentRepository _commentRepository;
     private readonly IDayHistoryRepository _dayHistoryRepository;
+    private readonly ISavedDishRepository _savedDishRepository;
     private readonly DayHandler _sut;
 
     /// <summary>Initializes a new instance of <see cref="DayPropertyTests"/> and truncates all relevant tables.</summary>
@@ -36,6 +37,7 @@ public class DayPropertyTests
         TableHelper.TruncateTable(_tableServiceClient, "DishRecords");
         TableHelper.TruncateTable(_tableServiceClient, "Comments");
         TableHelper.TruncateTable(_tableServiceClient, "DayHistory");
+        TableHelper.TruncateTable(_tableServiceClient, "SavedDishes");
 
         var storageClient = new TableStorageClient(_tableServiceClient);
 
@@ -44,6 +46,7 @@ public class DayPropertyTests
         _dishRepository = new DishRepository(storageClient, new DishRecordMapper());
         _commentRepository = new CommentRepository(storageClient, new CommentMapper());
         _dayHistoryRepository = new DayHistoryRepository(storageClient, new DayHistoryEntryMapper());
+        _savedDishRepository = new SavedDishRepository(storageClient, new SavedDishMapper());
 
         _sut = new DayHandler(
             _housemateRepository,
@@ -51,7 +54,8 @@ public class DayPropertyTests
             _dishRepository,
             _commentRepository,
             _dayHistoryRepository,
-            new NoOpPushHandler());
+            new NoOpPushHandler(),
+            _savedDishRepository);
     }
 
     // Feature: happie, Property 10: Dish length validation
@@ -77,7 +81,7 @@ public class DayPropertyTests
                 await _housemateRepository.UpsertAsync(housemate);
 
                 // Act.
-                await _sut.UpsertDishAsync(householdId, date, description, null, 0, housemateId);
+                await _sut.UpsertDishAsync(householdId, date, description, null, null, 0, housemateId);
                 var fetched = await _dishRepository.GetAsync(householdId, date);
 
                 // Clean up.
@@ -110,7 +114,7 @@ public class DayPropertyTests
                 await _housemateRepository.UpsertAsync(housemate);
 
                 // Act.
-                await _sut.UpsertDishAsync(householdId, date, description, null, 0, housemateId);
+                await _sut.UpsertDishAsync(householdId, date, description, null, null, 0, housemateId);
                 await _sut.DeleteDishAsync(householdId, date, housemateId);
 
                 var dayPlan = await _sut.GetDayPlanAsync(householdId, date);

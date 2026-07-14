@@ -1,5 +1,6 @@
 using Happie.Shared.Contracts;
 using Happie.Api.Domain;
+using Happie.Api.Results;
 using Happie.Shared.Domain;
 
 namespace Happie.Api.Handlers;
@@ -21,9 +22,10 @@ public interface IDayHandler
     Task<bool> UpsertAttendanceAsync(Guid householdId, DateOnly date, Guid housemateId, AttendanceStatus status, Guid actingHousemateId, CancellationToken ct = default);
 
     /// <summary>
-    /// Upserts the dish description for a household on a given date and writes a history entry.
+    /// Upserts the dish for a household on a given date and writes a history entry.
+    /// Returns the outcome of the operation.
     /// </summary>
-    Task UpsertDishAsync(Guid householdId, DateOnly date, string description, TimeOnly? dinnerTime, int timezoneOffsetMinutes, Guid actingHousemateId, CancellationToken ct = default);
+    Task<DishUpsertResult> UpsertDishAsync(Guid householdId, DateOnly date, string? description, Guid? savedDishId, TimeOnly? dinnerTime, int timezoneOffsetMinutes, Guid actingHousemateId, CancellationToken ct = default);
 
     /// <summary>
     /// Deletes the dish for a household on a given date and writes a history entry.

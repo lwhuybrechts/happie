@@ -2,6 +2,7 @@ using Happie.Api.Constants;
 using Happie.Api.Handlers;
 using Happie.Api.Http;
 using Happie.Api.Infrastructure.Repositories;
+using Happie.Api.Results;
 using Happie.Shared.Contracts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -149,10 +150,20 @@ public class DaysFunction
         if (conflictResult is not null)
             return conflictResult;
 
-        await _dayHandler.UpsertDishAsync(householdId, parsedDate, readResult.Body.Description.Trim(),
+        var description = readResult.Body.Description?.Trim();
+        var savedDishId = readResult.Body.SavedDishId;
+
+        var result = await _dayHandler.UpsertDishAsync(householdId, parsedDate, description, savedDishId,
             dinnerTime, readResult.Body.TimezoneOffsetMinutes, actingHousemateId, cancellationToken);
 
-        return new NoContentResult();
+        return result switch
+        {
+            DishUpsertResult.Success => new NoContentResult(),
+            DishUpsertResult.Deleted => new NoContentResult(),
+            DishUpsertResult.ValidationError => new UnprocessableEntityObjectResult(new ApiErrorResponse("Cannot provide both savedDishId and description.", ApiErrorCodes.ValidationError)),
+            DishUpsertResult.SavedDishNotFound => new UnprocessableEntityObjectResult(new ApiErrorResponse("Referenced saved dish not found.", ApiErrorCodes.ValidationError)),
+            _ => throw new InvalidOperationException($"Unhandled {nameof(DishUpsertResult)}: {result}"),
+        };
     }
 
     /// <summary>Deletes the dish for the given date.</summary>
