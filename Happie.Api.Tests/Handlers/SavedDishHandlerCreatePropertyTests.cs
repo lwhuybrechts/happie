@@ -16,6 +16,7 @@ public class SavedDishHandlerCreatePropertyTests
 {
     private readonly Mock<ISavedDishRepository> _savedDishRepositoryMock = new();
     private readonly Mock<IDishRepository> _dishRepositoryMock = new();
+    private readonly Mock<IDayPlanDishLinkRepository> _dayPlanDishLinkRepositoryMock = new();
     private readonly SavedDishHandler _sut;
 
     /// <summary>Initializes a new instance of <see cref="SavedDishHandlerCreatePropertyTests"/>.</summary>
@@ -24,6 +25,7 @@ public class SavedDishHandlerCreatePropertyTests
         _sut = new SavedDishHandler(
             _savedDishRepositoryMock.Object,
             _dishRepositoryMock.Object,
+            _dayPlanDishLinkRepositoryMock.Object,
             NullLogger<SavedDishHandler>.Instance);
     }
 
@@ -57,6 +59,14 @@ public class SavedDishHandlerCreatePropertyTests
                 _dishRepositoryMock
                     .Setup(x => x.GetAllByPartitionAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new List<DishRecord>());
+
+                _dayPlanDishLinkRepositoryMock
+                    .Setup(x => x.GetAllByHouseholdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new List<DayPlanDishLink>());
+
+                _dayPlanDishLinkRepositoryMock
+                    .Setup(x => x.CreateAsync(It.IsAny<DayPlanDishLink>(), It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
 
                 // Act.
                 var result = await _sut.CreateAsync(scenario.HouseholdId, scenario.Description);

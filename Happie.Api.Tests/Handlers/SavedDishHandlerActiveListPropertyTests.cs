@@ -21,6 +21,7 @@ public class SavedDishHandlerActiveListPropertyTests
 {
     private readonly Mock<ISavedDishRepository> _savedDishRepositoryMock = new();
     private readonly Mock<IDishRepository> _dishRepositoryMock = new();
+    private readonly Mock<IDayPlanDishLinkRepository> _dayPlanDishLinkRepositoryMock = new();
     private readonly SavedDishHandler _sut;
 
     public SavedDishHandlerActiveListPropertyTests()
@@ -28,6 +29,7 @@ public class SavedDishHandlerActiveListPropertyTests
         _sut = new SavedDishHandler(
             _savedDishRepositoryMock.Object,
             _dishRepositoryMock.Object,
+            _dayPlanDishLinkRepositoryMock.Object,
             NullLogger<SavedDishHandler>.Instance);
     }
 

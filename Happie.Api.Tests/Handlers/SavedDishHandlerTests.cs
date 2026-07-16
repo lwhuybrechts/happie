@@ -12,13 +12,20 @@ public class SavedDishHandlerTests
 {
     private readonly Mock<ISavedDishRepository> _savedDishRepositoryMock = new();
     private readonly Mock<IDishRepository> _dishRepositoryMock = new();
+    private readonly Mock<IDayPlanDishLinkRepository> _dayPlanDishLinkRepositoryMock = new();
     private readonly SavedDishHandler _sut;
 
     public SavedDishHandlerTests()
     {
+        // Default: no existing links for any household.
+        _dayPlanDishLinkRepositoryMock
+            .Setup(x => x.GetAllByHouseholdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<DayPlanDishLink>());
+
         _sut = new SavedDishHandler(
             _savedDishRepositoryMock.Object,
             _dishRepositoryMock.Object,
+            _dayPlanDishLinkRepositoryMock.Object,
             NullLogger<SavedDishHandler>.Instance);
     }
 

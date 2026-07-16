@@ -10,16 +10,19 @@ public class SavedDishHandler : ISavedDishHandler
 {
     private readonly ISavedDishRepository _savedDishRepository;
     private readonly IDishRepository _dishRepository;
+    private readonly IDayPlanDishLinkRepository _dayPlanDishLinkRepository;
     private readonly ILogger<SavedDishHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="SavedDishHandler"/>.</summary>
     public SavedDishHandler(
         ISavedDishRepository savedDishRepository,
         IDishRepository dishRepository,
+        IDayPlanDishLinkRepository dayPlanDishLinkRepository,
         ILogger<SavedDishHandler> logger)
     {
         _savedDishRepository = savedDishRepository;
         _dishRepository = dishRepository;
+        _dayPlanDishLinkRepository = dayPlanDishLinkRepository;
         _logger = logger;
     }
 
@@ -118,10 +121,15 @@ public class SavedDishHandler : ISavedDishHandler
             .Select(x => x.Description.Trim())
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // Filter DishRecords: non-empty description, not matching any saved dish.
+        // Determine which dates already have links (those are already linked to saved dishes).
+        var existingLinks = await _dayPlanDishLinkRepository.GetAllByHouseholdAsync(householdId, cancellationToken);
+        var datesWithLinks = existingLinks.Select(x => x.Date).ToHashSet();
+
+        // Filter DishRecords: non-empty description, not matching any saved dish, no existing links.
         var candidates = dishRecords
             .Where(x => !string.IsNullOrWhiteSpace(x.Description) &&
-                        !savedDescriptions.Contains(x.Description.Trim()))
+                        !savedDescriptions.Contains(x.Description.Trim()) &&
+                        !datesWithLinks.Contains(x.Date))
             .OrderByDescending(x => x.Date)
             .ToList();
 
@@ -143,13 +151,18 @@ public class SavedDishHandler : ISavedDishHandler
         return suggestions;
     }
 
-    /// <summary>Converts matching DishRecords to reference the saved dish (retroactive conversion).</summary>
+    /// <summary>Converts matching DishRecords to link the saved dish via the join table (retroactive conversion).</summary>
     private async Task ConvertMatchingDishRecordsAsync(Guid householdId, SavedDish savedDish, CancellationToken cancellationToken)
     {
         var dishRecords = await _dishRepository.GetAllByPartitionAsync(householdId, cancellationToken);
 
+        // Only convert records that have NO existing links.
+        var existingLinks = await _dayPlanDishLinkRepository.GetAllByHouseholdAsync(householdId, cancellationToken);
+        var datesWithLinks = existingLinks.Select(x => x.Date).ToHashSet();
+
         var matchingRecords = dishRecords
-            .Where(x => !string.IsNullOrWhiteSpace(x.Description) &&
+            .Where(x => !datesWithLinks.Contains(x.Date) &&
+                        !string.IsNullOrWhiteSpace(x.Description) &&
                         string.Equals(x.Description.Trim(), savedDish.Description, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
@@ -157,14 +170,17 @@ public class SavedDishHandler : ISavedDishHandler
         {
             try
             {
-                var converted = record with { Description = string.Empty };
-                await _dishRepository.UpsertAsync(converted, cancellationToken);
+                var link = new DayPlanDishLink(householdId, record.Date, savedDish.Id, 0);
+                await _dayPlanDishLinkRepository.CreateAsync(link, cancellationToken);
+
+                var cleared = record with { Description = string.Empty };
+                await _dishRepository.UpsertAsync(cleared, cancellationToken);
             }
             catch (Exception exception)
             {
                 _logger.LogWarning(
                     exception,
-                    "Failed to convert DishRecord {Date} to reference SavedDish {SavedDishId} in household {HouseholdId}.",
+                    "Failed to convert DishRecord {Date} to link SavedDish {SavedDishId} in household {HouseholdId}.",
                     record.Date,
                     savedDish.Id,
                     householdId);

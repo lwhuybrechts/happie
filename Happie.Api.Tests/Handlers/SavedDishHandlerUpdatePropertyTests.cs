@@ -34,9 +34,11 @@ public class SavedDishHandlerUpdatePropertyTests
                 // Arrange.
                 var savedDishRepositoryMock = new Mock<ISavedDishRepository>();
                 var dishRepositoryMock = new Mock<IDishRepository>();
+                var dayPlanDishLinkRepositoryMock = new Mock<IDayPlanDishLinkRepository>();
                 var sut = new SavedDishHandler(
                     savedDishRepositoryMock.Object,
                     dishRepositoryMock.Object,
+                    dayPlanDishLinkRepositoryMock.Object,
                     NullLogger<SavedDishHandler>.Instance);
 
                 savedDishRepositoryMock
@@ -73,9 +75,11 @@ public class SavedDishHandlerUpdatePropertyTests
                 // Arrange.
                 var savedDishRepositoryMock = new Mock<ISavedDishRepository>();
                 var dishRepositoryMock = new Mock<IDishRepository>();
+                var dayPlanDishLinkRepositoryMock = new Mock<IDayPlanDishLinkRepository>();
                 var sut = new SavedDishHandler(
                     savedDishRepositoryMock.Object,
                     dishRepositoryMock.Object,
+                    dayPlanDishLinkRepositoryMock.Object,
                     NullLogger<SavedDishHandler>.Instance);
 
                 savedDishRepositoryMock
@@ -119,9 +123,11 @@ public class SavedDishHandlerUpdatePropertyTests
                 // Arrange.
                 var savedDishRepositoryMock = new Mock<ISavedDishRepository>();
                 var dishRepositoryMock = new Mock<IDishRepository>();
+                var dayPlanDishLinkRepositoryMock = new Mock<IDayPlanDishLinkRepository>();
                 var sut = new SavedDishHandler(
                     savedDishRepositoryMock.Object,
                     dishRepositoryMock.Object,
+                    dayPlanDishLinkRepositoryMock.Object,
                     NullLogger<SavedDishHandler>.Instance);
 
                 savedDishRepositoryMock

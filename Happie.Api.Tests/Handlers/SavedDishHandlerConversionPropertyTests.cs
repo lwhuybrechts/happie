@@ -30,9 +30,11 @@ public class SavedDishHandlerConversionPropertyTests
                 // Arrange.
                 var savedDishRepositoryMock = new Mock<ISavedDishRepository>();
                 var dishRepositoryMock = new Mock<IDishRepository>();
+                var dayPlanDishLinkRepositoryMock = new Mock<IDayPlanDishLinkRepository>();
                 var sut = new SavedDishHandler(
                     savedDishRepositoryMock.Object,
                     dishRepositoryMock.Object,
+                    dayPlanDishLinkRepositoryMock.Object,
                     NullLogger<SavedDishHandler>.Instance);
 
                 savedDishRepositoryMock
@@ -46,6 +48,17 @@ public class SavedDishHandlerConversionPropertyTests
                 dishRepositoryMock
                     .Setup(x => x.GetAllByPartitionAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(scenario.DishRecords);
+
+                // Return empty list — simulate no existing links for any date.
+                dayPlanDishLinkRepositoryMock
+                    .Setup(x => x.GetAllByHouseholdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new List<DayPlanDishLink>());
+
+                var createdLinks = new List<DayPlanDishLink>();
+                dayPlanDishLinkRepositoryMock
+                    .Setup(x => x.CreateAsync(It.IsAny<DayPlanDishLink>(), It.IsAny<CancellationToken>()))
+                    .Callback<DayPlanDishLink, CancellationToken>((link, _) => createdLinks.Add(link))
+                    .Returns(Task.CompletedTask);
 
                 var upsertedRecords = new List<DishRecord>();
                 dishRepositoryMock
@@ -72,7 +85,16 @@ public class SavedDishHandlerConversionPropertyTests
                                 !string.Equals(x.Description.Trim(), trimmedDescription, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
-                // All matching records should have been upserted.
+                // All matching records should have links created.
+                var allMatchingLinked = (createdLinks.Count == expectedConverted.Count)
+                    .Label($"Expected {expectedConverted.Count} links created but got {createdLinks.Count}");
+
+                // All created links should reference the created SavedDish with SortOrder 0.
+                var allLinksCorrect = createdLinks
+                    .All(x => x.SavedDishId == createdDish.Id && x.SortOrder == 0)
+                    .Label("All created links should reference the created SavedDish with SortOrder 0");
+
+                // All matching records should have been upserted with empty description.
                 var allMatchingConverted = (upsertedRecords.Count == expectedConverted.Count)
                     .Label($"Expected {expectedConverted.Count} upserted records but got {upsertedRecords.Count}");
 
@@ -87,7 +109,9 @@ public class SavedDishHandlerConversionPropertyTests
                         upserted.HouseholdId == unchanged.HouseholdId && upserted.Date == unchanged.Date))
                     .Label("DishRecords that did not match should not have been upserted");
 
-                return allMatchingConverted
+                return allMatchingLinked
+                    .And(allLinksCorrect)
+                    .And(allMatchingConverted)
                     .And(allHaveEmptyDescription)
                     .And(unchangedNotUpserted);
             });

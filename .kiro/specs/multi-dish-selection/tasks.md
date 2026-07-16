@@ -93,18 +93,18 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - **Property 5: Auto_Match links matching saved dish and reactivates if soft-deleted**
     - **Validates: Requirements 16.1, 16.2, 16.3, 16.4**
 
-- [ ] 5. Update DaysFunction and SavedDishHandler
-  - [ ] 5.1 Update `DaysFunction` to pass `savedDishIds` to handler
+- [x] 5. Update DaysFunction and SavedDishHandler
+  - [x] 5.1 Update `DaysFunction` to pass `savedDishIds` to handler
     - Change the dish PUT endpoint to extract `savedDishIds` from `UpdateDishRequest` and pass to `UpsertDishAsync`
     - _Requirements: 10.1, 10.3_
-  - [ ] 5.2 Rewrite `SavedDishHandler` retroactive conversion to use join table
+  - [x] 5.2 Rewrite `SavedDishHandler` retroactive conversion to use join table
     - Replace `ConvertMatchingDishRecordsAsync` to create `DayPlanDishLink` entities instead of setting `SavedDishId`
     - Inject `IDayPlanDishLinkRepository` into `SavedDishHandler`
     - Only convert DishRecords that have no existing links (check via `GetAllByHouseholdAsync`)
     - Clear DishRecord description after creating link
     - Log failures but don't roll back
     - _Requirements: 9.1, 9.2, 9.3_
-  - [ ] 5.3 Update `SavedDishHandler.GetSuggestionsAsync` for new model
+  - [x] 5.3 Update `SavedDishHandler.GetSuggestionsAsync` for new model
     - Replace `SavedDishId is null` check with "no DayPlanDishLink entities exist for this DishRecord"
     - Query links by household to determine which dates already have links
     - _Requirements: 1.4, 1.5_
