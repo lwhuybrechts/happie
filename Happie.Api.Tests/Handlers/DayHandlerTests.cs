@@ -19,6 +19,7 @@ public class DayHandlerTests
     private readonly Mock<IDayHistoryRepository> _dayHistoryRepositoryMock = new();
     private readonly Mock<IPushHandler> _pushHandlerMock = new();
     private readonly Mock<ISavedDishRepository> _savedDishRepositoryMock = new();
+    private readonly Mock<IDayPlanDishLinkRepository> _dayPlanDishLinkRepositoryMock = new();
     private readonly DayHandler _sut;
 
     /// <summary>Initializes a new instance of <see cref="DayHandlerTests"/> with mocked dependencies.</summary>
@@ -35,7 +36,8 @@ public class DayHandlerTests
             _commentRepositoryMock.Object,
             _dayHistoryRepositoryMock.Object,
             _pushHandlerMock.Object,
-            _savedDishRepositoryMock.Object);
+            _savedDishRepositoryMock.Object,
+            _dayPlanDishLinkRepositoryMock.Object);
     }
 
     /// <summary>A dish description of exactly 100 characters is accepted and saved.</summary>
@@ -52,7 +54,7 @@ public class DayHandlerTests
         SetupHistoryAdd();
 
         // Act.
-        await _sut.UpsertDishAsync(householdId, date, description, null, 0, actingHousemateId);
+        await _sut.UpsertDishAsync(householdId, date, description, null, null, 0, actingHousemateId);
 
         // Assert.
         _dishRepositoryMock.Verify(
@@ -314,7 +316,7 @@ public class DayHandlerTests
         SetupHistoryAddWithCapture(entry => capturedEntry = entry);
 
         // Act.
-        await _sut.UpsertDishAsync(householdId, date, description, null, 0, actingHousemateId);
+        await _sut.UpsertDishAsync(householdId, date, description, null, null, 0, actingHousemateId);
 
         // Assert.
         Assert.NotNull(capturedEntry);

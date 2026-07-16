@@ -19,6 +19,7 @@ public class DayHandlerChefTests
     private readonly Mock<IDayHistoryRepository> _dayHistoryRepositoryMock = new();
     private readonly Mock<IPushHandler> _pushHandlerMock = new();
     private readonly Mock<ISavedDishRepository> _savedDishRepositoryMock = new();
+    private readonly Mock<IDayPlanDishLinkRepository> _dayPlanDishLinkRepositoryMock = new();
     private readonly DayHandler _sut;
 
     public DayHandlerChefTests()
@@ -30,7 +31,8 @@ public class DayHandlerChefTests
             _commentRepositoryMock.Object,
             _dayHistoryRepositoryMock.Object,
             _pushHandlerMock.Object,
-            _savedDishRepositoryMock.Object);
+            _savedDishRepositoryMock.Object,
+            _dayPlanDishLinkRepositoryMock.Object);
     }
 
     // Feature: chef-toggle, Property 4: Multiple chefs and cross-housemate toggling

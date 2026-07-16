@@ -153,7 +153,7 @@ public class DaysFunction
         var description = readResult.Body.Description?.Trim();
 
         var result = await _dayHandler.UpsertDishAsync(householdId, parsedDate, description,
-            dinnerTime, readResult.Body.TimezoneOffsetMinutes, actingHousemateId, cancellationToken);
+            readResult.Body.SavedDishIds, dinnerTime, readResult.Body.TimezoneOffsetMinutes, actingHousemateId, cancellationToken);
 
         return result switch
         {

@@ -82,7 +82,7 @@ public class DaysFunctionTests
                 var request = HttpRequestFactory.Create(new UpdateDishRequest(description, null, null, 0, null));
 
                 _dayHandlerMock
-                    .Setup(x => x.UpsertDishAsync(householdId, It.IsAny<DateOnly>(), It.IsAny<string?>(), It.IsAny<TimeOnly?>(), It.IsAny<int>(), actingHousemateId, It.IsAny<CancellationToken>()))
+                    .Setup(x => x.UpsertDishAsync(householdId, It.IsAny<DateOnly>(), It.IsAny<string?>(), It.IsAny<IReadOnlyList<Guid>?>(), It.IsAny<TimeOnly?>(), It.IsAny<int>(), actingHousemateId, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(Happie.Api.Results.DishUpsertResult.Success);
 
                 // Act.

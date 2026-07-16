@@ -82,7 +82,7 @@ public class DayHandlerPropertyTests
                 var (sut, capturedEntry) = CreateSutForDish();
 
                 // Act.
-                await sut.UpsertDishAsync(householdId, date, description, null, 0, actingHousemateId);
+                await sut.UpsertDishAsync(householdId, date, description, null, null, 0, actingHousemateId);
 
                 // Assert.
                 var entry = capturedEntry();
@@ -234,6 +234,7 @@ public class DayHandlerPropertyTests
         var dayHistoryRepositoryMock = new Mock<IDayHistoryRepository>();
         var pushHandlerMock = new Mock<IPushHandler>();
         var savedDishRepositoryMock = new Mock<ISavedDishRepository>();
+        var dayPlanDishLinkRepositoryMock = new Mock<IDayPlanDishLinkRepository>();
 
         var housemate = new Housemate(housemateId, householdId, name, HousemateColors.Palette[0], false);
 
@@ -278,7 +279,8 @@ public class DayHandlerPropertyTests
             commentRepositoryMock.Object,
             dayHistoryRepositoryMock.Object,
             pushHandlerMock.Object,
-            savedDishRepositoryMock.Object);
+            savedDishRepositoryMock.Object,
+            dayPlanDishLinkRepositoryMock.Object);
 
         return (sut, () => captured);
     }
@@ -292,6 +294,7 @@ public class DayHandlerPropertyTests
         var dayHistoryRepositoryMock = new Mock<IDayHistoryRepository>();
         var pushHandlerMock = new Mock<IPushHandler>();
         var savedDishRepositoryMock = new Mock<ISavedDishRepository>();
+        var dayPlanDishLinkRepositoryMock = new Mock<IDayPlanDishLinkRepository>();
 
         dishRepositoryMock
             .Setup(x => x.UpsertAsync(It.IsAny<DishRecord>(), It.IsAny<CancellationToken>()))
@@ -314,7 +317,8 @@ public class DayHandlerPropertyTests
             commentRepositoryMock.Object,
             dayHistoryRepositoryMock.Object,
             pushHandlerMock.Object,
-            savedDishRepositoryMock.Object);
+            savedDishRepositoryMock.Object,
+            dayPlanDishLinkRepositoryMock.Object);
 
         return (sut, () => captured);
     }

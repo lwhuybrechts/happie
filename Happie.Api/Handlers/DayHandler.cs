@@ -17,6 +17,7 @@ public class DayHandler : IDayHandler
     private readonly IDayHistoryRepository _dayHistoryRepository;
     private readonly IPushHandler _pushHandler;
     private readonly ISavedDishRepository _savedDishRepository;
+    private readonly IDayPlanDishLinkRepository _dayPlanDishLinkRepository;
 
     /// <summary>Initializes a new instance of <see cref="DayHandler"/>.</summary>
     public DayHandler(
@@ -26,7 +27,8 @@ public class DayHandler : IDayHandler
         ICommentRepository commentRepository,
         IDayHistoryRepository dayHistoryRepository,
         IPushHandler pushHandler,
-        ISavedDishRepository savedDishRepository)
+        ISavedDishRepository savedDishRepository,
+        IDayPlanDishLinkRepository dayPlanDishLinkRepository)
     {
         _housemateRepository = housemateRepository;
         _attendanceRepository = attendanceRepository;
@@ -35,6 +37,7 @@ public class DayHandler : IDayHandler
         _dayHistoryRepository = dayHistoryRepository;
         _pushHandler = pushHandler;
         _savedDishRepository = savedDishRepository;
+        _dayPlanDishLinkRepository = dayPlanDishLinkRepository;
     }
 
     /// <inheritdoc/>
@@ -149,7 +152,7 @@ public class DayHandler : IDayHandler
     }
 
     /// <inheritdoc/>
-    public async Task<DishUpsertResult> UpsertDishAsync(Guid householdId, DateOnly date, string? description, TimeOnly? dinnerTime, int timezoneOffsetMinutes, Guid actingHousemateId, CancellationToken ct = default)
+    public async Task<DishUpsertResult> UpsertDishAsync(Guid householdId, DateOnly date, string? description, IReadOnlyList<Guid>? savedDishIds, TimeOnly? dinnerTime, int timezoneOffsetMinutes, Guid actingHousemateId, CancellationToken ct = default)
     {
         // Both null/empty → delete the dish.
         if (string.IsNullOrEmpty(description))

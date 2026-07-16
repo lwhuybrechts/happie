@@ -25,7 +25,7 @@ public interface IDayHandler
     /// Upserts the dish for a household on a given date and writes a history entry.
     /// Returns the outcome of the operation.
     /// </summary>
-    Task<DishUpsertResult> UpsertDishAsync(Guid householdId, DateOnly date, string? description, TimeOnly? dinnerTime, int timezoneOffsetMinutes, Guid actingHousemateId, CancellationToken ct = default);
+    Task<DishUpsertResult> UpsertDishAsync(Guid householdId, DateOnly date, string? description, IReadOnlyList<Guid>? savedDishIds, TimeOnly? dinnerTime, int timezoneOffsetMinutes, Guid actingHousemateId, CancellationToken ct = default);
 
     /// <summary>
     /// Deletes the dish for a household on a given date and writes a history entry.

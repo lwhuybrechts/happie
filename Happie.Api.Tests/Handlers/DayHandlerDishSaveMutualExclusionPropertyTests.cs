@@ -25,6 +25,7 @@ public class DayHandlerDishSaveMutualExclusionPropertyTests
     private readonly Mock<IDayHistoryRepository> _dayHistoryRepositoryMock = new();
     private readonly Mock<IPushHandler> _pushHandlerMock = new();
     private readonly Mock<ISavedDishRepository> _savedDishRepositoryMock = new();
+    private readonly Mock<IDayPlanDishLinkRepository> _dayPlanDishLinkRepositoryMock = new();
     private readonly DayHandler _sut;
 
     /// <summary>Initializes a new instance of <see cref="DayHandlerDishSaveMutualExclusionPropertyTests"/>.</summary>
@@ -37,7 +38,8 @@ public class DayHandlerDishSaveMutualExclusionPropertyTests
             _commentRepositoryMock.Object,
             _dayHistoryRepositoryMock.Object,
             _pushHandlerMock.Object,
-            _savedDishRepositoryMock.Object);
+            _savedDishRepositoryMock.Object,
+            _dayPlanDishLinkRepositoryMock.Object);
     }
 
     /// <summary>
@@ -74,6 +76,7 @@ public class DayHandlerDishSaveMutualExclusionPropertyTests
                     scenario.HouseholdId,
                     scenario.Date,
                     scenario.Description,
+                    null,
                     null,
                     0,
                     scenario.ActingHousemateId);
@@ -121,6 +124,7 @@ public class DayHandlerDishSaveMutualExclusionPropertyTests
                     scenario.HouseholdId,
                     scenario.Date,
                     scenario.Description,
+                    null,
                     null,
                     0,
                     scenario.ActingHousemateId);
