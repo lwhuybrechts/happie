@@ -57,12 +57,12 @@ This plan transforms the single-dish reference model into a many-to-many relatio
 - [ ] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. DayHandler rewrite for multi-dish support
-  - [ ] 4.1 Update `IDayHandler.UpsertDishAsync` signature
+- [x] 4. DayHandler rewrite for multi-dish support
+  - [x] 4.1 Update `IDayHandler.UpsertDishAsync` signature
     - Change parameter from `Guid? savedDishId` to `IReadOnlyList<Guid>? savedDishIds`
     - Update `DayHandler` constructor to inject `IDayPlanDishLinkRepository`
     - _Requirements: 10.1, 10.3, 10.4_
-  - [ ] 4.2 Rewrite `DayHandler.UpsertDishAsync` for multi-dish saves
+  - [x] 4.2 Rewrite `DayHandler.UpsertDishAsync` for multi-dish saves
     - Implement mutual exclusion validation (both `savedDishIds` non-empty AND description non-empty → 422)
     - Implement empty save (both null/empty → delete links + handle DishRecord based on DinnerTime)
     - Implement saved-mode save (validate ≤10 IDs, no duplicates, all exist in household, replace links, clear description)
@@ -70,14 +70,14 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Implement custom-mode save without match (delete existing links, store description)
     - Add `DishUpsertResult.SavedDishNotFound` if not already present
     - _Requirements: 3.4, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 10.3, 10.4, 10.5, 16.1, 16.2, 16.3, 16.4_
-  - [ ] 4.3 Rewrite `DayHandler.GetDayPlanAsync` dish resolution
+  - [x] 4.3 Rewrite `DayHandler.GetDayPlanAsync` dish resolution
     - Fetch `DayPlanDishLink` entities for the date
     - When links exist: resolve descriptions from saved dishes, join with " & " in SortOrder, exclude missing SavedDishIds, return valid IDs in `savedDishIds`
     - When links exist: ignore DishRecord description
     - When no links: use DishRecord description (existing behavior), return null `savedDishIds`
     - Resolve descriptions from soft-deleted saved dishes (still visible)
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7_
-  - [ ] 4.4 Update `DayHandler.DeleteDishAsync` to also delete links
+  - [x] 4.4 Update `DayHandler.DeleteDishAsync` to also delete links
     - When deleting a dish, also call `_dayPlanDishLinkRepository.DeleteAllAsync` for that household+date
     - _Requirements: 5.7_
   - [ ]* 4.5 Write property test for combined description resolution

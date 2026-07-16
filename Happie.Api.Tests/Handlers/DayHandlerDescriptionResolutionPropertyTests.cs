@@ -57,6 +57,7 @@ public class DayHandlerDescriptionResolutionPropertyTests
                 _dayHistoryRepositoryMock.Reset();
                 _pushHandlerMock.Reset();
                 _savedDishRepositoryMock.Reset();
+                _dayPlanDishLinkRepositoryMock.Reset();
 
                 var housemateId = Guid.NewGuid();
                 var housemate = new Housemate(housemateId, scenario.HouseholdId, "TestHousemate", "#E91E63", false);
@@ -80,6 +81,14 @@ public class DayHandlerDescriptionResolutionPropertyTests
                 _dayHistoryRepositoryMock
                     .Setup(x => x.GetByDateAsync(scenario.HouseholdId, scenario.Date, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new List<DayHistoryEntry>());
+
+                _dayPlanDishLinkRepositoryMock
+                    .Setup(x => x.GetByDateAsync(scenario.HouseholdId, scenario.Date, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new List<DayPlanDishLink>());
+
+                _savedDishRepositoryMock
+                    .Setup(x => x.GetAllAsync(scenario.HouseholdId, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new List<SavedDish>());
 
                 // Act.
                 var result = await _sut.GetDayPlanAsync(scenario.HouseholdId, scenario.Date);

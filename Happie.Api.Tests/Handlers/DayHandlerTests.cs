@@ -29,6 +29,14 @@ public class DayHandlerTests
             .Setup(x => x.SendAutoNotificationsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        _dayPlanDishLinkRepositoryMock
+            .Setup(x => x.GetByDateAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<DayPlanDishLink>());
+
+        _savedDishRepositoryMock
+            .Setup(x => x.GetAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SavedDish>());
+
         _sut = new DayHandler(
             _housemateRepositoryMock.Object,
             _attendanceRepositoryMock.Object,
