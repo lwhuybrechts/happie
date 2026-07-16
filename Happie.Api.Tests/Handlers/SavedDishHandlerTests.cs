@@ -323,29 +323,6 @@ public class SavedDishHandlerTests
     }
 
     [Fact]
-    public async Task GetSuggestionsAsync_ExcludesDishesWithSavedDishId()
-    {
-        // Arrange.
-        var householdId = Guid.NewGuid();
-        var savedDishId = Guid.NewGuid();
-        var dishRecords = new List<DishRecord>
-        {
-            CreateDishRecord(householdId, DateOnly.FromDateTime(DateTime.Today), "Pasta", savedDishId: savedDishId),
-            CreateDishRecord(householdId, DateOnly.FromDateTime(DateTime.Today.AddDays(-1)), "Risotto"),
-        };
-
-        SetupGetAllDishRecords(householdId, dishRecords);
-        SetupGetAllSavedDishes(householdId, new List<SavedDish>());
-
-        // Act.
-        var result = await _sut.GetSuggestionsAsync(householdId);
-
-        // Assert.
-        Assert.Single(result);
-        Assert.Equal("Risotto", result[0]);
-    }
-
-    [Fact]
     public async Task GetSuggestionsAsync_LimitsToFive()
     {
         // Arrange.
@@ -412,6 +389,6 @@ public class SavedDishHandlerTests
     private static SavedDish CreateSavedDish(Guid householdId, string description) =>
         new(Guid.NewGuid(), householdId, description, false);
 
-    private static DishRecord CreateDishRecord(Guid householdId, DateOnly date, string description, Guid? savedDishId = null) =>
-        new(householdId, date, description, null, null, null, null, savedDishId);
+    private static DishRecord CreateDishRecord(Guid householdId, DateOnly date, string description) =>
+        new(householdId, date, description, null, null, null, null);
 }

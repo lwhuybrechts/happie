@@ -36,14 +36,12 @@ public class DayHandlerDescriptionResolutionPropertyTests
     }
 
     /// <summary>
-    /// For any DishRecord with a SavedDishId and a corresponding set of SavedDish records for the household,
-    /// the resolved description should equal the SavedDish's description when the referenced SavedDish exists
-    /// (active or soft-deleted), and should fall back to the DishRecord's own description when the referenced
-    /// SavedDish does not exist. When SavedDishId is null, the DishRecord's own description is always used.
+    /// For any DishRecord, GetDayPlanAsync returns the DishRecord's own description directly.
+    /// Description resolution from saved dishes will be handled via DayPlanDishLinks in later tasks.
     /// Validates: Requirements 2.2, 2.3, 2.5, 2.6
     /// </summary>
     [Property(MaxTest = 100)]
-    public Property GetDayPlanAsync_DescriptionResolution_CorrectlyResolvesFromSavedDish()
+    public Property GetDayPlanAsync_DescriptionResolution_ReturnsDishRecordDescription()
     {
         return Prop.ForAll(
             DescriptionResolutionScenarioArb(),
@@ -81,136 +79,39 @@ public class DayHandlerDescriptionResolutionPropertyTests
                     .Setup(x => x.GetByDateAsync(scenario.HouseholdId, scenario.Date, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new List<DayHistoryEntry>());
 
-                if (scenario.SavedDish is not null)
-                {
-                    _savedDishRepositoryMock
-                        .Setup(x => x.GetAsync(scenario.HouseholdId, scenario.SavedDish.Id, It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(scenario.SavedDish);
-                }
-                else if (scenario.DishRecord?.SavedDishId is not null)
-                {
-                    // Orphaned reference: saved dish not found.
-                    _savedDishRepositoryMock
-                        .Setup(x => x.GetAsync(scenario.HouseholdId, scenario.DishRecord.SavedDishId.Value, It.IsAny<CancellationToken>()))
-                        .ReturnsAsync((SavedDish?)null);
-                }
-
                 // Act.
                 var result = await _sut.GetDayPlanAsync(scenario.HouseholdId, scenario.Date);
 
-                // Assert.
-                return scenario.ScenarioType switch
-                {
-                    DescriptionScenarioType.NullSavedDishId =>
-                        (result.Dish!.Description == scenario.DishRecord!.Description)
-                            .Label($"Null SavedDishId: expected '{scenario.DishRecord.Description}' but got '{result.Dish.Description}'")
-                            .And((result.Dish.SavedDishId == null)
-                                .Label("Null SavedDishId: response SavedDishId should be null")),
-
-                    DescriptionScenarioType.ActiveSavedDishExists =>
-                        (result.Dish!.Description == scenario.SavedDish!.Description)
-                            .Label($"Active SavedDish: expected '{scenario.SavedDish.Description}' but got '{result.Dish.Description}'")
-                            .And((result.Dish.SavedDishId == scenario.SavedDish.Id)
-                                .Label($"Active SavedDish: SavedDishId should be {scenario.SavedDish.Id} but got {result.Dish.SavedDishId}")),
-
-                    DescriptionScenarioType.SoftDeletedSavedDishExists =>
-                        (result.Dish!.Description == scenario.SavedDish!.Description)
-                            .Label($"Soft-deleted SavedDish: expected '{scenario.SavedDish.Description}' but got '{result.Dish.Description}'")
-                            .And((result.Dish.SavedDishId == scenario.SavedDish.Id)
-                                .Label($"Soft-deleted SavedDish: SavedDishId should be {scenario.SavedDish.Id} but got {result.Dish.SavedDishId}")),
-
-                    DescriptionScenarioType.OrphanedSavedDishId =>
-                        (result.Dish!.Description == scenario.DishRecord!.Description)
-                            .Label($"Orphaned: expected '{scenario.DishRecord.Description}' but got '{result.Dish.Description}'")
-                            .And((result.Dish.SavedDishId == null)
-                                .Label("Orphaned: response SavedDishId should be null")),
-
-                    _ => throw new InvalidOperationException($"Unhandled {nameof(DescriptionScenarioType)}: {scenario.ScenarioType}")
-                };
+                // Assert — description is returned directly from DishRecord.
+                return (result.Dish!.Description == scenario.DishRecord!.Description)
+                    .Label($"Expected '{scenario.DishRecord.Description}' but got '{result.Dish.Description}'");
             });
     }
 
     private static Arbitrary<DescriptionResolutionScenario> DescriptionResolutionScenarioArb()
     {
-        var gen = Gen.Choose(0, 3).SelectMany(scenarioType =>
-        {
-            var householdIdGen = ArbMap.Default.GeneratorFor<Guid>();
-            var dateGen = Gen.Choose(2020, 2030).SelectMany(year =>
-                Gen.Choose(1, 12).SelectMany(month =>
-                    Gen.Choose(1, 28).Select(day => new DateOnly(year, month, day))));
-            var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x);
-            var descriptionGen = Gen.Choose(1, 50)
-                .SelectMany(length => Gen.ListOf(printableCharGen, length)
-                    .Select(chars => new string(chars.ToArray())));
+        var householdIdGen = ArbMap.Default.GeneratorFor<Guid>();
+        var dateGen = Gen.Choose(2020, 2030).SelectMany(year =>
+            Gen.Choose(1, 12).SelectMany(month =>
+                Gen.Choose(1, 28).Select(day => new DateOnly(year, month, day))));
+        var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x);
+        var descriptionGen = Gen.Choose(1, 50)
+            .SelectMany(length => Gen.ListOf(printableCharGen, length)
+                .Select(chars => new string(chars.ToArray())));
 
-            return scenarioType switch
-            {
-                // Scenario 0: DishRecord with null SavedDishId → uses own description.
-                0 => householdIdGen.SelectMany(householdId =>
-                    dateGen.SelectMany(date =>
-                        descriptionGen.Select(description =>
-                            new DescriptionResolutionScenario(
-                                householdId,
-                                date,
-                                new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow, null),
-                                null,
-                                DescriptionScenarioType.NullSavedDishId)))),
-
-                // Scenario 1: DishRecord with SavedDishId that matches an active SavedDish → uses SavedDish.Description.
-                1 => householdIdGen.SelectMany(householdId =>
-                    dateGen.SelectMany(date =>
-                        descriptionGen.SelectMany(dishDescription =>
-                            descriptionGen.SelectMany(savedDishDescription =>
-                                ArbMap.Default.GeneratorFor<Guid>().Select(savedDishId =>
-                                    new DescriptionResolutionScenario(
-                                        householdId,
-                                        date,
-                                        new DishRecord(householdId, date, dishDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow, savedDishId),
-                                        new SavedDish(savedDishId, householdId, savedDishDescription, false),
-                                        DescriptionScenarioType.ActiveSavedDishExists)))))),
-
-                // Scenario 2: DishRecord with SavedDishId that matches a soft-deleted SavedDish → still uses SavedDish.Description.
-                2 => householdIdGen.SelectMany(householdId =>
-                    dateGen.SelectMany(date =>
-                        descriptionGen.SelectMany(dishDescription =>
-                            descriptionGen.SelectMany(savedDishDescription =>
-                                ArbMap.Default.GeneratorFor<Guid>().Select(savedDishId =>
-                                    new DescriptionResolutionScenario(
-                                        householdId,
-                                        date,
-                                        new DishRecord(householdId, date, dishDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow, savedDishId),
-                                        new SavedDish(savedDishId, householdId, savedDishDescription, true),
-                                        DescriptionScenarioType.SoftDeletedSavedDishExists)))))),
-
-                // Scenario 3: DishRecord with SavedDishId that doesn't match any SavedDish → falls back to own description.
-                _ => householdIdGen.SelectMany(householdId =>
-                    dateGen.SelectMany(date =>
-                        descriptionGen.SelectMany(description =>
-                            ArbMap.Default.GeneratorFor<Guid>().Select(orphanedSavedDishId =>
-                                new DescriptionResolutionScenario(
-                                    householdId,
-                                    date,
-                                    new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow, orphanedSavedDishId),
-                                    null,
-                                    DescriptionScenarioType.OrphanedSavedDishId)))))
-            };
-        });
+        var gen = householdIdGen.SelectMany(householdId =>
+            dateGen.SelectMany(date =>
+                descriptionGen.Select(description =>
+                    new DescriptionResolutionScenario(
+                        householdId,
+                        date,
+                        new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow)))));
 
         return Arb.From(gen);
-    }
-
-    private enum DescriptionScenarioType
-    {
-        NullSavedDishId,
-        ActiveSavedDishExists,
-        SoftDeletedSavedDishExists,
-        OrphanedSavedDishId
     }
 
     private record DescriptionResolutionScenario(
         Guid HouseholdId,
         DateOnly Date,
-        DishRecord? DishRecord,
-        SavedDish? SavedDish,
-        DescriptionScenarioType ScenarioType);
+        DishRecord? DishRecord);
 }

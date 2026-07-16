@@ -9,6 +9,4 @@ public record DishRecord(
     Guid? LastChangedByHousemateId,
     DateTimeOffset? LastChangedAt,
     TimeOnly? DinnerTime,
-    DateTimeOffset? LastModified,
-    Guid? SavedDishId
-);
+    DateTimeOffset? LastModified);

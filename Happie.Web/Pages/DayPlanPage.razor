@@ -612,7 +612,7 @@
             var updatedDish = newDescription is not null
                 ? (_dayPlan.Dish is not null
                     ? _dayPlan.Dish with { Description = newDescription }
-                    : new DishDto(newDescription, _activeHousemateId, DateTimeOffset.UtcNow, null, null, null))
+                    : new DishDto(newDescription, _activeHousemateId, DateTimeOffset.UtcNow, null, null))
                 : null;
 
             _dayPlan = _dayPlan with { Dish = updatedDish };

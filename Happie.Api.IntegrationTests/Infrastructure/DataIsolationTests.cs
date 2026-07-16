@@ -123,7 +123,7 @@ public class DataIsolationTests
                 var (householdA, householdB, housemateId, date) = args;
 
                 // Arrange.
-                var dish = new DishRecord(householdA, date, "Pasta", housemateId, DateTimeOffset.UtcNow, null, null, null);
+                var dish = new DishRecord(householdA, date, "Pasta", housemateId, DateTimeOffset.UtcNow, null, null);
                 await _dishRepository.UpsertAsync(dish);
 
                 // Act.

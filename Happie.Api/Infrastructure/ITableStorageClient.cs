@@ -21,4 +21,8 @@ public interface ITableStorageClient
     /// <summary>Queries entities whose row key starts with the given prefix within a partition.</summary>
     Task<IReadOnlyList<T>> QueryByRowKeyPrefixAsync<T>(string tableName, string partitionKey, string rowKeyPrefix, CancellationToken cancellationToken = default)
         where T : MyTableEntity;
+
+    /// <summary>Queries entities whose partition key starts with the given prefix.</summary>
+    Task<IReadOnlyList<T>> QueryByPartitionPrefixAsync<T>(string tableName, string partitionKeyPrefix, CancellationToken cancellationToken = default)
+        where T : MyTableEntity;
 }

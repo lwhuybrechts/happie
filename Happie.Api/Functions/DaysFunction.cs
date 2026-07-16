@@ -151,16 +151,15 @@ public class DaysFunction
             return conflictResult;
 
         var description = readResult.Body.Description?.Trim();
-        var savedDishId = readResult.Body.SavedDishId;
 
-        var result = await _dayHandler.UpsertDishAsync(householdId, parsedDate, description, savedDishId,
+        var result = await _dayHandler.UpsertDishAsync(householdId, parsedDate, description,
             dinnerTime, readResult.Body.TimezoneOffsetMinutes, actingHousemateId, cancellationToken);
 
         return result switch
         {
             DishUpsertResult.Success => new NoContentResult(),
             DishUpsertResult.Deleted => new NoContentResult(),
-            DishUpsertResult.ValidationError => new UnprocessableEntityObjectResult(new ApiErrorResponse("Cannot provide both savedDishId and description.", ApiErrorCodes.ValidationError)),
+            DishUpsertResult.ValidationError => new UnprocessableEntityObjectResult(new ApiErrorResponse("Validation error.", ApiErrorCodes.ValidationError)),
             DishUpsertResult.SavedDishNotFound => new UnprocessableEntityObjectResult(new ApiErrorResponse("Referenced saved dish not found.", ApiErrorCodes.ValidationError)),
             _ => throw new InvalidOperationException($"Unhandled {nameof(DishUpsertResult)}: {result}"),
         };

@@ -27,9 +27,9 @@ public class SavedDishHandlerSuggestionsPropertyTests
     }
 
     /// <summary>
-    /// For any household with a set of DishRecords (some with SavedDishId, some without) and a set of
+    /// For any household with a set of DishRecords and a set of
     /// SavedDishes (active and soft-deleted), the suggestions computation should return at most 5 distinct
-    /// descriptions from DishRecords where SavedDishId is null, description is non-empty, and the description
+    /// descriptions from DishRecords where description is non-empty, and the description
     /// does not match any SavedDish (case-insensitive, trimmed), ordered by most recent date first.
     /// Validates: Requirements 5.2, 5.3
     /// </summary>
@@ -60,10 +60,9 @@ public class SavedDishHandlerSuggestionsPropertyTests
                     .Select(x => x.Description.Trim())
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                // Candidates: SavedDishId is null, non-empty description, not matching any saved dish.
+                // Candidates: non-empty description, not matching any saved dish.
                 var candidates = dishRecords
-                    .Where(x => x.SavedDishId is null &&
-                                !string.IsNullOrWhiteSpace(x.Description) &&
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Description) &&
                                 !savedDescriptions.Contains(x.Description.Trim()))
                     .OrderByDescending(x => x.Date)
                     .ToList();
@@ -92,9 +91,9 @@ public class SavedDishHandlerSuggestionsPropertyTests
                     .Label("A suggestion matches a saved dish description");
 
                 var noneFromLinkedRecords = result.All(suggestion =>
-                    dishRecords.Any(x => x.SavedDishId is null &&
+                    dishRecords.Any(x => !string.IsNullOrWhiteSpace(x.Description) &&
                                          string.Equals(x.Description.Trim(), suggestion, StringComparison.OrdinalIgnoreCase)))
-                    .Label("A suggestion came from a DishRecord with non-null SavedDishId");
+                    .Label("A suggestion did not come from any DishRecord");
 
                 var correctOrder = result.SequenceEqual(expectedSuggestions)
                     .Label($"Expected [{string.Join(", ", expectedSuggestions)}] but got [{string.Join(", ", result)}]");
@@ -139,20 +138,14 @@ public class SavedDishHandlerSuggestionsPropertyTests
                     length)
                     .Select(chars => "  " + new string(chars.ToArray()) + "  ")));
 
-        // SavedDishId: some null, some set.
-        var savedDishIdGen = Gen.OneOf(
-            Gen.Constant<Guid?>(null),
-            Gen.Constant<Guid?>(null),
-            guidGen.Select(x => (Guid?)x));
-
+        // SavedDishId removed — DishRecord no longer has this field.
         // Date: random dates within a reasonable range.
         var dateGen = Gen.Choose(0, 365)
             .Select(x => DateOnly.FromDateTime(DateTime.Today.AddDays(-x)));
 
         return guidGen.SelectMany(householdId =>
             dateGen.SelectMany(date =>
-                descriptionGen.SelectMany(description =>
-                    savedDishIdGen.Select(savedDishId =>
+                descriptionGen.Select(description =>
                         new DishRecord(
                             householdId,
                             date,
@@ -160,8 +153,7 @@ public class SavedDishHandlerSuggestionsPropertyTests
                             null,
                             null,
                             null,
-                            null,
-                            savedDishId)))));
+                            null))));
     }
 
     private static Arbitrary<List<SavedDish>> SavedDishListArb()

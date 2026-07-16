@@ -18,8 +18,7 @@ public class DishRecordMapper : IDishRecordMapper
             entity.DinnerTimeHour == -1 || entity.DinnerTimeMinute == -1
                 ? null
                 : new TimeOnly(entity.DinnerTimeHour, entity.DinnerTimeMinute),
-            entity.LastModified == default ? null : entity.LastModified,
-            entity.SavedDishId == Guid.Empty ? null : entity.SavedDishId);
+            entity.LastModified == default ? null : entity.LastModified);
 
     /// <inheritdoc/>
     public DishRecordEntity ToEntity(DishRecord record)
@@ -31,7 +30,6 @@ public class DishRecordMapper : IDishRecordMapper
         entity.DinnerTimeHour = record.DinnerTime?.Hour ?? -1;
         entity.DinnerTimeMinute = record.DinnerTime?.Minute ?? -1;
         entity.LastModified = record.LastModified ?? default;
-        entity.SavedDishId = record.SavedDishId ?? Guid.Empty;
         return entity;
     }
 }

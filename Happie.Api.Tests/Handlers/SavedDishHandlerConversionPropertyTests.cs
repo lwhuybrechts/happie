@@ -13,9 +13,9 @@ namespace Happie.Api.Tests.Handlers;
 // Feature: saved-dishes, Property 6: Retroactive conversion links all matching DishRecords
 /// <summary>
 /// For any household with DishRecords and a newly created SavedDish, after retroactive conversion,
-/// every DishRecord where <c>SavedDishId</c> was null and the description matched the new SavedDish
-/// (case-insensitive, trimmed) should now have <c>SavedDishId</c> set to the new SavedDish's ID
-/// and description set to empty string. DishRecords that did not match should remain unchanged.
+/// every DishRecord where the description matched the new SavedDish (case-insensitive, trimmed)
+/// should now have its description set to empty string. DishRecords that did not match should
+/// remain unchanged.
 /// Validates: Requirements 7.1, 7.2
 /// </summary>
 public class SavedDishHandlerConversionPropertyTests
@@ -62,24 +62,19 @@ public class SavedDishHandlerConversionPropertyTests
 
                 // Determine which records should have been converted.
                 var expectedConverted = scenario.DishRecords
-                    .Where(x => x.SavedDishId is null &&
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Description) &&
                                 string.Equals(x.Description.Trim(), trimmedDescription, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
                 // Determine which records should NOT have been converted.
                 var expectedUnchanged = scenario.DishRecords
-                    .Where(x => x.SavedDishId is not null ||
+                    .Where(x => string.IsNullOrWhiteSpace(x.Description) ||
                                 !string.Equals(x.Description.Trim(), trimmedDescription, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
                 // All matching records should have been upserted.
                 var allMatchingConverted = (upsertedRecords.Count == expectedConverted.Count)
                     .Label($"Expected {expectedConverted.Count} upserted records but got {upsertedRecords.Count}");
-
-                // All upserted records should have SavedDishId set to the new dish's ID.
-                var allHaveCorrectSavedDishId = upsertedRecords
-                    .All(x => x.SavedDishId == createdDish.Id)
-                    .Label("All converted records should have SavedDishId set to the new SavedDish's ID");
 
                 // All upserted records should have description cleared.
                 var allHaveEmptyDescription = upsertedRecords
@@ -93,7 +88,6 @@ public class SavedDishHandlerConversionPropertyTests
                     .Label("DishRecords that did not match should not have been upserted");
 
                 return allMatchingConverted
-                    .And(allHaveCorrectSavedDishId)
                     .And(allHaveEmptyDescription)
                     .And(unchangedNotUpserted);
             });
@@ -136,8 +130,7 @@ public class SavedDishHandlerConversionPropertyTests
 
     /// <summary>
     /// Generates DishRecords for a household. Some will have matching descriptions (case-insensitive
-    /// variants of the target), some will have non-matching descriptions, and some will already
-    /// have a SavedDishId set.
+    /// variants of the target) and some will have non-matching descriptions.
     /// </summary>
     private static Gen<DishRecord> DishRecordGen(Guid householdId, string targetDescription, Gen<char> charGen)
     {
@@ -158,10 +151,10 @@ public class SavedDishHandlerConversionPropertyTests
 
         var dateGen = Gen.Choose(0, 365).Select(x => DateOnly.FromDayNumber(738000 + x));
 
-        // Generate one of three record types.
-        return Gen.Choose(0, 2).SelectMany(recordType => recordType switch
+        // Generate one of two record types.
+        return Gen.Choose(0, 1).SelectMany(recordType => recordType switch
         {
-            // Matching description, no SavedDishId (should be converted).
+            // Matching description (should be converted).
             0 => matchingDescriptionGen.SelectMany(description =>
                 dateGen.Select(date => new DishRecord(
                     householdId,
@@ -170,11 +163,10 @@ public class SavedDishHandlerConversionPropertyTests
                     null,
                     null,
                     null,
-                    null,
                     null))),
 
-            // Non-matching description, no SavedDishId (should NOT be converted).
-            1 => nonMatchingDescriptionGen.SelectMany(description =>
+            // Non-matching description (should NOT be converted).
+            _ => nonMatchingDescriptionGen.SelectMany(description =>
                 dateGen.Select(date => new DishRecord(
                     householdId,
                     date,
@@ -182,21 +174,7 @@ public class SavedDishHandlerConversionPropertyTests
                     null,
                     null,
                     null,
-                    null,
-                    null))),
-
-            // Has an existing SavedDishId set (should NOT be converted even if description matches).
-            _ => Gen.OneOf(matchingDescriptionGen, nonMatchingDescriptionGen).SelectMany(description =>
-                dateGen.SelectMany(date =>
-                    ArbMap.Default.GeneratorFor<Guid>().Select(existingSavedDishId => new DishRecord(
-                        householdId,
-                        date,
-                        description,
-                        null,
-                        null,
-                        null,
-                        null,
-                        existingSavedDishId))))
+                    null)))
         });
     }
 

@@ -118,10 +118,9 @@ public class SavedDishHandler : ISavedDishHandler
             .Select(x => x.Description.Trim())
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // Filter DishRecords: no SavedDishId, non-empty description, not matching any saved dish.
+        // Filter DishRecords: non-empty description, not matching any saved dish.
         var candidates = dishRecords
-            .Where(x => x.SavedDishId is null &&
-                        !string.IsNullOrWhiteSpace(x.Description) &&
+            .Where(x => !string.IsNullOrWhiteSpace(x.Description) &&
                         !savedDescriptions.Contains(x.Description.Trim()))
             .OrderByDescending(x => x.Date)
             .ToList();
@@ -150,7 +149,7 @@ public class SavedDishHandler : ISavedDishHandler
         var dishRecords = await _dishRepository.GetAllByPartitionAsync(householdId, cancellationToken);
 
         var matchingRecords = dishRecords
-            .Where(x => x.SavedDishId is null &&
+            .Where(x => !string.IsNullOrWhiteSpace(x.Description) &&
                         string.Equals(x.Description.Trim(), savedDish.Description, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
@@ -158,7 +157,7 @@ public class SavedDishHandler : ISavedDishHandler
         {
             try
             {
-                var converted = record with { SavedDishId = savedDish.Id, Description = string.Empty };
+                var converted = record with { Description = string.Empty };
                 await _dishRepository.UpsertAsync(converted, cancellationToken);
             }
             catch (Exception exception)

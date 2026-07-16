@@ -171,7 +171,7 @@ public class CachedApiClient : ICachedApiClient
         return true;
     }
 
-    public async Task<bool> SaveDishAsync(string date, string description, int? dinnerTimeHour, int? dinnerTimeMinute, int timezoneOffsetMinutes, Guid? savedDishId = null, string? savedDishDescription = null)
+    public async Task<bool> SaveDishAsync(string date, string description, int? dinnerTimeHour, int? dinnerTimeMinute, int timezoneOffsetMinutes)
     {
         var householdId = await GetHouseholdIdAsync();
         if (householdId is null)
@@ -179,10 +179,7 @@ public class CachedApiClient : ICachedApiClient
 
         var url = $"days/{date}/dish";
 
-        // In saved mode: send SavedDishId with null description.
-        // In custom mode: send description with null SavedDishId (existing behavior).
-        var requestDescription = savedDishId is not null ? null : description;
-        var request = new UpdateDishRequest(requestDescription, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes, savedDishId);
+        var request = new UpdateDishRequest(description, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes);
 
         if (_connectivityService.IsOnline)
         {
@@ -191,13 +188,13 @@ public class CachedApiClient : ICachedApiClient
                 return false;
 
             // Update day plan cache if entry exists.
-            await ApplyDishOptimisticUpdate(householdId, date, description, dinnerTimeHour, dinnerTimeMinute, savedDishId, savedDishDescription);
+            await ApplyDishOptimisticUpdate(householdId, date, description, dinnerTimeHour, dinnerTimeMinute);
             return true;
         }
 
         // Offline: enqueue mutation and apply optimistic update.
         await EnqueueMutationAsync(householdId, "PUT", url, JsonSerializer.Serialize(request), date, "dish");
-        await ApplyDishOptimisticUpdate(householdId, date, description, dinnerTimeHour, dinnerTimeMinute, savedDishId, savedDishDescription);
+        await ApplyDishOptimisticUpdate(householdId, date, description, dinnerTimeHour, dinnerTimeMinute);
 
         return true;
     }
@@ -503,7 +500,7 @@ public class CachedApiClient : ICachedApiClient
         await _cacheStore.PutCalendarAsync(householdId, month, updatedJson, month);
     }
 
-    private async Task ApplyDishOptimisticUpdate(string householdId, string date, string description, int? dinnerTimeHour, int? dinnerTimeMinute, Guid? savedDishId = null, string? savedDishDescription = null)
+    private async Task ApplyDishOptimisticUpdate(string householdId, string date, string description, int? dinnerTimeHour, int? dinnerTimeMinute)
     {
         var dayPlan = await GetCachedDayPlanAsync(householdId, date);
         if (dayPlan is null)
@@ -511,13 +508,9 @@ public class CachedApiClient : ICachedApiClient
 
         var housemateId = await GetActiveHousemateIdAsync();
 
-        // In saved mode: store the resolved description so the dish displays without a network lookup.
-        // In custom mode: use the regular description (existing behavior).
-        var cachedDescription = savedDishId is not null ? (savedDishDescription ?? description) : description;
-
         var updatedDish = dayPlan.Dish is not null
-            ? dayPlan.Dish with { Description = cachedDescription, LastChangedByHousemateId = housemateId ?? dayPlan.Dish.LastChangedByHousemateId, LastChangedAt = DateTimeOffset.UtcNow, DinnerTimeHour = dinnerTimeHour, DinnerTimeMinute = dinnerTimeMinute, SavedDishId = savedDishId }
-            : new DishDto(cachedDescription, housemateId, DateTimeOffset.UtcNow, dinnerTimeHour, dinnerTimeMinute, savedDishId);
+            ? dayPlan.Dish with { Description = description, LastChangedByHousemateId = housemateId ?? dayPlan.Dish.LastChangedByHousemateId, LastChangedAt = DateTimeOffset.UtcNow, DinnerTimeHour = dinnerTimeHour, DinnerTimeMinute = dinnerTimeMinute }
+            : new DishDto(description, housemateId, DateTimeOffset.UtcNow, dinnerTimeHour, dinnerTimeMinute);
 
         await SaveDayPlanUpdateAsync(householdId, date, dayPlan with { Dish = updatedDish });
     }

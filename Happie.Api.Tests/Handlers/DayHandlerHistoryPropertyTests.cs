@@ -32,11 +32,11 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow, null);
+                var existingDish = new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
-                await sut.UpsertDishAsync(householdId, date, description, null, dinnerTime, 0, actingHousemateId);
+                await sut.UpsertDishAsync(householdId, date, description, dinnerTime, 0, actingHousemateId);
 
                 // Assert.
                 return (capturedEntries().Count == 0)
@@ -63,11 +63,11 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, oldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow, null);
+                var existingDish = new DishRecord(householdId, date, oldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
-                await sut.UpsertDishAsync(householdId, date, newDescription, null, dinnerTime, 0, actingHousemateId);
+                await sut.UpsertDishAsync(householdId, date, newDescription, dinnerTime, 0, actingHousemateId);
 
                 // Assert.
                 var entries = capturedEntries();
@@ -102,11 +102,11 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow, null);
+                var existingDish = new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
-                await sut.UpsertDishAsync(householdId, date, description, null, newDinnerTime, 0, actingHousemateId);
+                await sut.UpsertDishAsync(householdId, date, description, newDinnerTime, 0, actingHousemateId);
 
                 // Assert.
                 var entries = capturedEntries();
@@ -140,11 +140,11 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow, null);
+                var existingDish = new DishRecord(householdId, date, description, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
-                await sut.UpsertDishAsync(householdId, date, description, null, null, 0, actingHousemateId);
+                await sut.UpsertDishAsync(householdId, date, description, null, 0, actingHousemateId);
 
                 // Assert.
                 var entries = capturedEntries();
@@ -179,11 +179,11 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, oldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow, null);
+                var existingDish = new DishRecord(householdId, date, oldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
-                await sut.UpsertDishAsync(householdId, date, newDescription, null, newDinnerTime, 0, actingHousemateId);
+                await sut.UpsertDishAsync(householdId, date, newDescription, newDinnerTime, 0, actingHousemateId);
 
                 // Assert.
                 var entries = capturedEntries();
@@ -219,11 +219,11 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, oldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow, null);
+                var existingDish = new DishRecord(householdId, date, oldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, oldDinnerTime, DateTimeOffset.UtcNow);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
-                await sut.UpsertDishAsync(householdId, date, newDescription, null, null, 0, actingHousemateId);
+                await sut.UpsertDishAsync(householdId, date, newDescription, null, 0, actingHousemateId);
 
                 // Assert.
                 var entries = capturedEntries();
@@ -255,11 +255,11 @@ public class DayHandlerHistoryPropertyTests
                 var actingHousemateId = Guid.NewGuid();
                 var date = new DateOnly(2025, 1, 15);
 
-                var existingDish = new DishRecord(householdId, date, input.OldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, input.OldDinnerTime, DateTimeOffset.UtcNow, null);
+                var existingDish = new DishRecord(householdId, date, input.OldDescription, Guid.NewGuid(), DateTimeOffset.UtcNow, input.OldDinnerTime, DateTimeOffset.UtcNow);
                 var (sut, capturedEntries) = CreateSutWithDishCapture(existingDish);
 
                 // Act.
-                await sut.UpsertDishAsync(householdId, date, input.NewDescription, null, input.NewDinnerTime, 0, actingHousemateId);
+                await sut.UpsertDishAsync(householdId, date, input.NewDescription, input.NewDinnerTime, 0, actingHousemateId);
 
                 // Assert.
                 var entries = capturedEntries();

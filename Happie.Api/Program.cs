@@ -59,6 +59,7 @@ builder.Services.AddSingleton<ICommentMapper, CommentMapper>();
 builder.Services.AddSingleton<IDayHistoryEntryMapper, DayHistoryEntryMapper>();
 builder.Services.AddSingleton<IPushSubscriptionMapper, PushSubscriptionMapper>();
 builder.Services.AddSingleton<ISavedDishMapper, SavedDishMapper>();
+builder.Services.AddSingleton<IDayPlanDishLinkMapper, DayPlanDishLinkMapper>();
 
 // Register all repositories as singletons.
 builder.Services.AddSingleton<IHouseholdRepository, HouseholdRepository>();
@@ -69,6 +70,7 @@ builder.Services.AddSingleton<ICommentRepository, CommentRepository>();
 builder.Services.AddSingleton<IDayHistoryRepository, DayHistoryRepository>();
 builder.Services.AddSingleton<IPushSubscriptionRepository, PushSubscriptionRepository>();
 builder.Services.AddSingleton<ISavedDishRepository, SavedDishRepository>();
+builder.Services.AddSingleton<IDayPlanDishLinkRepository, DayPlanDishLinkRepository>();
 
 // Register SentryOptions with startup validation.
 builder.Services

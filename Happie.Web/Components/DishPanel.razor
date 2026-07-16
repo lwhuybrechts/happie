@@ -263,7 +263,7 @@
         if (!_isSaving)
         {
             _committedValue = Dish?.Description ?? string.Empty;
-            _committedSavedDishId = Dish?.SavedDishId;
+            _committedSavedDishId = null;
         }
 
         _lastEditorName = ResolveEditorName();
@@ -285,7 +285,7 @@
         _showError = false;
         _showPromoteError = false;
 
-        // Determine initial mode from the DishRecord's SavedDishId value.
+        // Determine initial mode based on committed saved dish state.
         if (_committedSavedDishId is not null)
         {
             _isSavedMode = true;
@@ -418,7 +418,7 @@
                     _selectedSavedDishDescription = created.Description;
                     _editValue = created.Description;
 
-                    // Auto-save the DishRecord for the current day with the new SavedDishId.
+                    // Auto-save the DishRecord for the current day with the new saved dish.
                     await AutoSaveAfterPromoteAsync(created);
                 }
             }
@@ -442,7 +442,7 @@
                         _selectedSavedDishDescription = match.Description;
                         _editValue = match.Description;
 
-                        // Auto-save the DishRecord for the current day with the existing SavedDishId.
+                        // Auto-save the DishRecord for the current day with the existing saved dish.
                         await AutoSaveAfterPromoteAsync(match);
                     }
                 }
@@ -500,14 +500,14 @@
 
         var timezoneOffsetMinutes = (int)DateTimeOffset.Now.Offset.TotalMinutes;
 
-        // Save through CachedApiClient with SavedDishId and resolved description for cache.
-        var success = await CachedApi.SaveDishAsync(Date, savedDish.Description, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes, savedDish.Id, savedDish.Description);
+        // Save through CachedApiClient with resolved description for cache.
+        var success = await CachedApi.SaveDishAsync(Date, savedDish.Description, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes);
 
         if (!success)
         {
             // Rollback on failure — remain in edit mode with error shown.
             _committedValue = Dish?.Description ?? string.Empty;
-            _committedSavedDishId = Dish?.SavedDishId;
+            _committedSavedDishId = null;
             _showError = true;
         }
         else
@@ -570,12 +570,12 @@
 
             if (_isSavedMode)
             {
-                // Saved mode: send SavedDishId with null description, include resolved description for cache.
-                success = await CachedApi.SaveDishAsync(Date, _selectedSavedDishDescription, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes, _selectedSavedDishId, _selectedSavedDishDescription);
+                // Saved mode: send saved dish description.
+                success = await CachedApi.SaveDishAsync(Date, _selectedSavedDishDescription, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes);
             }
             else
             {
-                // Custom mode: send description with null SavedDishId (existing behavior).
+                // Custom mode: send description (existing behavior).
                 success = await CachedApi.SaveDishAsync(Date, trimmed, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes);
             }
         }

@@ -8,5 +8,4 @@ public record DishDto(
     [property: JsonPropertyName("lastChangedByHousemateId")] Guid? LastChangedByHousemateId,
     [property: JsonPropertyName("lastChangedAt")] DateTimeOffset? LastChangedAt,
     [property: JsonPropertyName("dinnerTimeHour")] int? DinnerTimeHour,
-    [property: JsonPropertyName("dinnerTimeMinute")] int? DinnerTimeMinute,
-    [property: JsonPropertyName("savedDishId")] Guid? SavedDishId);
+    [property: JsonPropertyName("dinnerTimeMinute")] int? DinnerTimeMinute);

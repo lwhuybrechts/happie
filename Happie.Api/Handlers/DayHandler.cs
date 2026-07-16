@@ -78,28 +78,9 @@ public class DayHandler : IDayHandler
             .ToList();
 
         // Build dish DTO.
-        // Resolve saved dish description if applicable.
-        string dishDescription = dish?.Description ?? string.Empty;
-        Guid? dishSavedDishId = dish?.SavedDishId;
-
-        if (dish is not null && dish.SavedDishId.HasValue)
-        {
-            var savedDish = await _savedDishRepository.GetAsync(householdId, dish.SavedDishId.Value, ct);
-            if (savedDish is not null)
-            {
-                // Resolve description from saved dish (active or soft-deleted).
-                dishDescription = savedDish.Description;
-            }
-            else
-            {
-                // Orphaned reference: fall back to own description, return null SavedDishId.
-                dishSavedDishId = null;
-            }
-        }
-
         var DishDto = dish is null
             ? null
-            : new DishDto(dishDescription, dish.LastChangedByHousemateId, dish.LastChangedAt, dish.DinnerTime?.Hour, dish.DinnerTime?.Minute, dishSavedDishId);
+            : new DishDto(dish.Description, dish.LastChangedByHousemateId, dish.LastChangedAt, dish.DinnerTime?.Hour, dish.DinnerTime?.Minute);
 
         // Build comment DTOs — include only housemates who have a comment.
         // Soft-deleted housemates are included if they have a comment; their name is formatted as "Name (deleted)".
@@ -168,59 +149,31 @@ public class DayHandler : IDayHandler
     }
 
     /// <inheritdoc/>
-    public async Task<DishUpsertResult> UpsertDishAsync(Guid householdId, DateOnly date, string? description, Guid? savedDishId, TimeOnly? dinnerTime, int timezoneOffsetMinutes, Guid actingHousemateId, CancellationToken ct = default)
+    public async Task<DishUpsertResult> UpsertDishAsync(Guid householdId, DateOnly date, string? description, TimeOnly? dinnerTime, int timezoneOffsetMinutes, Guid actingHousemateId, CancellationToken ct = default)
     {
-        // Mutual exclusion: both savedDishId and description provided → validation error.
-        if (savedDishId.HasValue && !string.IsNullOrEmpty(description))
-            return DishUpsertResult.ValidationError;
-
         // Both null/empty → delete the dish.
-        if (!savedDishId.HasValue && string.IsNullOrEmpty(description))
+        if (string.IsNullOrEmpty(description))
         {
             await DeleteDishAsync(householdId, date, actingHousemateId, ct);
             return DishUpsertResult.Deleted;
         }
 
-        // If savedDishId is provided, validate it exists.
-        string resolvedDescription;
-        Guid? recordSavedDishId;
-        if (savedDishId.HasValue)
-        {
-            var savedDish = await _savedDishRepository.GetAsync(householdId, savedDishId.Value, ct);
-            if (savedDish is null)
-                return DishUpsertResult.SavedDishNotFound;
-
-            // Store with empty description and the savedDishId reference.
-            resolvedDescription = string.Empty;
-            recordSavedDishId = savedDishId;
-        }
-        else
-        {
-            // Custom description mode: store description, clear savedDishId.
-            resolvedDescription = description!;
-            recordSavedDishId = null;
-        }
+        // Custom description mode.
+        var resolvedDescription = description!;
 
         // Fetch existing record to compare old values.
         var existingDish = await _dishRepository.GetAsync(householdId, date, ct);
 
-        var dishChanged = existingDish is null || existingDish.Description != resolvedDescription || existingDish.SavedDishId != recordSavedDishId;
+        var dishChanged = existingDish is null || existingDish.Description != resolvedDescription;
         var dinnerTimeChanged = existingDish?.DinnerTime != dinnerTime;
 
-        var record = new DishRecord(householdId, date, resolvedDescription, actingHousemateId, DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow, recordSavedDishId);
+        var record = new DishRecord(householdId, date, resolvedDescription, actingHousemateId, DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow);
         await _dishRepository.UpsertAsync(record, ct);
 
         // Write a single history entry based on what changed.
         if (dishChanged || dinnerTimeChanged)
         {
-            // For history, use the resolved description (from saved dish) for display purposes.
             var historyDescription = resolvedDescription;
-            if (savedDishId.HasValue)
-            {
-                var savedDish = await _savedDishRepository.GetAsync(householdId, savedDishId.Value, ct);
-                if (savedDish is not null)
-                    historyDescription = savedDish.Description;
-            }
 
             var historyEntry = CreateDishHistoryEntry(householdId, date, actingHousemateId, historyDescription, dinnerTime, dishChanged, dinnerTimeChanged);
 
