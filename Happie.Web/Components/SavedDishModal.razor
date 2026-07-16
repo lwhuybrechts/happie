@@ -187,6 +187,9 @@
         _isOpen = true;
         StateHasChanged();
 
+        // Lock background scroll while modal is open.
+        _ = JS.InvokeVoidAsync("happie.lockScroll");
+
         // Schedule scroll after render.
         if (_scrollTargetId is not null)
             _ = ScrollToSelectedAsync(_scrollTargetId.Value);
@@ -196,6 +199,9 @@
     public void Close()
     {
         _isOpen = false;
+
+        // Restore background scroll.
+        _ = JS.InvokeVoidAsync("happie.unlockScroll");
     }
 
     /// <summary>Confirms the current selection and invokes the OnConfirm callback.</summary>
@@ -204,6 +210,9 @@
         var selectedDishes = _selectedDishIds
             .Select(id => _sortedDishes.First(x => x.Id == id))
             .ToList();
+
+        // Restore background scroll.
+        await JS.InvokeVoidAsync("happie.unlockScroll");
 
         _isOpen = false;
         await OnConfirm.InvokeAsync(selectedDishes);
@@ -241,6 +250,9 @@
             // No dishes selected — pass the existing custom description.
             prefillText = _currentDescription;
         }
+
+        // Restore background scroll.
+        await JS.InvokeVoidAsync("happie.unlockScroll");
 
         _isOpen = false;
         await OnCustomMode.InvokeAsync(prefillText);

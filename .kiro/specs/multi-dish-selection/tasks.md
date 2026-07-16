@@ -54,7 +54,7 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Update `DaysFunction` to pass the new field to the handler
     - _Requirements: 10.1_
 
-- [ ] 3. Checkpoint - Ensure all tests pass
+- [~] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 4. DayHandler rewrite for multi-dish support
@@ -112,7 +112,7 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - **Property 6: Retroactive conversion creates links for all matching DishRecords**
     - **Validates: Requirements 9.1, 9.2**
 
-- [ ] 6. Checkpoint - Ensure all tests pass
+- [~] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 7. Frontend multi-select modal
@@ -160,8 +160,8 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Wire through `CachedApiClient.SaveDishAsync` with updated signature
     - _Requirements: 5.1, 5.5_
 
-- [ ] 9. Offline support and CachedApiClient updates
-  - [ ] 9.1 Extend `CachedApiClient.SaveDishAsync` for multi-dish
+- [x] 9. Offline support and CachedApiClient updates
+  - [x] 9.1 Extend `CachedApiClient.SaveDishAsync` for multi-dish
     - Update signature to accept `IReadOnlyList<Guid>? savedDishIds` and `string? resolvedDescription`
     - When `savedDishIds` is non-empty: send with null description
     - Optimistic update: store `resolvedDescription` in cached `DishDto.Description` and `savedDishIds` in `DishDto.SavedDishIds`
@@ -172,34 +172,34 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Test offline queueing includes savedDishIds in mutation payload
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 10. Checkpoint - Ensure all tests pass
+- [~] 10. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Modal overlay and scroll lock fixes
-  - [ ] 11.1 Fix modal overlay positioning
+- [x] 11. Modal overlay and scroll lock fixes
+  - [x] 11.1 Fix modal overlay positioning
     - Update Multi_Select_Modal overlay to use `position: fixed`, `inset: 0`, `z-index: 1100`
     - Update modal dialog to use `z-index: 1101`
     - Ensure overlay covers entire viewport including day plan header
     - Match NudgeModal overlay behavior
     - _Requirements: 13.1, 13.2, 13.3_
-  - [ ] 11.2 Implement Scroll_Lock for all modals
+  - [x] 11.2 Implement Scroll_Lock for all modals
     - Apply `overflow: hidden` to document body when any modal is open (Multi_Select_Modal, NudgeModal, HousemateColorPicker)
     - Restore previous scroll behavior on close (confirm, dismiss, backdrop)
     - Apply universally to all existing and new modals
     - _Requirements: 14.1, 14.2, 14.3_
-  - [ ] 11.3 Implement scrollable modal content
+  - [x] 11.3 Implement scrollable modal content
     - Make modal body independently scrollable when saved dishes list exceeds available vertical space
     - Keep modal header and sticky footer fixed (not scrolling with list)
     - Contain scroll within modal (page does not scroll)
     - _Requirements: 15.1, 15.2, 15.3_
 
 - [ ] 12. Documentation and prompt document
-  - [ ] 12.1 Update `coding-conventions.md` with modal conventions
+  - [~] 12.1 Update `coding-conventions.md` with modal conventions
     - Document modal overlay `position: fixed`, `inset: 0`, `z-index: 1100` convention
     - Document Scroll_Lock (`overflow: hidden` on body) requirement for all modals
     - Document independently scrollable modal content with fixed header/footer
     - _Requirements: 18.1, 18.2, 18.3, 18.4_
-  - [ ] 12.2 Create `prompt-dish-folders.md` in spec directory
+  - [~] 12.2 Create `prompt-dish-folders.md` in spec directory
     - Write one-paragraph feature summary for dish folders/categories
     - Include user story
     - List key behaviors to be specified (folder CRUD, assigning dishes, filtering, modal integration)
@@ -207,7 +207,7 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Describe relationship to existing entities
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
 
-- [ ] 13. Final checkpoint - Ensure all tests pass
+- [~] 13. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

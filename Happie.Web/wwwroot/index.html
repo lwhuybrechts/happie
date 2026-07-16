@@ -580,6 +580,16 @@
             if (element)
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         };
+
+        // Applies scroll lock to the document body (prevents background scrolling when modal is open).
+        happie.lockScroll = function () {
+            document.body.style.overflow = 'hidden';
+        };
+
+        // Restores scroll behavior on the document body (removes scroll lock when modal closes).
+        happie.unlockScroll = function () {
+            document.body.style.overflow = '';
+        };
     </script>
     <script src="js/cacheDb.js"></script>
     <script src="js/swipeCarousel.js"></script>

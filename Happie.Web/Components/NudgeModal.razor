@@ -3,6 +3,7 @@
 @inject HttpClient Http
 @inject IConnectivityService ConnectivityService
 @inject IStringLocalizer<AppStrings> Localizer
+@inject IJSRuntime JS
 
 @if (_isOpen)
 {
@@ -156,11 +157,17 @@
         _showError = false;
         _showOfflineError = false;
         _isOpen = true;
+
+        // Lock background scroll while modal is open.
+        _ = JS.InvokeVoidAsync("happie.lockScroll");
     }
 
     private void Close()
     {
         _isOpen = false;
+
+        // Restore background scroll.
+        _ = JS.InvokeVoidAsync("happie.unlockScroll");
     }
 
     private void ToggleRecipient(Guid housemateId)
