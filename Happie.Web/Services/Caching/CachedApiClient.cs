@@ -179,7 +179,7 @@ public class CachedApiClient : ICachedApiClient
 
         var url = $"days/{date}/dish";
 
-        var request = new UpdateDishRequest(description, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes);
+        var request = new UpdateDishRequest(description, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes, null);
 
         if (_connectivityService.IsOnline)
         {
@@ -510,7 +510,7 @@ public class CachedApiClient : ICachedApiClient
 
         var updatedDish = dayPlan.Dish is not null
             ? dayPlan.Dish with { Description = description, LastChangedByHousemateId = housemateId ?? dayPlan.Dish.LastChangedByHousemateId, LastChangedAt = DateTimeOffset.UtcNow, DinnerTimeHour = dinnerTimeHour, DinnerTimeMinute = dinnerTimeMinute }
-            : new DishDto(description, housemateId, DateTimeOffset.UtcNow, dinnerTimeHour, dinnerTimeMinute);
+            : new DishDto(description, housemateId, DateTimeOffset.UtcNow, dinnerTimeHour, dinnerTimeMinute, null);
 
         await SaveDayPlanUpdateAsync(householdId, date, dayPlan with { Dish = updatedDish });
     }

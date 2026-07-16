@@ -42,13 +42,13 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Add singleton registration for `IDayPlanDishLinkRepository` / `DayPlanDishLinkRepository`
     - _Requirements: 1.2_
 
-- [ ] 2. Shared contracts update
-  - [ ] 2.1 Update `DishDto` to replace `savedDishId` with `savedDishIds`
+- [x] 2. Shared contracts update
+  - [x] 2.1 Update `DishDto` to replace `savedDishId` with `savedDishIds`
     - Replace nullable `Guid? SavedDishId` with nullable `IReadOnlyList<Guid>? SavedDishIds` in `Happie.Shared/Contracts/DishDto.cs`
     - Add `[JsonPropertyName("savedDishIds")]` attribute
     - Update any frontend code that reads `SavedDishId` to use `SavedDishIds`
     - _Requirements: 10.2_
-  - [ ] 2.2 Update `UpdateDishRequest` to replace `savedDishId` with `savedDishIds`
+  - [x] 2.2 Update `UpdateDishRequest` to replace `savedDishId` with `savedDishIds`
     - Replace nullable `Guid? SavedDishId` with nullable `IReadOnlyList<Guid>? SavedDishIds` in `Happie.Shared/Contracts/UpdateDishRequest.cs`
     - Add `[JsonPropertyName("savedDishIds")]` attribute
     - Update `DaysFunction` to pass the new field to the handler

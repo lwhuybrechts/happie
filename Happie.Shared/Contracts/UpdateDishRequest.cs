@@ -13,4 +13,6 @@ public record UpdateDishRequest(
     [property: JsonPropertyName("dinnerTimeMinute")]
     int? DinnerTimeMinute,
     [property: JsonPropertyName("timezoneOffsetMinutes")]
-    int TimezoneOffsetMinutes);
+    int TimezoneOffsetMinutes,
+    [property: JsonPropertyName("savedDishIds")]
+    IReadOnlyList<Guid>? SavedDishIds);

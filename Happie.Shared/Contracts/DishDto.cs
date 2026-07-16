@@ -8,4 +8,5 @@ public record DishDto(
     [property: JsonPropertyName("lastChangedByHousemateId")] Guid? LastChangedByHousemateId,
     [property: JsonPropertyName("lastChangedAt")] DateTimeOffset? LastChangedAt,
     [property: JsonPropertyName("dinnerTimeHour")] int? DinnerTimeHour,
-    [property: JsonPropertyName("dinnerTimeMinute")] int? DinnerTimeMinute);
+    [property: JsonPropertyName("dinnerTimeMinute")] int? DinnerTimeMinute,
+    [property: JsonPropertyName("savedDishIds")] IReadOnlyList<Guid>? SavedDishIds);

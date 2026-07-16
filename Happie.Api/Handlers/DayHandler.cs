@@ -80,7 +80,7 @@ public class DayHandler : IDayHandler
         // Build dish DTO.
         var DishDto = dish is null
             ? null
-            : new DishDto(dish.Description, dish.LastChangedByHousemateId, dish.LastChangedAt, dish.DinnerTime?.Hour, dish.DinnerTime?.Minute);
+            : new DishDto(dish.Description, dish.LastChangedByHousemateId, dish.LastChangedAt, dish.DinnerTime?.Hour, dish.DinnerTime?.Minute, null);
 
         // Build comment DTOs — include only housemates who have a comment.
         // Soft-deleted housemates are included if they have a comment; their name is formatted as "Name (deleted)".
