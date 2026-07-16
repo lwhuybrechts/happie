@@ -28,7 +28,7 @@ public interface ICachedApiClient
     Task<bool> SaveAttendanceAsync(string date, Guid housemateId, AttendanceStatus status);
 
     /// <summary>Saves a dish change. Online: sends HTTP and updates cache. Offline: queues mutation and applies optimistically.</summary>
-    Task<bool> SaveDishAsync(string date, string description, int? dinnerTimeHour, int? dinnerTimeMinute, int timezoneOffsetMinutes);
+    Task<bool> SaveDishAsync(string date, string? description, int? dinnerTimeHour, int? dinnerTimeMinute, int timezoneOffsetMinutes, IReadOnlyList<Guid>? savedDishIds = null, string? resolvedDescription = null);
 
     /// <summary>Deletes the dish for a given date. Online: sends HTTP and updates cache. Offline: queues mutation and applies optimistically.</summary>
     Task<bool> DeleteDishAsync(string date);

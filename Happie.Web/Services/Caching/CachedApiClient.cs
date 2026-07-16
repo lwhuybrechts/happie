@@ -171,7 +171,7 @@ public class CachedApiClient : ICachedApiClient
         return true;
     }
 
-    public async Task<bool> SaveDishAsync(string date, string description, int? dinnerTimeHour, int? dinnerTimeMinute, int timezoneOffsetMinutes)
+    public async Task<bool> SaveDishAsync(string date, string? description, int? dinnerTimeHour, int? dinnerTimeMinute, int timezoneOffsetMinutes, IReadOnlyList<Guid>? savedDishIds = null, string? resolvedDescription = null)
     {
         var householdId = await GetHouseholdIdAsync();
         if (householdId is null)
@@ -179,7 +179,16 @@ public class CachedApiClient : ICachedApiClient
 
         var url = $"days/{date}/dish";
 
-        var request = new UpdateDishRequest(description, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes, null);
+        // When savedDishIds is provided, send null description; otherwise send the description.
+        var requestDescription = savedDishIds is not null && savedDishIds.Count > 0 ? null : description;
+        var requestSavedDishIds = savedDishIds is not null && savedDishIds.Count > 0 ? savedDishIds : null;
+        var request = new UpdateDishRequest(requestDescription, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes, requestSavedDishIds);
+
+        // Determine the display description for optimistic cache update.
+        var cacheDescription = savedDishIds is not null && savedDishIds.Count > 0
+            ? resolvedDescription ?? string.Empty
+            : description ?? string.Empty;
+        var cacheSavedDishIds = requestSavedDishIds;
 
         if (_connectivityService.IsOnline)
         {
@@ -188,13 +197,13 @@ public class CachedApiClient : ICachedApiClient
                 return false;
 
             // Update day plan cache if entry exists.
-            await ApplyDishOptimisticUpdate(householdId, date, description, dinnerTimeHour, dinnerTimeMinute);
+            await ApplyDishOptimisticUpdate(householdId, date, cacheDescription, dinnerTimeHour, dinnerTimeMinute, cacheSavedDishIds);
             return true;
         }
 
         // Offline: enqueue mutation and apply optimistic update.
         await EnqueueMutationAsync(householdId, "PUT", url, JsonSerializer.Serialize(request), date, "dish");
-        await ApplyDishOptimisticUpdate(householdId, date, description, dinnerTimeHour, dinnerTimeMinute);
+        await ApplyDishOptimisticUpdate(householdId, date, cacheDescription, dinnerTimeHour, dinnerTimeMinute, cacheSavedDishIds);
 
         return true;
     }
@@ -500,7 +509,7 @@ public class CachedApiClient : ICachedApiClient
         await _cacheStore.PutCalendarAsync(householdId, month, updatedJson, month);
     }
 
-    private async Task ApplyDishOptimisticUpdate(string householdId, string date, string description, int? dinnerTimeHour, int? dinnerTimeMinute)
+    private async Task ApplyDishOptimisticUpdate(string householdId, string date, string description, int? dinnerTimeHour, int? dinnerTimeMinute, IReadOnlyList<Guid>? savedDishIds = null)
     {
         var dayPlan = await GetCachedDayPlanAsync(householdId, date);
         if (dayPlan is null)
@@ -509,8 +518,8 @@ public class CachedApiClient : ICachedApiClient
         var housemateId = await GetActiveHousemateIdAsync();
 
         var updatedDish = dayPlan.Dish is not null
-            ? dayPlan.Dish with { Description = description, LastChangedByHousemateId = housemateId ?? dayPlan.Dish.LastChangedByHousemateId, LastChangedAt = DateTimeOffset.UtcNow, DinnerTimeHour = dinnerTimeHour, DinnerTimeMinute = dinnerTimeMinute }
-            : new DishDto(description, housemateId, DateTimeOffset.UtcNow, dinnerTimeHour, dinnerTimeMinute, null);
+            ? dayPlan.Dish with { Description = description, LastChangedByHousemateId = housemateId ?? dayPlan.Dish.LastChangedByHousemateId, LastChangedAt = DateTimeOffset.UtcNow, DinnerTimeHour = dinnerTimeHour, DinnerTimeMinute = dinnerTimeMinute, SavedDishIds = savedDishIds }
+            : new DishDto(description, housemateId, DateTimeOffset.UtcNow, dinnerTimeHour, dinnerTimeMinute, savedDishIds);
 
         await SaveDayPlanUpdateAsync(householdId, date, dayPlan with { Dish = updatedDish });
     }

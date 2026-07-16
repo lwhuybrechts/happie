@@ -358,19 +358,8 @@
 
     private async Task HandleModeToggleAsync()
     {
-        if (_isSavedMode)
-        {
-            // Switch from Saved_Mode to Custom_Mode: pre-fill with the saved dish description.
-            _isSavedMode = false;
-            _editValue = _selectedSavedDishDescription;
-            _selectedSavedDishIds = [];
-            _selectedSavedDishDescription = string.Empty;
-        }
-        else
-        {
-            // Switch from Custom_Mode: open the SavedDishModal.
-            await OpenSavedDishModalAsync();
-        }
+        // Always open the modal regardless of current mode.
+        await OpenSavedDishModalAsync();
     }
 
     private async Task OpenSavedDishModalAsync()
@@ -407,8 +396,7 @@
         // Switch to Saved_Mode with the selected dishes.
         _isSavedMode = true;
         _selectedSavedDishIds = dishes.Select(x => x.Id).ToList();
-        // Combined description: join all selected dish descriptions with " + ".
-        _selectedSavedDishDescription = string.Join(" + ", dishes.Select(x => x.Description));
+        _selectedSavedDishDescription = string.Join(" & ", dishes.Select(x => x.Description));
         _editValue = _selectedSavedDishDescription;
         StateHasChanged();
     }
@@ -472,12 +460,12 @@
 
             if (_isSavedMode)
             {
-                // Saved mode: send saved dish description.
-                success = await CachedApi.SaveDishAsync(Date, _selectedSavedDishDescription, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes);
+                // Saved mode: send savedDishIds with null description.
+                success = await CachedApi.SaveDishAsync(Date, null, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes, _selectedSavedDishIds, _selectedSavedDishDescription);
             }
             else
             {
-                // Custom mode: send description (existing behavior).
+                // Custom mode: send description with null savedDishIds (existing behavior).
                 success = await CachedApi.SaveDishAsync(Date, trimmed, dinnerTimeHour, dinnerTimeMinute, timezoneOffsetMinutes);
             }
         }

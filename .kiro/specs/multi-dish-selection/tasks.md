@@ -141,20 +141,20 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Hide when description is empty, whitespace-only, or >100 chars
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6_
 
-- [ ] 8. Frontend DishPanel and mode toggle updates
-  - [ ] 8.1 Update DishPanel display for multi-dish selection
+- [x] 8. Frontend DishPanel and mode toggle updates
+  - [x] 8.1 Update DishPanel display for multi-dish selection
     - Display Combined_Description (joined with " & ") in read mode when saved dishes are linked
     - Show bookmark icon adjacent to Combined_Description when linked dishes exist
     - When entering edit mode with linked dishes: start in Saved_Mode with dishes pre-selected
     - When switching from Saved_Mode to Custom_Mode: pre-fill input with Combined_Description
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
-  - [ ] 8.2 Update Mode_Toggle behavior
+  - [x] 8.2 Update Mode_Toggle behavior
     - Bookmark button always opens Multi_Select_Modal (regardless of current mode)
     - From Saved_Mode: open modal with currently linked dishes pre-selected
     - From Custom_Mode: open modal (existing behavior)
     - "Custom mode" button in footer: close modal, switch to Custom_Mode, pre-fill with Combined_Description (or existing custom description if no dishes selected)
     - _Requirements: 17.1, 17.2, 17.3, 17.4_
-  - [ ] 8.3 Update DishPanel save logic for multi-dish
+  - [x] 8.3 Update DishPanel save logic for multi-dish
     - On confirm: send list of selected SavedDishIds (in selection order) with null description
     - On custom save: send null SavedDishIds with typed description
     - Wire through `CachedApiClient.SaveDishAsync` with updated signature
