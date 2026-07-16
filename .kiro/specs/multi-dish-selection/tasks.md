@@ -115,8 +115,8 @@ This plan transforms the single-dish reference model into a many-to-many relatio
 - [ ] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Frontend multi-select modal
-  - [ ] 7.1 Update `SavedDishModal` to multi-select with checkmarks
+- [x] 7. Frontend multi-select modal
+  - [x] 7.1 Update `SavedDishModal` to multi-select with checkmarks
     - Convert from single-select (tap to close) to multi-select (toggleable checkmarks)
     - Display all active saved dishes sorted alphabetically
     - Track selection state as an ordered list of selected SavedDishIds
@@ -126,14 +126,14 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Dismiss (close/backdrop) preserves previous state without changes
     - All text uses `IStringLocalizer<AppStrings>`
     - _Requirements: 2.1, 2.2, 2.5, 2.6, 2.7, 2.8, 2.10, 3.1, 3.2, 3.3_
-  - [ ] 7.2 Implement sticky footer with live preview and confirm button
+  - [x] 7.2 Implement sticky footer with live preview and confirm button
     - Add fixed footer showing: Combined_Description preview (joined with " & " in selection order), "Confirm (N)" button (disabled when N=0), "Custom mode" button
     - Immediate update on toggle (count + preview text)
     - Show localized placeholder when no dishes selected
     - Footer remains visible at all times regardless of scroll position
     - "Confirm" button text includes count via `IStringLocalizer<AppStrings>`
     - _Requirements: 2.3, 2.4, 2.9, 12.1, 12.2, 12.3, 12.4, 12.5_
-  - [ ] 7.3 Implement Promote_Option in Multi_Select_Modal
+  - [x] 7.3 Implement Promote_Option in Multi_Select_Modal
     - Show Promote_Option at top of list when custom description is non-empty, non-matching, ≤100 chars
     - On select: create new SavedDish via `POST /api/saved-dishes`, on success auto-check new dish
     - Handle 409 (already exists): show localized error, auto-check existing match

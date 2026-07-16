@@ -1,5 +1,7 @@
 @using Happie.Shared.Contracts
 @inject IStringLocalizer<AppStrings> Localizer
+@inject IJSRuntime JS
+@inject HttpClient Http
 
 @if (_isOpen)
 {
@@ -20,115 +22,289 @@
         </div>
 
         <div class="saved-dish-modal__body">
-            @if (_promoteOption is not null)
+            @if (!string.IsNullOrEmpty(_promoteError))
+            {
+                <p class="saved-dish-modal__error">@_promoteError</p>
+            }
+
+            @if (ShowPromoteOption)
             {
                 <button class="saved-dish-modal__action-item saved-dish-modal__action-item--promote"
-                        @onclick="HandlePromote">
-                    @(string.Format(Localizer[_promoteLocalizationKey].Value, _promoteOption.Description))
+                        @onclick="HandlePromoteAsync"
+                        disabled="@_isPromoting">
+                    @string.Format(Localizer["SavedDish_Promote"].Value, _currentDescription.Trim())
                 </button>
             }
 
             @if (_sortedDishes.Count > 0)
             {
-                <ul class="saved-dish-modal__list">
+                @if (IsAtLimit)
+                {
+                    <p class="saved-dish-modal__limit-message">@Localizer["SavedDish_SelectionLimit"]</p>
+                }
+
+                <ul class="saved-dish-modal__list" @ref="_listRef">
                     @foreach (var dish in _sortedDishes)
                     {
-                        <li class="saved-dish-modal__list-item">
-                            <button class="saved-dish-modal__dish-btn" @onclick="() => SelectDish(dish)">
-                                @dish.Description
+                        var isSelected = _selectedDishIds.Contains(dish.Id);
+                        var isDisabled = !isSelected && IsAtLimit;
+
+                        <li class="saved-dish-modal__list-item" id="@($"saved-dish-{dish.Id}")">
+                            <button class="saved-dish-modal__dish-btn @(isSelected ? "saved-dish-modal__dish-btn--selected" : "") @(isDisabled ? "saved-dish-modal__dish-btn--disabled" : "")"
+                                    @onclick="() => ToggleDish(dish)"
+                                    disabled="@isDisabled"
+                                    aria-pressed="@isSelected.ToString().ToLower()">
+                                <span class="saved-dish-modal__checkmark @(isSelected ? "saved-dish-modal__checkmark--visible" : "")">✓</span>
+                                <span class="saved-dish-modal__dish-name">@dish.Description</span>
                             </button>
                         </li>
                     }
                 </ul>
             }
-            else if (_promoteOption is null)
+            else
             {
                 <p class="saved-dish-modal__empty">@Localizer["SavedDish_EmptyState"]</p>
             }
+        </div>
+
+        <div class="saved-dish-modal__footer">
+            <p class="saved-dish-modal__preview">@CombinedDescriptionPreview</p>
+            <div class="saved-dish-modal__footer-buttons">
+                <button class="saved-dish-modal__confirm-btn"
+                        disabled="@(_selectedDishIds.Count == 0)"
+                        @onclick="ConfirmAsync">
+                    @string.Format(Localizer["SavedDish_ConfirmButton"].Value, _selectedDishIds.Count)
+                </button>
+                <button class="saved-dish-modal__custom-btn"
+                        @onclick="HandleCustomMode">
+                    @Localizer["SavedDish_CustomModeButton"]
+                </button>
+            </div>
         </div>
     </div>
 }
 
 @code {
-    /// <summary>Callback invoked when the user selects a saved dish from the list or uses an existing match.</summary>
-    [Parameter, EditorRequired]
-    public EventCallback<SavedDishDto> OnDishSelected { get; set; }
+    private const int SelectionLimit = 10;
 
-    /// <summary>Callback invoked when the user promotes the current custom description to a saved dish.</summary>
+    /// <summary>Callback invoked when the user confirms the multi-selection.</summary>
     [Parameter, EditorRequired]
-    public EventCallback<SavedDishDto> OnDishPromoted { get; set; }
+    public EventCallback<IReadOnlyList<SavedDishDto>> OnConfirm { get; set; }
+
+    /// <summary>Callback invoked when the user clicks "Custom mode" (passes Combined_Description).</summary>
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnCustomMode { get; set; }
 
     private bool _isOpen;
     private string _currentDescription = string.Empty;
     private List<SavedDishDto> _sortedDishes = [];
-    private SavedDishDto? _promoteOption;
-    private string _promoteLocalizationKey = string.Empty;
+    private List<Guid> _selectedDishIds = [];
+    private ElementReference _listRef;
+    private Guid? _scrollTargetId;
+    private bool _isPromoting;
+    private string? _promoteError;
 
-    /// <summary>Opens the modal with the current custom description and the list of active saved dishes.</summary>
-    public void Open(string currentDescription, IReadOnlyList<SavedDishDto> savedDishes)
+    private bool IsAtLimit => _selectedDishIds.Count >= SelectionLimit;
+
+    private bool ShowPromoteOption
+    {
+        get
+        {
+            var trimmed = _currentDescription.Trim();
+            if (string.IsNullOrEmpty(trimmed) || trimmed.Length > 100)
+                return false;
+
+            // Hide if it matches an existing saved dish (case-insensitive).
+            return !_sortedDishes.Any(x =>
+                string.Equals(x.Description.Trim(), trimmed, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    private string CombinedDescriptionPreview
+    {
+        get
+        {
+            if (_selectedDishIds.Count == 0)
+                return Localizer["SavedDish_SelectPlaceholder"];
+
+            var descriptions = _selectedDishIds
+                .Select(id => _sortedDishes.FirstOrDefault(x => x.Id == id))
+                .Where(x => x is not null)
+                .Select(x => x!.Description);
+
+            return string.Join(" & ", descriptions);
+        }
+    }
+
+    /// <summary>Opens the modal with the current custom description, list of active saved dishes, and optional pre-selected IDs.</summary>
+    public void Open(string currentDescription, IReadOnlyList<SavedDishDto> savedDishes, IReadOnlyList<Guid>? preSelectedIds)
     {
         _currentDescription = currentDescription;
+        _promoteError = null;
+        _isPromoting = false;
         _sortedDishes = savedDishes
             .OrderBy(x => x.Description, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        DetermineTopAction();
+        // Initialize selection from pre-selected IDs.
+        _selectedDishIds = [];
+        _scrollTargetId = null;
+
+        if (preSelectedIds is not null)
+        {
+            // Add pre-selected IDs that exist in the sorted dishes.
+            var validIds = new HashSet<Guid>(_sortedDishes.Select(x => x.Id));
+            foreach (var id in preSelectedIds)
+            {
+                if (validIds.Contains(id))
+                    _selectedDishIds.Add(id);
+            }
+        }
+
+        // Auto-match: if currentDescription matches an active saved dish and it's not already selected, add it.
+        var trimmed = _currentDescription.Trim();
+        if (!string.IsNullOrEmpty(trimmed))
+        {
+            var match = _sortedDishes.FirstOrDefault(x =>
+                string.Equals(x.Description.Trim(), trimmed, StringComparison.OrdinalIgnoreCase));
+
+            if (match is not null && !_selectedDishIds.Contains(match.Id))
+            {
+                _selectedDishIds.Add(match.Id);
+                _scrollTargetId = match.Id;
+            }
+            else if (match is not null && _selectedDishIds.Contains(match.Id))
+            {
+                // Already selected via preSelectedIds, still scroll to it.
+                _scrollTargetId = match.Id;
+            }
+        }
+
+        // If no auto-match scroll target but we have pre-selected items, scroll to the first one.
+        if (_scrollTargetId is null && _selectedDishIds.Count > 0)
+            _scrollTargetId = _selectedDishIds[0];
 
         _isOpen = true;
         StateHasChanged();
+
+        // Schedule scroll after render.
+        if (_scrollTargetId is not null)
+            _ = ScrollToSelectedAsync(_scrollTargetId.Value);
     }
 
-    /// <summary>Closes the modal without any action.</summary>
+    /// <summary>Closes the modal without any action (preserves previous state).</summary>
     public void Close()
     {
         _isOpen = false;
     }
 
-    private void DetermineTopAction()
+    /// <summary>Confirms the current selection and invokes the OnConfirm callback.</summary>
+    public async Task ConfirmAsync()
     {
-        _promoteOption = null;
-        _promoteLocalizationKey = string.Empty;
+        var selectedDishes = _selectedDishIds
+            .Select(id => _sortedDishes.First(x => x.Id == id))
+            .ToList();
 
-        var trimmed = _currentDescription.Trim();
+        _isOpen = false;
+        await OnConfirm.InvokeAsync(selectedDishes);
+    }
 
-        // No action if description is empty or exceeds 100 characters.
-        if (string.IsNullOrEmpty(trimmed) || trimmed.Length > 100)
-            return;
+    /// <summary>Gets the current selection count for external display (e.g., footer button).</summary>
+    public int GetSelectionCount() => _selectedDishIds.Count;
 
-        // Check if description matches an existing saved dish (case-insensitive).
-        var match = _sortedDishes.FirstOrDefault(x =>
-            string.Equals(x.Description.Trim(), trimmed, StringComparison.OrdinalIgnoreCase));
+    /// <summary>Gets the currently selected dish IDs.</summary>
+    public IReadOnlyList<Guid> GetSelectedIds() => _selectedDishIds;
 
-        if (match is not null)
+    private void ToggleDish(SavedDishDto dish)
+    {
+        if (_selectedDishIds.Contains(dish.Id))
+            _selectedDishIds.Remove(dish.Id);
+        else if (!IsAtLimit)
+            _selectedDishIds.Add(dish.Id);
+    }
+
+    private async Task HandleCustomMode()
+    {
+        // Compute Combined_Description from current selection.
+        string prefillText;
+        if (_selectedDishIds.Count > 0)
         {
-            // "Use existing saved dish: {matched description}".
-            _promoteOption = match;
-            _promoteLocalizationKey = "SavedDish_UseExisting";
+            var descriptions = _selectedDishIds
+                .Select(id => _sortedDishes.FirstOrDefault(x => x.Id == id))
+                .Where(x => x is not null)
+                .Select(x => x!.Description);
+
+            prefillText = string.Join(" & ", descriptions);
         }
         else
         {
-            // "Add {description} to saved dishes".
-            _promoteOption = new SavedDishDto(Guid.Empty, trimmed);
-            _promoteLocalizationKey = "SavedDish_Promote";
+            // No dishes selected — pass the existing custom description.
+            prefillText = _currentDescription;
+        }
+
+        _isOpen = false;
+        await OnCustomMode.InvokeAsync(prefillText);
+    }
+
+    private async Task HandlePromoteAsync()
+    {
+        _isPromoting = true;
+        _promoteError = null;
+
+        try
+        {
+            var trimmed = _currentDescription.Trim();
+            var response = await Http.PostAsJsonAsync("saved-dishes", new CreateSavedDishRequest(trimmed));
+
+            if (response.IsSuccessStatusCode)
+            {
+                var created = await response.Content.ReadFromJsonAsync<SavedDishDto>();
+                if (created is not null)
+                {
+                    // Add to the sorted list and auto-check it.
+                    _sortedDishes.Add(created);
+                    _sortedDishes = _sortedDishes.OrderBy(x => x.Description, StringComparer.OrdinalIgnoreCase).ToList();
+                    if (!_selectedDishIds.Contains(created.Id) && !IsAtLimit)
+                        _selectedDishIds.Add(created.Id);
+                }
+            }
+            else if ((int)response.StatusCode == 409)
+            {
+                // Already exists — show error and auto-check the match.
+                _promoteError = Localizer["SavedDish_PromoteAlreadyExists"].Value;
+                var match = _sortedDishes.FirstOrDefault(x =>
+                    string.Equals(x.Description.Trim(), _currentDescription.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (match is not null && !_selectedDishIds.Contains(match.Id) && !IsAtLimit)
+                    _selectedDishIds.Add(match.Id);
+            }
+            else
+            {
+                _promoteError = Localizer["SavedDish_PromoteError"].Value;
+            }
+        }
+        catch
+        {
+            _promoteError = Localizer["SavedDish_PromoteError"].Value;
+        }
+        finally
+        {
+            _isPromoting = false;
         }
     }
 
-    private async Task HandlePromote()
+    private async Task ScrollToSelectedAsync(Guid dishId)
     {
-        if (_promoteOption is null)
-            return;
+        // Wait for the render to complete.
+        await Task.Yield();
+        await Task.Delay(50);
 
-        _isOpen = false;
-
-        if (_promoteLocalizationKey == "SavedDish_UseExisting")
-            await OnDishSelected.InvokeAsync(_promoteOption);
-        else
-            await OnDishPromoted.InvokeAsync(_promoteOption);
-    }
-
-    private async Task SelectDish(SavedDishDto dish)
-    {
-        _isOpen = false;
-        await OnDishSelected.InvokeAsync(dish);
+        try
+        {
+            await JS.InvokeVoidAsync("happie.scrollIntoView", $"saved-dish-{dishId}");
+        }
+        catch
+        {
+            // Scroll is best-effort; ignore errors.
+        }
     }
 }

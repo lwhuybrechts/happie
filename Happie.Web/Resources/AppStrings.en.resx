@@ -582,4 +582,16 @@
   <data name="SavedDish_LoadError" xml:space="preserve">
     <value>Failed to load dishes.</value>
   </data>
+  <data name="SavedDish_SelectionLimit" xml:space="preserve">
+    <value>Maximum 10 dishes</value>
+  </data>
+  <data name="SavedDish_ConfirmButton" xml:space="preserve">
+    <value>Confirm ({0})</value>
+  </data>
+  <data name="SavedDish_CustomModeButton" xml:space="preserve">
+    <value>Custom mode</value>
+  </data>
+  <data name="SavedDish_SelectPlaceholder" xml:space="preserve">
+    <value>Select dishes</value>
+  </data>
 </root>

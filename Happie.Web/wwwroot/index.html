@@ -573,6 +573,13 @@
             happie._onOffline = null;
             happie._connectivityDotNetRef = null;
         };
+
+        // Scrolls the element with the given ID into view within its scroll container.
+        happie.scrollIntoView = function (elementId) {
+            var element = document.getElementById(elementId);
+            if (element)
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
     </script>
     <script src="js/cacheDb.js"></script>
     <script src="js/swipeCarousel.js"></script>

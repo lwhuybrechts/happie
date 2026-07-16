@@ -582,4 +582,16 @@
   <data name="SavedDish_LoadError" xml:space="preserve">
     <value>Gerechten laden mislukt.</value>
   </data>
+  <data name="SavedDish_SelectionLimit" xml:space="preserve">
+    <value>Maximaal 10 gerechten</value>
+  </data>
+  <data name="SavedDish_ConfirmButton" xml:space="preserve">
+    <value>Bevestigen ({0})</value>
+  </data>
+  <data name="SavedDish_CustomModeButton" xml:space="preserve">
+    <value>Eigen invoer</value>
+  </data>
+  <data name="SavedDish_SelectPlaceholder" xml:space="preserve">
+    <value>Selecteer gerechten</value>
+  </data>
 </root>
