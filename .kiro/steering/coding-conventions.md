@@ -902,6 +902,62 @@ When adding a new modal that can appear on a swipe-enabled page, ensure:
 1. The modal dialog element has `role="dialog"` (already required for accessibility).
 2. If the overlay uses a class not yet listed in the `closest()` check, add it to the selector in `index.html`.
 
+### Scroll Lock (MUST follow)
+
+All modals MUST apply `overflow: hidden` to `document.body` while open to prevent background page scrolling behind the overlay. This applies universally to ALL modals (Multi_Select_Modal, NudgeModal, HousemateColorPicker, and any future modals).
+
+- Apply `overflow: hidden` to `document.body` when the modal opens.
+- Restore the previous scroll behavior on close (confirm, dismiss, or backdrop tap).
+- Never leave `overflow: hidden` on the body after a modal is closed.
+
+```csharp
+// ✅ GOOD: Blazor JSInterop approach for scroll lock.
+
+// On modal open:
+await JS.InvokeVoidAsync("eval", "document.body.style.overflow = 'hidden'");
+
+// On modal close (confirm, dismiss, or backdrop tap):
+await JS.InvokeVoidAsync("eval", "document.body.style.overflow = ''");
+```
+
+### Scrollable Modal Content (MUST follow)
+
+When modal content exceeds the available vertical space, the modal body MUST be independently scrollable. The modal header and footer MUST remain fixed (not scroll with the content). Page scrolling MUST be contained within the modal — the page itself does not scroll.
+
+- Use `overflow-y: auto` on the modal body to enable scrolling only when needed.
+- Use `flex: 1` and `min-height: 0` so the body shrinks within the flex layout and activates overflow.
+- The modal container should use `display: flex; flex-direction: column` with a constrained height (e.g., `max-height: 80vh`).
+
+```css
+/* ✅ GOOD: independently scrollable modal body with fixed header/footer. */
+.my-modal {
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+}
+
+.my-modal__header {
+    flex-shrink: 0;
+}
+
+.my-modal__body {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.my-modal__footer {
+    flex-shrink: 0;
+}
+```
+
+```css
+/* ❌ BAD: entire modal scrolls, footer disappears off-screen. */
+.my-modal {
+    overflow-y: auto;
+}
+```
+
 
 ---
 

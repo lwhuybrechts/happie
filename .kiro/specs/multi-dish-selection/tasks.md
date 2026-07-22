@@ -193,13 +193,13 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Contain scroll within modal (page does not scroll)
     - _Requirements: 15.1, 15.2, 15.3_
 
-- [ ] 12. Documentation and prompt document
-  - [~] 12.1 Update `coding-conventions.md` with modal conventions
+- [x] 12. Documentation and prompt document
+  - [x] 12.1 Update `coding-conventions.md` with modal conventions
     - Document modal overlay `position: fixed`, `inset: 0`, `z-index: 1100` convention
     - Document Scroll_Lock (`overflow: hidden` on body) requirement for all modals
     - Document independently scrollable modal content with fixed header/footer
     - _Requirements: 18.1, 18.2, 18.3, 18.4_
-  - [~] 12.2 Create `prompt-dish-folders.md` in spec directory
+  - [x] 12.2 Create `prompt-dish-folders.md` in spec directory
     - Write one-paragraph feature summary for dish folders/categories
     - Include user story
     - List key behaviors to be specified (folder CRUD, assigning dishes, filtering, modal integration)

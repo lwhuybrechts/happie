@@ -199,8 +199,8 @@ This plan implements a household-level saved dishes collection with CRUD managem
 - [x] 9. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 10. Future feature prompt documents
-  - [~] 10.1 Create prompt documents for planned features
+- [x] 10. Future feature prompt documents
+  - [x] 10.1 Create prompt documents for planned features
     - Create `prompt-public-dishes.md` describing toggle-to-public, cross-household suggestions, copy semantics
     - Create `prompt-saved-dish-history.md` describing audit trail following DayHistoryEntry pattern
     - Create `prompt-recipes.md` describing ingredients list and cooking instructions on SavedDish
