@@ -72,7 +72,7 @@
     }
 
     @* Saved dishes list. *@
-    @if (_isLoading)
+    @if (_dishesLoading)
     {
         <p>@Localizer["DayPlan_Loading"]</p>
     }
@@ -160,7 +160,11 @@
     }
 
     @* Suggestions section — only shown when suggestions are available. *@
-    @if (_suggestions.Count > 0)
+    @if (_suggestionsLoading)
+    {
+        <p>@Localizer["DayPlan_Loading"]</p>
+    }
+    else if (_suggestions.Count > 0)
     {
         <div class="saved-dishes-page__suggestions">
             <h2 class="saved-dishes-page__suggestions-title">@Localizer["SavedDishes_SuggestionsTitle"]</h2>
@@ -200,7 +204,8 @@
 @code {
     private List<SavedDishDto> _dishes = new();
     private List<SavedDishSuggestionDto> _suggestions = new();
-    private bool _isLoading = true;
+    private bool _dishesLoading = true;
+    private bool _suggestionsLoading;
     private bool _loadError;
     private string? _errorMessage;
 
@@ -266,7 +271,7 @@
 
     private async Task LoadDishesAsync()
     {
-        _isLoading = true;
+        _dishesLoading = true;
         _loadError = false;
 
         var result = await CachedApi.GetSavedDishesAsync();
@@ -285,13 +290,15 @@
             _loadError = true;
         }
 
-        _isLoading = false;
+        _dishesLoading = false;
     }
 
     private async Task LoadSuggestionsAsync()
     {
         if (!ConnectivityService.IsOnline)
             return;
+
+        _suggestionsLoading = true;
 
         try
         {
@@ -303,6 +310,10 @@
             }
         }
         catch { }
+        finally
+        {
+            _suggestionsLoading = false;
+        }
     }
 
     private async Task PromoteSuggestionAsync(SavedDishSuggestionDto suggestion)
