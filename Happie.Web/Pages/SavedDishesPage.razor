@@ -72,13 +72,13 @@
     }
 
     @* Saved dishes list. *@
-    @if (_dishesLoading)
-    {
-        <p>@Localizer["DayPlan_Loading"]</p>
-    }
-    else if (_loadError)
+    @if (_loadError)
     {
         <p role="alert">@Localizer["SavedDishes_LoadError"]</p>
+    }
+    else if (_showDishesLoading)
+    {
+        <p class="loading-delayed">@Localizer["DayPlan_Loading"]</p>
     }
     else
     {
@@ -162,7 +162,7 @@
     @* Suggestions section — only shown when suggestions are available. *@
     @if (_suggestionsLoading)
     {
-        <p>@Localizer["DayPlan_Loading"]</p>
+        <p class="loading-delayed">@Localizer["DayPlan_Loading"]</p>
     }
     else if (_suggestions.Count > 0)
     {
@@ -204,7 +204,7 @@
 @code {
     private List<SavedDishDto> _dishes = new();
     private List<SavedDishSuggestionDto> _suggestions = new();
-    private bool _dishesLoading = true;
+    private bool _showDishesLoading;
     private bool _suggestionsLoading;
     private bool _loadError;
     private string? _errorMessage;
@@ -237,11 +237,11 @@
         return true;
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         CachedApi.OnSavedDishesUpdated += HandleSavedDishesUpdated;
-        await LoadDishesAsync();
-        await LoadSuggestionsAsync();
+        _ = LoadDishesAsync();
+        _ = LoadSuggestionsAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -271,7 +271,6 @@
 
     private async Task LoadDishesAsync()
     {
-        _dishesLoading = true;
         _loadError = false;
 
         var result = await CachedApi.GetSavedDishesAsync();
@@ -279,18 +278,21 @@
         if (result.Dishes is not null)
         {
             _dishes = result.Dishes.ToList();
+            _showDishesLoading = false;
         }
         else if (result.IsColdCache)
         {
             _loadError = true;
+            _showDishesLoading = false;
             ShowError(Localizer["SavedDish_OfflineUnavailable"]);
         }
         else if (result.HasError)
         {
             _loadError = true;
+            _showDishesLoading = false;
         }
 
-        _dishesLoading = false;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadSuggestionsAsync()
@@ -299,6 +301,7 @@
             return;
 
         _suggestionsLoading = true;
+        await InvokeAsync(StateHasChanged);
 
         try
         {
@@ -313,6 +316,7 @@
         finally
         {
             _suggestionsLoading = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 

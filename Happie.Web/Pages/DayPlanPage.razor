@@ -71,7 +71,7 @@
             <div class="swipe-carousel__panel-content" @key="@($"active-{_parsedDate}")">
                 @if (_isLoading)
                 {
-                    <p>@Localizer["DayPlan_Loading"]</p>
+                    <p class="loading-delayed">@Localizer["DayPlan_Loading"]</p>
                 }
                 else if (_loadError)
                 {
