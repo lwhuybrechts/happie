@@ -272,6 +272,10 @@ public class DayHandler : IDayHandler
                 return DishUpsertResult.SavedDishNotFound;
         }
 
+        // Read existing links to determine if the dish selection actually changed.
+        var existingLinks = await _dayPlanDishLinkRepository.GetByDateAsync(householdId, date, ct);
+        var existingLinkIds = existingLinks.Select(x => x.SavedDishId).ToList();
+
         // Replace links.
         var links = savedDishIds.Select((x, index) => new DayPlanDishLink(householdId, date, x, index)).ToList();
         await _dayPlanDishLinkRepository.ReplaceAllAsync(householdId, date, links, ct);
@@ -288,7 +292,8 @@ public class DayHandler : IDayHandler
             .Where(x => savedDishById.ContainsKey(x))
             .Select(x => savedDishById[x].Description));
 
-        var dishChanged = existingDish is null || existingDish.Description != combinedDescription;
+        // Dish changed only if the linked dish IDs actually differ (avoids phantom history entries).
+        var dishChanged = !savedDishIds.SequenceEqual(existingLinkIds);
         var dinnerTimeChanged = existingDish?.DinnerTime != resolvedDinnerTime;
 
         if (dishChanged || dinnerTimeChanged)
@@ -341,32 +346,7 @@ public class DayHandler : IDayHandler
     /// or null if no full match was found.
     /// </summary>
     private static List<SavedDish>? TryMatchAllWithSavedDishes(string trimmedDescription, IReadOnlyList<SavedDish>? allSavedDishes)
-    {
-        if (allSavedDishes is null || allSavedDishes.Count == 0)
-            return null;
-
-        // Split into segments: a single description without " & " yields one segment.
-        var segments = trimmedDescription.Contains(" & ")
-            ? trimmedDescription.Split(" & ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            : [trimmedDescription];
-
-        if (segments.Length == 0 || segments.Length > 10)
-            return null;
-
-        var matchedDishes = new List<SavedDish>(segments.Length);
-        foreach (var segment in segments)
-        {
-            var segmentMatch = allSavedDishes.FirstOrDefault(x =>
-                string.Equals(x.Description.Trim(), segment, StringComparison.OrdinalIgnoreCase));
-
-            if (segmentMatch is null)
-                return null;
-
-            matchedDishes.Add(segmentMatch);
-        }
-
-        return matchedDishes;
-    }
+        => SavedDishMatcher.TryMatchAll(trimmedDescription, allSavedDishes);
 
     /// <summary>
     /// Saves matched saved dishes as linked dishes: reactivates soft-deleted ones, creates links,

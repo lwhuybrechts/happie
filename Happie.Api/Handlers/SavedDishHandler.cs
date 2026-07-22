@@ -59,14 +59,22 @@ public class SavedDishHandler : ISavedDishHandler
             // Reactivate soft-deleted match.
             var reactivated = existingMatch with { IsDeleted = false, Description = trimmed };
             await _savedDishRepository.UpsertAsync(reactivated, cancellationToken);
-            await ConvertMatchingDishRecordsAsync(householdId, reactivated, cancellationToken);
+
+            // Build the full dish list including the reactivated dish for multi-part matching.
+            var dishesWithReactivated = allDishes
+                .Select(x => x.Id == reactivated.Id ? reactivated : x)
+                .ToList();
+            await ConvertMatchingDishRecordsAsync(householdId, reactivated, dishesWithReactivated, cancellationToken);
             return new SavedDishCreateResult(SavedDishCreateOutcome.Reactivated, reactivated);
         }
 
         // Create new saved dish.
         var newDish = new SavedDish(Guid.NewGuid(), householdId, trimmed, false);
         await _savedDishRepository.UpsertAsync(newDish, cancellationToken);
-        await ConvertMatchingDishRecordsAsync(householdId, newDish, cancellationToken);
+
+        // Build the full dish list including the newly created dish for multi-part matching.
+        var dishesWithNew = allDishes.Append(newDish).ToList();
+        await ConvertMatchingDishRecordsAsync(householdId, newDish, dishesWithNew, cancellationToken);
         return new SavedDishCreateResult(SavedDishCreateOutcome.Created, newDish);
     }
 
@@ -152,7 +160,7 @@ public class SavedDishHandler : ISavedDishHandler
     }
 
     /// <summary>Converts matching DishRecords to link the saved dish via the join table (retroactive conversion).</summary>
-    private async Task ConvertMatchingDishRecordsAsync(Guid householdId, SavedDish savedDish, CancellationToken cancellationToken)
+    private async Task ConvertMatchingDishRecordsAsync(Guid householdId, SavedDish savedDish, IReadOnlyList<SavedDish> allSavedDishes, CancellationToken cancellationToken)
     {
         var dishRecords = await _dishRepository.GetAllByPartitionAsync(householdId, cancellationToken);
 
@@ -160,21 +168,35 @@ public class SavedDishHandler : ISavedDishHandler
         var existingLinks = await _dayPlanDishLinkRepository.GetAllByHouseholdAsync(householdId, cancellationToken);
         var datesWithLinks = existingLinks.Select(x => x.Date).ToHashSet();
 
-        var matchingRecords = dishRecords
+        var recordsWithoutLinks = dishRecords
             .Where(x => !datesWithLinks.Contains(x.Date) &&
-                        !string.IsNullOrWhiteSpace(x.Description) &&
-                        string.Equals(x.Description.Trim(), savedDish.Description, StringComparison.OrdinalIgnoreCase))
+                        !string.IsNullOrWhiteSpace(x.Description))
             .ToList();
 
-        foreach (var record in matchingRecords)
+        foreach (var record in recordsWithoutLinks)
         {
             try
             {
-                var link = new DayPlanDishLink(householdId, record.Date, savedDish.Id, 0);
-                await _dayPlanDishLinkRepository.CreateAsync(link, cancellationToken);
+                var trimmedDescription = record.Description.Trim();
 
-                var cleared = record with { Description = string.Empty };
-                await _dishRepository.UpsertAsync(cleared, cancellationToken);
+                // Use the shared matcher to resolve single or multi-part descriptions.
+                var matchedDishes = SavedDishMatcher.TryMatchAll(trimmedDescription, allSavedDishes);
+                if (matchedDishes is null)
+                    continue;
+
+                // Only convert if the newly created/reactivated savedDish is among the matches.
+                if (!matchedDishes.Any(x => x.Id == savedDish.Id))
+                    continue;
+
+                // Create links for all matched dishes.
+                for (var i = 0; i < matchedDishes.Count; i++)
+                {
+                    var link = new DayPlanDishLink(householdId, record.Date, matchedDishes[i].Id, i);
+                    await _dayPlanDishLinkRepository.CreateAsync(link, cancellationToken);
+                }
+
+                var clearedRecord = record with { Description = string.Empty };
+                await _dishRepository.UpsertAsync(clearedRecord, cancellationToken);
             }
             catch (Exception exception)
             {

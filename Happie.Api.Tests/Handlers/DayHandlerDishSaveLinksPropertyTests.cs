@@ -306,6 +306,10 @@ public class DayHandlerDishSaveLinksPropertyTests
         _dayPlanDishLinkRepositoryMock
             .Setup(x => x.ReplaceAllAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<IReadOnlyList<DayPlanDishLink>>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+
+        _dayPlanDishLinkRepositoryMock
+            .Setup(x => x.GetByDateAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<DayPlanDishLink>());
     }
 
     private void SetupDayPlanDishLinkRepositoryDeleteAll()
