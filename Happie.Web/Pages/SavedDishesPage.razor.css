@@ -273,35 +273,28 @@
     }
 }
 
-/* Explanation section — always visible at bottom. */
-.saved-dishes-page__explanation {
-    background-color: #f8faf8;
-    border-radius: 16px;
-    padding: 16px 20px;
-    border: 1px solid #e8f5e9;
-}
-
-.saved-dishes-page__explanation-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #111827;
-    margin: 0 0 8px 0;
-}
-
-.saved-dishes-page__explanation-text {
-    font-size: 0.875rem;
-    color: #4b5563;
-    margin: 0 0 6px 0;
+/* Info section — subtle hint matching CalendarPage style. */
+.saved-dishes-page__info {
+    font-size: 13px;
+    color: #666666;
+    text-align: center;
     line-height: 1.5;
+    background-color: rgba(76, 175, 80, 0.06);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin: 0;
 }
 
-.saved-dishes-page__explanation-text:last-child {
+.saved-dishes-page__info-text {
+    margin: 0 0 6px 0;
+}
+
+.saved-dishes-page__info-text:last-child {
     margin-bottom: 0;
 }
 
-.saved-dishes-page__explanation-text--future {
+.saved-dishes-page__info-text--future {
     font-style: italic;
-    color: #6b7280;
 }
 
 /* Suggestions section. */

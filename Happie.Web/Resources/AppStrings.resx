@@ -540,9 +540,6 @@
   <data name="SavedDishes_LoadError" xml:space="preserve">
     <value>Gerechten laden mislukt. Probeer het opnieuw.</value>
   </data>
-  <data name="SavedDishes_ExplanationTitle" xml:space="preserve">
-    <value>Waarom gerechten opslaan?</value>
-  </data>
   <data name="SavedDishes_ExplanationCurrent" xml:space="preserve">
     <value>Sla gerechten op om ze snel te hergebruiken op het dagplan.</value>
   </data>
