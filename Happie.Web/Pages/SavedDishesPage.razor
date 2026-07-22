@@ -88,7 +88,7 @@
                 <li class="saved-dishes-page__item @(dish.Id == _highlightedDishId ? "saved-dishes-page__item--highlighted" : "")"
                     @key="dish.Id"
                     id="@($"dish-{dish.Id}")"
-                    @onanimationend="() => OnHighlightAnimationEnd(dish.Id)">
+                    >
 
                     @if (_editingDishId == dish.Id)
                     {
@@ -334,6 +334,7 @@
                     // Highlight the new dish.
                     _highlightedDishId = newDish.Id;
                     _shouldScrollToHighlighted = true;
+                    _ = ScheduleHighlightClearAsync(newDish.Id);
                 }
 
                 await CachedApi.RefreshSavedDishesCacheAsync();
@@ -407,6 +408,7 @@
                     // Trigger highlight animation.
                     _highlightedDishId = newDish.Id;
                     _shouldScrollToHighlighted = true;
+                    _ = ScheduleHighlightClearAsync(newDish.Id);
                 }
 
                 await CachedApi.RefreshSavedDishesCacheAsync();
@@ -545,10 +547,14 @@
 
     // --- Highlight animation ---
 
-    private void OnHighlightAnimationEnd(Guid dishId)
+    private async Task ScheduleHighlightClearAsync(Guid dishId)
     {
+        await Task.Delay(1500);
         if (_highlightedDishId == dishId)
+        {
             _highlightedDishId = null;
+            StateHasChanged();
+        }
     }
 
     // --- Error toast ---
