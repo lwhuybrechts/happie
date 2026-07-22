@@ -209,6 +209,140 @@ public class CachedApiClientTests
         Assert.True(_navigationManager.LastForceLoad);
     }
 
+    [Fact]
+    public async Task SaveDishAsync_OnlineWithSavedDishIds_StoresResolvedDescriptionAndIdsInCache()
+    {
+        // Arrange.
+        var savedDishId1 = Guid.NewGuid();
+        var savedDishId2 = Guid.NewGuid();
+        var existingDish = new DishDto("Old dish", Guid.NewGuid(), DateTimeOffset.UtcNow, null, null, null);
+        var dayPlanResponse = CreateDayPlanResponseWithDish(existingDish);
+        var cachedJson = JsonSerializer.Serialize(dayPlanResponse);
+        var cachedEntry = new CachedDayPlan(TestDate, cachedJson, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+
+        SetupConnectivityOnline();
+        _cacheStoreMock
+            .Setup(x => x.GetDayPlanAsync(HouseholdId, TestDate))
+            .ReturnsAsync(cachedEntry);
+        SetupLocalStorageGetItem("activeHousemateId", Guid.NewGuid().ToString());
+        _mockHttp.When($"http://localhost/api/days/{TestDate}/dish")
+            .Respond("application/json", "true");
+
+        string? capturedJson = null;
+        _cacheStoreMock
+            .Setup(x => x.PutDayPlanAsync(HouseholdId, TestDate, It.IsAny<string>()))
+            .Callback<string, string, string>((_, _, json) => capturedJson = json)
+            .Returns(Task.CompletedTask);
+
+        // Act.
+        var result = await _sut.SaveDishAsync(TestDate, null, null, null, 0,
+            savedDishIds: new List<Guid> { savedDishId1, savedDishId2 },
+            resolvedDescription: "Pasta & Salad");
+
+        // Assert.
+        Assert.True(result);
+        Assert.NotNull(capturedJson);
+        var updatedDayPlan = JsonSerializer.Deserialize<DayPlanResponse>(capturedJson);
+        Assert.NotNull(updatedDayPlan?.Dish);
+        Assert.Equal("Pasta & Salad", updatedDayPlan.Dish.Description);
+        Assert.NotNull(updatedDayPlan.Dish.SavedDishIds);
+        Assert.Equal(2, updatedDayPlan.Dish.SavedDishIds.Count);
+        Assert.Contains(savedDishId1, updatedDayPlan.Dish.SavedDishIds);
+        Assert.Contains(savedDishId2, updatedDayPlan.Dish.SavedDishIds);
+    }
+
+    [Fact]
+    public async Task SaveDishAsync_OfflineWithSavedDishIds_EnqueuesMutationWithSavedDishIds()
+    {
+        // Arrange.
+        var savedDishId1 = Guid.NewGuid();
+        var savedDishId2 = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var existingDish = new DishDto("Old dish", housemateId, DateTimeOffset.UtcNow, null, null, null);
+        var dayPlanResponse = CreateDayPlanResponseWithDish(existingDish);
+        var cachedJson = JsonSerializer.Serialize(dayPlanResponse);
+        var cachedEntry = new CachedDayPlan(TestDate, cachedJson, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+
+        SetupConnectivityOffline();
+        SetupLocalStorageGetItem("jwt", "test-token");
+        SetupLocalStorageGetItem("activeHousemateId", housemateId.ToString());
+        _cacheStoreMock
+            .Setup(x => x.GetDayPlanAsync(HouseholdId, TestDate))
+            .ReturnsAsync(cachedEntry);
+
+        QueuedMutation? capturedMutation = null;
+        _mutationQueueMock
+            .Setup(x => x.EnqueueAsync(HouseholdId, It.IsAny<QueuedMutation>()))
+            .Callback<string, QueuedMutation>((_, mutation) => capturedMutation = mutation)
+            .Returns(Task.CompletedTask);
+
+        string? capturedCacheJson = null;
+        _cacheStoreMock
+            .Setup(x => x.PutDayPlanAsync(HouseholdId, TestDate, It.IsAny<string>()))
+            .Callback<string, string, string>((_, _, json) => capturedCacheJson = json)
+            .Returns(Task.CompletedTask);
+
+        // Act.
+        var result = await _sut.SaveDishAsync(TestDate, null, null, null, 0,
+            savedDishIds: new List<Guid> { savedDishId1, savedDishId2 },
+            resolvedDescription: "Pasta & Salad");
+
+        // Assert.
+        Assert.True(result);
+        _mutationQueueMock.Verify(
+            x => x.EnqueueAsync(HouseholdId, It.Is<QueuedMutation>(x => x.MutationType == "dish")),
+            Times.Once);
+        Assert.NotNull(capturedMutation);
+        Assert.NotNull(capturedMutation.Body);
+        var mutationBody = JsonSerializer.Deserialize<UpdateDishRequest>(capturedMutation.Body);
+        Assert.NotNull(mutationBody?.SavedDishIds);
+        Assert.Equal(2, mutationBody.SavedDishIds.Count);
+        Assert.Contains(savedDishId1, mutationBody.SavedDishIds);
+        Assert.Contains(savedDishId2, mutationBody.SavedDishIds);
+        Assert.Null(mutationBody.Description);
+    }
+
+    [Fact]
+    public async Task SaveDishAsync_OfflineWithSavedDishIds_CacheContainsSavedDishIdsForOfflinePreselection()
+    {
+        // Arrange.
+        var savedDishId1 = Guid.NewGuid();
+        var savedDishId2 = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var existingDish = new DishDto("Old dish", housemateId, DateTimeOffset.UtcNow, null, null, null);
+        var dayPlanResponse = CreateDayPlanResponseWithDish(existingDish);
+        var cachedJson = JsonSerializer.Serialize(dayPlanResponse);
+        var cachedEntry = new CachedDayPlan(TestDate, cachedJson, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+
+        SetupConnectivityOffline();
+        SetupLocalStorageGetItem("jwt", "test-token");
+        SetupLocalStorageGetItem("activeHousemateId", housemateId.ToString());
+        _cacheStoreMock
+            .Setup(x => x.GetDayPlanAsync(HouseholdId, TestDate))
+            .ReturnsAsync(cachedEntry);
+
+        string? capturedCacheJson = null;
+        _cacheStoreMock
+            .Setup(x => x.PutDayPlanAsync(HouseholdId, TestDate, It.IsAny<string>()))
+            .Callback<string, string, string>((_, _, json) => capturedCacheJson = json)
+            .Returns(Task.CompletedTask);
+
+        // Act.
+        await _sut.SaveDishAsync(TestDate, null, null, null, 0,
+            savedDishIds: new List<Guid> { savedDishId1, savedDishId2 },
+            resolvedDescription: "Pasta & Salad");
+
+        // Assert.
+        Assert.NotNull(capturedCacheJson);
+        var updatedDayPlan = JsonSerializer.Deserialize<DayPlanResponse>(capturedCacheJson);
+        Assert.NotNull(updatedDayPlan?.Dish);
+        Assert.Equal("Pasta & Salad", updatedDayPlan.Dish.Description);
+        Assert.NotNull(updatedDayPlan.Dish.SavedDishIds);
+        Assert.Equal(2, updatedDayPlan.Dish.SavedDishIds.Count);
+        Assert.Equal(savedDishId1, updatedDayPlan.Dish.SavedDishIds[0]);
+        Assert.Equal(savedDishId2, updatedDayPlan.Dish.SavedDishIds[1]);
+    }
+
     private void SetupLocalStorageGetItem(string key, string? value)
     {
         _jsRuntimeMock
@@ -241,6 +375,20 @@ public class CachedApiClientTests
         return new DayPlanResponse(
             DateOnly.ParseExact(TestDate, "yyyy-MM-dd"),
             null,
+            new List<AttendanceDto>
+            {
+                new(id, "Alice", "#FF0000", AttendanceStatus.Unknown, false),
+            },
+            new List<CommentDto>(),
+            new List<HistoryEntryDto>());
+    }
+
+    private static DayPlanResponse CreateDayPlanResponseWithDish(DishDto dish, Guid? housemateId = null)
+    {
+        var id = housemateId ?? Guid.NewGuid();
+        return new DayPlanResponse(
+            DateOnly.ParseExact(TestDate, "yyyy-MM-dd"),
+            dish,
             new List<AttendanceDto>
             {
                 new(id, "Alice", "#FF0000", AttendanceStatus.Unknown, false),

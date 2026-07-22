@@ -22,7 +22,7 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - `ToModel` parses composite PK (`{HouseholdId}_{YYYY-MM-DD}`) and RK (`{SavedDishId}`)
     - `ToEntity` constructs entity with composite PK and GUID RK
     - _Requirements: 1.1, 1.2, 1.3_
-  - [x]* 1.4 Write property test for DayPlanDishLink mapper round-trip
+  - [x] 1.4 Write property test for DayPlanDishLink mapper round-trip
     - **Property 1: DayPlanDishLink mapper round-trip**
     - **Validates: Requirements 1.1, 1.3**
   - [x] 1.5 Create `IDayPlanDishLinkRepository` and `DayPlanDishLinkRepository`
@@ -54,7 +54,7 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Update `DaysFunction` to pass the new field to the handler
     - _Requirements: 10.1_
 
-- [~] 3. Checkpoint - Ensure all tests pass
+- [x] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 4. DayHandler rewrite for multi-dish support
@@ -80,16 +80,16 @@ This plan transforms the single-dish reference model into a many-to-many relatio
   - [x] 4.4 Update `DayHandler.DeleteDishAsync` to also delete links
     - When deleting a dish, also call `_dayPlanDishLinkRepository.DeleteAllAsync` for that household+date
     - _Requirements: 5.7_
-  - [ ]* 4.5 Write property test for combined description resolution
+  - [x] 4.5 Write property test for combined description resolution
     - **Property 2: Combined description resolution**
     - **Validates: Requirements 1.5, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6**
-  - [ ]* 4.6 Write property test for save creates and replaces links correctly
+  - [x] 4.6 Write property test for save creates and replaces links correctly
     - **Property 3: Save creates and replaces links correctly**
     - **Validates: Requirements 5.2, 5.3, 5.5, 5.7**
-  - [ ]* 4.7 Write property test for input validation
+  - [x] 4.7 Write property test for input validation
     - **Property 4: Input validation rejects invalid dish save requests**
     - **Validates: Requirements 3.4, 5.4, 5.6, 10.5**
-  - [ ]* 4.8 Write property test for Auto_Match
+  - [x] 4.8 Write property test for Auto_Match
     - **Property 5: Auto_Match links matching saved dish and reactivates if soft-deleted**
     - **Validates: Requirements 16.1, 16.2, 16.3, 16.4**
 
@@ -108,11 +108,11 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Replace `SavedDishId is null` check with "no DayPlanDishLink entities exist for this DishRecord"
     - Query links by household to determine which dates already have links
     - _Requirements: 1.4, 1.5_
-  - [ ]* 5.4 Write property test for retroactive conversion
+  - [x] 5.4 Write property test for retroactive conversion
     - **Property 6: Retroactive conversion creates links for all matching DishRecords**
     - **Validates: Requirements 9.1, 9.2**
 
-- [~] 6. Checkpoint - Ensure all tests pass
+- [x] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 7. Frontend multi-select modal
@@ -167,12 +167,12 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Optimistic update: store `resolvedDescription` in cached `DishDto.Description` and `savedDishIds` in `DishDto.SavedDishIds`
     - Offline: enqueue mutation with savedDishIds; cache is updated immediately
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
-  - [ ]* 9.2 Write unit tests for CachedApiClient multi-dish offline behavior
+  - [x] 9.2 Write unit tests for CachedApiClient multi-dish offline behavior
     - Test optimistic update stores Combined_Description and savedDishIds in cache
     - Test offline queueing includes savedDishIds in mutation payload
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-- [~] 10. Checkpoint - Ensure all tests pass
+- [x] 10. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 11. Modal overlay and scroll lock fixes
@@ -207,7 +207,7 @@ This plan transforms the single-dish reference model into a many-to-many relatio
     - Describe relationship to existing entities
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
 
-- [~] 13. Final checkpoint - Ensure all tests pass
+- [x] 13. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
