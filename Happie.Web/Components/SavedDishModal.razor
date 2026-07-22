@@ -103,6 +103,7 @@
     private Guid? _scrollTargetId;
     private bool _isPromoting;
     private string? _promoteError;
+    private bool _userChangedSelection;
 
     private bool IsAtLimit => _selectedDishIds.Count >= SelectionLimit;
 
@@ -112,6 +113,10 @@
         {
             var trimmed = _currentDescription.Trim();
             if (string.IsNullOrEmpty(trimmed) || trimmed.Length > 100)
+                return false;
+
+            // Hide if description contains '&' — not allowed in saved dish names.
+            if (trimmed.Contains('&'))
                 return false;
 
             // Hide if it matches an existing saved dish (case-insensitive).
@@ -142,6 +147,7 @@
         _currentDescription = currentDescription;
         _promoteError = null;
         _isPromoting = false;
+        _userChangedSelection = false;
         _sortedDishes = savedDishes
             .OrderBy(x => x.Description, StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -162,21 +168,40 @@
         }
 
         // Auto-match: if currentDescription matches an active saved dish and it's not already selected, add it.
+        // Also handles multi-part descriptions split by " & " to match individual saved dishes.
         var trimmed = _currentDescription.Trim();
         if (!string.IsNullOrEmpty(trimmed))
         {
-            var match = _sortedDishes.FirstOrDefault(x =>
+            // First try an exact match against the whole description.
+            var exactMatch = _sortedDishes.FirstOrDefault(x =>
                 string.Equals(x.Description.Trim(), trimmed, StringComparison.OrdinalIgnoreCase));
 
-            if (match is not null && !_selectedDishIds.Contains(match.Id))
+            if (exactMatch is not null && !_selectedDishIds.Contains(exactMatch.Id))
             {
-                _selectedDishIds.Add(match.Id);
-                _scrollTargetId = match.Id;
+                _selectedDishIds.Add(exactMatch.Id);
+                _scrollTargetId = exactMatch.Id;
             }
-            else if (match is not null && _selectedDishIds.Contains(match.Id))
+            else if (exactMatch is not null && _selectedDishIds.Contains(exactMatch.Id))
             {
                 // Already selected via preSelectedIds, still scroll to it.
-                _scrollTargetId = match.Id;
+                _scrollTargetId = exactMatch.Id;
+            }
+            else if (trimmed.Contains(" & "))
+            {
+                // Split by " & " and try to match each segment individually.
+                var segments = trimmed.Split(" & ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                foreach (var segment in segments)
+                {
+                    var segmentMatch = _sortedDishes.FirstOrDefault(x =>
+                        string.Equals(x.Description.Trim(), segment, StringComparison.OrdinalIgnoreCase));
+
+                    if (segmentMatch is not null && !_selectedDishIds.Contains(segmentMatch.Id))
+                        _selectedDishIds.Add(segmentMatch.Id);
+                }
+
+                // Scroll to the first matched dish.
+                if (_scrollTargetId is null && _selectedDishIds.Count > 0)
+                    _scrollTargetId = _selectedDishIds[0];
             }
         }
 
@@ -226,6 +251,7 @@
 
     private void ToggleDish(SavedDishDto dish)
     {
+        _userChangedSelection = true;
         if (_selectedDishIds.Contains(dish.Id))
             _selectedDishIds.Remove(dish.Id);
         else if (!IsAtLimit)
@@ -234,9 +260,13 @@
 
     private async Task HandleCustomMode()
     {
-        // Compute Combined_Description from current selection.
+        // If the user didn't manually change the selection, preserve the original custom description.
         string prefillText;
-        if (_selectedDishIds.Count > 0)
+        if (!_userChangedSelection)
+        {
+            prefillText = _currentDescription;
+        }
+        else if (_selectedDishIds.Count > 0)
         {
             var descriptions = _selectedDishIds
                 .Select(id => _sortedDishes.FirstOrDefault(x => x.Id == id))
@@ -247,7 +277,7 @@
         }
         else
         {
-            // No dishes selected — pass the existing custom description.
+            // User deselected everything — pass the existing custom description.
             prefillText = _currentDescription;
         }
 
@@ -262,6 +292,7 @@
     {
         _isPromoting = true;
         _promoteError = null;
+        _userChangedSelection = true;
 
         try
         {

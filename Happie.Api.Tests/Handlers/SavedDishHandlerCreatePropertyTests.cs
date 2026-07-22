@@ -163,7 +163,8 @@ public class SavedDishHandlerCreatePropertyTests
     private static Gen<SavedDish> SavedDishGen(Guid householdId)
     {
         var guidGen = ArbMap.Default.GeneratorFor<Guid>();
-        var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x);
+        // Exclude '&' (ASCII 38) — reserved as the multi-dish separator.
+        var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x).Where(x => x != '&');
 
         var descriptionGen = Gen.Choose(1, 50)
             .SelectMany(length => Gen.ListOf(printableCharGen, length)
@@ -192,7 +193,8 @@ public class SavedDishHandlerCreatePropertyTests
     /// <summary>Generates a description that does not match any existing dish (case-insensitive).</summary>
     private static Gen<string> NewDescriptionGen(List<SavedDish> existingDishes)
     {
-        var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x);
+        // Exclude '&' (ASCII 38) — reserved as the multi-dish separator.
+        var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x).Where(x => x != '&');
 
         return Gen.Choose(1, 50)
             .SelectMany(length => Gen.ListOf(printableCharGen, length)

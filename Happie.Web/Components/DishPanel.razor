@@ -65,8 +65,8 @@
                        type="text"
                        maxlength="100"
                        placeholder="@Localizer["DishPanel_Placeholder"]"
-                       @bind="_editValue"
-                       @bind:event="oninput"
+                       value="@_editValue"
+                       @oninput="HandleDishInput"
                        @onkeydown="HandleKeyDownAsync"
                        disabled="@(_isSaving || _isSavedMode)"
                        aria-label="@Localizer["DishPanel_InputAriaLabel"]" />
@@ -171,9 +171,7 @@
     </div>
 }
 
-<SavedDishModal @ref="_savedDishModal"
-                OnConfirm="HandleMultiDishConfirm"
-                OnCustomMode="HandleCustomMode" />
+
 
 @code {
     /// <summary>The date for which the dish is displayed, in yyyy-MM-dd format.</summary>
@@ -196,6 +194,10 @@
     [Parameter]
     public EventCallback<string?> OnDishChanged { get; set; }
 
+    /// <summary>Reference to the SavedDishModal rendered outside the swipe carousel.</summary>
+    [Parameter]
+    public SavedDishModal? SavedDishModalRef { get; set; }
+
     private string _committedValue = string.Empty;
     private IReadOnlyList<Guid>? _committedSavedDishIds;
     private string _editValue = string.Empty;
@@ -208,7 +210,6 @@
     private string _promoteErrorMessage = string.Empty;
     private bool _isAnimating;
     private ElementReference _panelRef;
-    private SavedDishModal _savedDishModal = default!;
 
     // Mode toggle state.
     private bool _isSavedMode;
@@ -223,19 +224,21 @@
     {
         get
         {
+            var timeChanged = _editTimeValue != GetStoredTimeValue();
+
             if (_isSavedMode)
             {
                 // Compare current selection with committed selection.
                 if (_committedSavedDishIds is null)
-                    return _selectedSavedDishIds.Count > 0;
+                    return _selectedSavedDishIds.Count > 0 || timeChanged;
 
                 if (_selectedSavedDishIds.Count != _committedSavedDishIds.Count)
                     return true;
 
-                return !_selectedSavedDishIds.SequenceEqual(_committedSavedDishIds);
+                return !_selectedSavedDishIds.SequenceEqual(_committedSavedDishIds) || timeChanged;
             }
 
-            return _editValue.Trim() != _committedValue || _editTimeValue != GetStoredTimeValue();
+            return _editValue.Trim() != _committedValue || timeChanged;
         }
     }
 
@@ -348,6 +351,11 @@
         _editTimeValue = args.Value?.ToString() ?? string.Empty;
     }
 
+    private void HandleDishInput(ChangeEventArgs args)
+    {
+        _editValue = args.Value?.ToString() ?? string.Empty;
+    }
+
     private async Task HandleKeyDownAsync(KeyboardEventArgs args)
     {
         if (args.Key == "Enter")
@@ -366,17 +374,26 @@
     {
         _showPromoteError = false;
 
+        if (SavedDishModalRef is null)
+            return;
+
         try
         {
             var response = await Http.GetAsync("saved-dishes");
             if (response.IsSuccessStatusCode)
             {
                 var dishes = await response.Content.ReadFromJsonAsync<SavedDishDto[]>() ?? [];
-                // Pass pre-selected IDs: use current selection if in saved mode, otherwise null.
-                var preSelectedIds = _isSavedMode && _selectedSavedDishIds.Count > 0
-                    ? (IReadOnlyList<Guid>)_selectedSavedDishIds
-                    : _committedSavedDishIds;
-                _savedDishModal.Open(_editValue, dishes, preSelectedIds);
+                // Pass pre-selected IDs: use current selection if in saved mode.
+                // In custom mode, only pass committed IDs if the input still matches the committed description.
+                IReadOnlyList<Guid>? preSelectedIds;
+                if (_isSavedMode && _selectedSavedDishIds.Count > 0)
+                    preSelectedIds = _selectedSavedDishIds;
+                else if (!_isSavedMode && _committedSavedDishIds is { Count: > 0 } && _editValue.Trim() == _committedValue)
+                    preSelectedIds = _committedSavedDishIds;
+                else
+                    preSelectedIds = null;
+
+                SavedDishModalRef.Open(_editValue, dishes, preSelectedIds);
             }
             else
             {
@@ -391,7 +408,7 @@
         }
     }
 
-    private void HandleMultiDishConfirm(IReadOnlyList<SavedDishDto> dishes)
+    public void HandleMultiDishConfirm(IReadOnlyList<SavedDishDto> dishes)
     {
         // Switch to Saved_Mode with the selected dishes.
         _isSavedMode = true;
@@ -401,7 +418,7 @@
         StateHasChanged();
     }
 
-    private void HandleCustomMode(string combinedDescription)
+    public void HandleCustomMode(string combinedDescription)
     {
         // Switch to Custom_Mode with the combined description pre-filled.
         _isSavedMode = false;

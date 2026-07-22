@@ -102,6 +102,12 @@ public class DayHandlerDishSaveMutualExclusionPropertyTests
                 _dishRepositoryMock.Reset();
                 _dayHistoryRepositoryMock.Reset();
                 _pushHandlerMock.Reset();
+                _savedDishRepositoryMock.Reset();
+                _dayPlanDishLinkRepositoryMock.Reset();
+
+                _savedDishRepositoryMock
+                    .Setup(x => x.GetAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new List<SavedDish>());
 
                 _dishRepositoryMock
                     .Setup(x => x.GetAsync(It.IsAny<Guid>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
@@ -162,6 +168,7 @@ public class DayHandlerDishSaveMutualExclusionPropertyTests
             Gen.Choose(1, 12).SelectMany(month =>
                 Gen.Choose(1, 28).Select(day => new DateOnly(year, month, day))));
 
+        // Printable ASCII characters.
         var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x);
         var nonEmptyDescriptionGen = Gen.Choose(1, 100)
             .SelectMany(length => Gen.ListOf(printableCharGen, length)

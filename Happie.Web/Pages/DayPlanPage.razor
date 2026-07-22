@@ -84,10 +84,12 @@
                 }
                 else if (_dayPlan is not null)
                 {
-                    <DishPanel Date="@Date"
+                    <DishPanel @ref="_activeDishPanel"
+                               Date="@Date"
                                Dish="@_dayPlan.Dish"
                                Attendance="@_dayPlan.Attendance"
                                ActingHousemateId="@_activeHousemateId"
+                               SavedDishModalRef="@_savedDishModal"
                                OnDishChanged="OnDishChangedAsync" />
 
                     <AttendanceSection Date="@Date"
@@ -151,6 +153,10 @@
                     ActiveHousemateId="@_activeHousemateId"
                     Date="@Date" />
     }
+
+    <SavedDishModal @ref="_savedDishModal"
+                    OnConfirm="HandleSavedDishConfirm"
+                    OnCustomMode="HandleSavedDishCustomMode" />
 </div>
 
 @code {
@@ -167,6 +173,8 @@
     private ElementReference _carouselElement;
     private DotNetObjectReference<DayPlanPage>? _dotNetRef;
     private NudgeModal? _nudgeModal;
+    private SavedDishModal _savedDishModal = default!;
+    private DishPanel? _activeDishPanel;
 
     // Carousel state: adjacent day plans.
     private DayPlanResponse? _prevDayPlan;
@@ -666,6 +674,16 @@
         var fetchResult = await CachedApi.GetDayPlanAsync(Date);
         if (fetchResult.Data is not null)
             _dayPlan = fetchResult.Data;
+    }
+
+    private void HandleSavedDishConfirm(IReadOnlyList<SavedDishDto> dishes)
+    {
+        _activeDishPanel?.HandleMultiDishConfirm(dishes);
+    }
+
+    private void HandleSavedDishCustomMode(string combinedDescription)
+    {
+        _activeDishPanel?.HandleCustomMode(combinedDescription);
     }
 
     public async ValueTask DisposeAsync()

@@ -150,7 +150,8 @@ public class SavedDishHandlerUpdatePropertyTests
     private static Arbitrary<ConflictScenario> ConflictScenarioArb()
     {
         var householdIdGen = ArbMap.Default.GeneratorFor<Guid>();
-        var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x);
+        // Exclude '&' (ASCII 38) — reserved as the multi-dish separator.
+        var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x).Where(x => x != '&');
 
         var descriptionGen = Gen.Choose(1, 50)
             .SelectMany(length => Gen.ListOf(printableCharGen, length)
@@ -183,7 +184,8 @@ public class SavedDishHandlerUpdatePropertyTests
     private static Arbitrary<SuccessScenario> SuccessScenarioArb()
     {
         var householdIdGen = ArbMap.Default.GeneratorFor<Guid>();
-        var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x);
+        // Exclude '&' (ASCII 38) — reserved as the multi-dish separator.
+        var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x).Where(x => x != '&');
 
         var descriptionGen = Gen.Choose(1, 50)
             .SelectMany(length => Gen.ListOf(printableCharGen, length)
@@ -220,7 +222,8 @@ public class SavedDishHandlerUpdatePropertyTests
     private static Arbitrary<SoftDeletedTargetScenario> SoftDeletedTargetScenarioArb()
     {
         var householdIdGen = ArbMap.Default.GeneratorFor<Guid>();
-        var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x);
+        // Exclude '&' (ASCII 38) — reserved as the multi-dish separator.
+        var printableCharGen = Gen.Choose(33, 126).Select(x => (char)x).Where(x => x != '&');
 
         var descriptionGen = Gen.Choose(1, 50)
             .SelectMany(length => Gen.ListOf(printableCharGen, length)

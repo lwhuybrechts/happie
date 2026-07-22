@@ -547,7 +547,7 @@
     <value>Save dishes to quickly reuse them on the day plan.</value>
   </data>
   <data name="SavedDishes_ExplanationFuture" xml:space="preserve">
-    <value>Coming soon: edit history, sharing with other households, adding recipes, and viewing statistics.</value>
+    <value>Coming soon: dish edit history, sharing dishes with other households, adding recipes, and viewing dish statistics.</value>
   </data>
   <data name="SavedDishes_SuggestionsTitle" xml:space="preserve">
     <value>Suggestions</value>

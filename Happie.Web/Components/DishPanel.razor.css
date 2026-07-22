@@ -163,10 +163,6 @@
     color: #ffffff;
     line-height: 1.3;
     word-break: break-word;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
 }
 
 .dish-panel__empty-text {
@@ -291,7 +287,8 @@
     display: inline-flex;
     align-items: center;
     color: #4CAF50;
-    flex-shrink: 0;
+    vertical-align: middle;
+    margin-left: 6px;
 }
 
 .dish-panel__time-input-group {

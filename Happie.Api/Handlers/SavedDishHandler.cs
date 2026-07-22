@@ -42,7 +42,7 @@ public class SavedDishHandler : ISavedDishHandler
     {
         var trimmed = description.Trim();
 
-        if (trimmed.Length == 0 || trimmed.Length > 100)
+        if (trimmed.Length == 0 || trimmed.Length > 100 || trimmed.Contains('&'))
             return new SavedDishCreateResult(SavedDishCreateOutcome.ValidationError);
 
         var allDishes = await _savedDishRepository.GetAllAsync(householdId, cancellationToken);
@@ -75,7 +75,7 @@ public class SavedDishHandler : ISavedDishHandler
     {
         var trimmed = description.Trim();
 
-        if (trimmed.Length == 0 || trimmed.Length > 100)
+        if (trimmed.Length == 0 || trimmed.Length > 100 || trimmed.Contains('&'))
             return new SavedDishUpdateResult(SavedDishUpdateOutcome.ValidationError);
 
         var target = await _savedDishRepository.GetAsync(householdId, savedDishId, cancellationToken);

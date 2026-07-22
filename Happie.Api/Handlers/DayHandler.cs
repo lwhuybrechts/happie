@@ -314,81 +314,110 @@ public class DayHandler : IDayHandler
     {
         var trimmedDescription = description.Trim();
 
-        // Auto_Match: case-insensitive trimmed match against saved dishes.
+        // Auto_Match: try to resolve the description to saved dishes.
         var allSavedDishes = await _savedDishRepository.GetAllAsync(householdId, ct);
-        var match = allSavedDishes?.FirstOrDefault(x =>
-            string.Equals(x.Description.Trim(), trimmedDescription, StringComparison.OrdinalIgnoreCase));
+        var matchedDishes = TryMatchAllWithSavedDishes(trimmedDescription, allSavedDishes);
 
-        if (match is not null)
-        {
-            // Reactivate if soft-deleted.
-            if (match.IsDeleted)
-            {
-                var reactivated = match with { IsDeleted = false };
-                await _savedDishRepository.UpsertAsync(reactivated, ct);
-            }
-
-            // Create link for the matched dish.
-            var autoLink = new DayPlanDishLink(householdId, date, match.Id, 0);
-            await _dayPlanDishLinkRepository.ReplaceAllAsync(householdId, date, new[] { autoLink }, ct);
-
-            // Upsert DishRecord with empty description.
-            var existingDish = await _dishRepository.GetAsync(householdId, date, ct);
-            var resolvedDinnerTime = dinnerTime ?? existingDish?.DinnerTime;
-
-            var record = new DishRecord(householdId, date, string.Empty, actingHousemateId, DateTimeOffset.UtcNow, resolvedDinnerTime, DateTimeOffset.UtcNow);
-            await _dishRepository.UpsertAsync(record, ct);
-
-            // Write history using the matched dish description.
-            var dishChanged = existingDish is null || existingDish.Description != match.Description;
-            var dinnerTimeChanged = existingDish?.DinnerTime != resolvedDinnerTime;
-
-            if (dishChanged || dinnerTimeChanged)
-            {
-                var historyEntry = CreateDishHistoryEntry(householdId, date, actingHousemateId, match.Description, resolvedDinnerTime, dishChanged, dinnerTimeChanged);
-
-                try { await _dayHistoryRepository.AddAsync(historyEntry, ct); }
-                catch { }
-
-                var dinnerTimeCleared = dinnerTimeChanged && resolvedDinnerTime is null;
-                var shouldNotifyDish = dishChanged && IsTodayOrTomorrow(date);
-                var shouldNotifyDinnerTime = dinnerTimeChanged && !dinnerTimeCleared
-                    && IsDinnerTimeWithinWindow(date, resolvedDinnerTime!.Value, timezoneOffsetMinutes);
-
-                if (shouldNotifyDish || shouldNotifyDinnerTime)
-                    await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.TranslationKey, historyEntry.Parameters, ct);
-            }
-
-            return DishUpsertResult.Success;
-        }
+        if (matchedDishes is not null)
+            return await SaveAsLinkedDishesAsync(householdId, date, matchedDishes, dinnerTime, timezoneOffsetMinutes, actingHousemateId, ct);
 
         // No Auto_Match: delete existing links, standard custom save.
         await _dayPlanDishLinkRepository.DeleteAllAsync(householdId, date, ct);
 
         var existingForCustom = await _dishRepository.GetAsync(householdId, date, ct);
-        var customDishChanged = existingForCustom is null || existingForCustom.Description.Trim() != trimmedDescription;
-        var customDinnerTimeChanged = existingForCustom?.DinnerTime != dinnerTime;
-
         var customRecord = new DishRecord(householdId, date, trimmedDescription, actingHousemateId, DateTimeOffset.UtcNow, dinnerTime, DateTimeOffset.UtcNow);
         await _dishRepository.UpsertAsync(customRecord, ct);
 
-        if (customDishChanged || customDinnerTimeChanged)
-        {
-            var historyEntry = CreateDishHistoryEntry(householdId, date, actingHousemateId, trimmedDescription, dinnerTime, customDishChanged, customDinnerTimeChanged);
-
-            try { await _dayHistoryRepository.AddAsync(historyEntry, ct); }
-            catch { }
-
-            var dinnerTimeCleared = customDinnerTimeChanged && dinnerTime is null;
-            var shouldNotifyDish = customDishChanged && IsTodayOrTomorrow(date);
-            var shouldNotifyDinnerTime = customDinnerTimeChanged && !dinnerTimeCleared
-                && IsDinnerTimeWithinWindow(date, dinnerTime!.Value, timezoneOffsetMinutes);
-
-            if (shouldNotifyDish || shouldNotifyDinnerTime)
-                await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.TranslationKey, historyEntry.Parameters, ct);
-        }
+        var customDishChanged = existingForCustom is null || existingForCustom.Description.Trim() != trimmedDescription;
+        var customDinnerTimeChanged = existingForCustom?.DinnerTime != dinnerTime;
+        await WriteHistoryAndNotifyAsync(householdId, date, actingHousemateId, trimmedDescription, dinnerTime, timezoneOffsetMinutes, customDishChanged, customDinnerTimeChanged, ct);
 
         return DishUpsertResult.Success;
+    }
+
+    /// <summary>
+    /// Tries to match a description against saved dishes. Handles both single exact match
+    /// and multi-part descriptions split by " & ". Returns the matched dishes in order,
+    /// or null if no full match was found.
+    /// </summary>
+    private static List<SavedDish>? TryMatchAllWithSavedDishes(string trimmedDescription, IReadOnlyList<SavedDish>? allSavedDishes)
+    {
+        if (allSavedDishes is null || allSavedDishes.Count == 0)
+            return null;
+
+        // Split into segments: a single description without " & " yields one segment.
+        var segments = trimmedDescription.Contains(" & ")
+            ? trimmedDescription.Split(" & ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            : [trimmedDescription];
+
+        if (segments.Length == 0 || segments.Length > 10)
+            return null;
+
+        var matchedDishes = new List<SavedDish>(segments.Length);
+        foreach (var segment in segments)
+        {
+            var segmentMatch = allSavedDishes.FirstOrDefault(x =>
+                string.Equals(x.Description.Trim(), segment, StringComparison.OrdinalIgnoreCase));
+
+            if (segmentMatch is null)
+                return null;
+
+            matchedDishes.Add(segmentMatch);
+        }
+
+        return matchedDishes;
+    }
+
+    /// <summary>
+    /// Saves matched saved dishes as linked dishes: reactivates soft-deleted ones, creates links,
+    /// clears the DishRecord description, and writes history/notifications.
+    /// </summary>
+    private async Task<DishUpsertResult> SaveAsLinkedDishesAsync(Guid householdId, DateOnly date, List<SavedDish> matchedDishes, TimeOnly? dinnerTime, int timezoneOffsetMinutes, Guid actingHousemateId, CancellationToken ct)
+    {
+        // Reactivate any soft-deleted matches.
+        foreach (var matched in matchedDishes.Where(x => x.IsDeleted))
+        {
+            var reactivated = matched with { IsDeleted = false };
+            await _savedDishRepository.UpsertAsync(reactivated, ct);
+        }
+
+        // Create links for all matched dishes.
+        var links = matchedDishes.Select((x, index) => new DayPlanDishLink(householdId, date, x.Id, index)).ToList();
+        await _dayPlanDishLinkRepository.ReplaceAllAsync(householdId, date, links, ct);
+
+        // Upsert DishRecord with empty description.
+        var existingDish = await _dishRepository.GetAsync(householdId, date, ct);
+        var resolvedDinnerTime = dinnerTime ?? existingDish?.DinnerTime;
+
+        var record = new DishRecord(householdId, date, string.Empty, actingHousemateId, DateTimeOffset.UtcNow, resolvedDinnerTime, DateTimeOffset.UtcNow);
+        await _dishRepository.UpsertAsync(record, ct);
+
+        var combinedDescription = string.Join(" & ", matchedDishes.Select(x => x.Description));
+        var dishChanged = existingDish is null || existingDish.Description != combinedDescription;
+        var dinnerTimeChanged = existingDish?.DinnerTime != resolvedDinnerTime;
+        await WriteHistoryAndNotifyAsync(householdId, date, actingHousemateId, combinedDescription, resolvedDinnerTime, timezoneOffsetMinutes, dishChanged, dinnerTimeChanged, ct);
+
+        return DishUpsertResult.Success;
+    }
+
+    /// <summary>Writes a dish history entry and sends push notifications if applicable.</summary>
+    private async Task WriteHistoryAndNotifyAsync(Guid householdId, DateOnly date, Guid actingHousemateId, string description, TimeOnly? dinnerTime, int timezoneOffsetMinutes, bool dishChanged, bool dinnerTimeChanged, CancellationToken ct)
+    {
+        if (!dishChanged && !dinnerTimeChanged)
+            return;
+
+        var historyEntry = CreateDishHistoryEntry(householdId, date, actingHousemateId, description, dinnerTime, dishChanged, dinnerTimeChanged);
+
+        try { await _dayHistoryRepository.AddAsync(historyEntry, ct); }
+        catch { }
+
+        var dinnerTimeCleared = dinnerTimeChanged && dinnerTime is null;
+        var shouldNotifyDish = dishChanged && IsTodayOrTomorrow(date);
+        var shouldNotifyDinnerTime = dinnerTimeChanged && !dinnerTimeCleared
+            && IsDinnerTimeWithinWindow(date, dinnerTime!.Value, timezoneOffsetMinutes);
+
+        if (shouldNotifyDish || shouldNotifyDinnerTime)
+            await _pushHandler.SendAutoNotificationsAsync(householdId, actingHousemateId, date, historyEntry.TranslationKey, historyEntry.Parameters, ct);
     }
 
     /// <summary>Creates the appropriate history entry based on what changed in a dish save.</summary>

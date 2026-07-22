@@ -58,6 +58,7 @@ public class TableStorageClient : ITableStorageClient
         where T : MyTableEntity
     {
         var tableClient = _serviceClient.GetTableClient(tableName);
+        await tableClient.CreateIfNotExistsAsync(cancellationToken);
         var filter = TableClient.CreateQueryFilter($"PartitionKey eq {partitionKey}");
         var results = new List<T>();
         await foreach (var entity in tableClient.QueryAsync<T>(filter, cancellationToken: cancellationToken))
@@ -72,6 +73,7 @@ public class TableStorageClient : ITableStorageClient
         where T : MyTableEntity
     {
         var tableClient = _serviceClient.GetTableClient(tableName);
+        await tableClient.CreateIfNotExistsAsync(cancellationToken);
 
         // Row key prefix range: [prefix, prefix + '\uffff') covers all keys starting with the prefix.
         var prefixEnd = rowKeyPrefix + "\uffff";
@@ -91,6 +93,7 @@ public class TableStorageClient : ITableStorageClient
         where T : MyTableEntity
     {
         var tableClient = _serviceClient.GetTableClient(tableName);
+        await tableClient.CreateIfNotExistsAsync(cancellationToken);
         var prefixEnd = partitionKeyPrefix + "\uffff";
         var filter = TableClient.CreateQueryFilter(
             $"PartitionKey ge {partitionKeyPrefix} and PartitionKey lt {prefixEnd}");
