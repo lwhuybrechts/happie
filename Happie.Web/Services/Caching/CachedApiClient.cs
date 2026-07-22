@@ -19,8 +19,11 @@ public class CachedApiClient : ICachedApiClient
     private readonly NavigationManager _navigationManager;
     private readonly SessionService _sessionService;
 
+    private bool _savedDishesPrePopulated;
+
     public event Action<DayPlanResponse>? OnDayPlanUpdated;
     public event Action<DateOnly, CalendarResponse>? OnCalendarUpdated;
+    public event Action<IReadOnlyList<SavedDishDto>>? OnSavedDishesUpdated;
 
     public bool IsColdCacheFetch { get; private set; }
     public bool HasLoadError { get; private set; }
@@ -63,6 +66,7 @@ public class CachedApiClient : ICachedApiClient
             if (_connectivityService.IsOnline)
                 backgroundRefreshTask = BackgroundRefreshDayPlanAsync(householdId, date, cached.ResponseJson);
 
+            TriggerSavedDishesPrePopulation(householdId);
             return new DayPlanFetchResult(cachedResponse, false, false, backgroundRefreshTask);
         }
 
@@ -75,6 +79,7 @@ public class CachedApiClient : ICachedApiClient
         if (data is null)
             hasLoadError = true;
 
+        TriggerSavedDishesPrePopulation(householdId);
         return new DayPlanFetchResult(data, true, hasLoadError, null);
     }
 
@@ -137,6 +142,70 @@ public class CachedApiClient : ICachedApiClient
 
         var month = viewedMonth.ToString("yyyy-MM");
         return await FetchAndCacheCalendarAsync(householdId, viewedMonth, month);
+    }
+
+    public async Task<SavedDishesFetchResult> GetSavedDishesAsync()
+    {
+        var householdId = await GetHouseholdIdAsync();
+        if (householdId is null)
+        {
+            await RedirectToLoginAsync();
+            return new SavedDishesFetchResult(null, false, false);
+        }
+
+        var cached = await _cacheStore.GetSavedDishesAsync(householdId);
+
+        if (cached is not null)
+        {
+            // Stale-while-revalidate: return cached immediately, background refresh if online.
+            var cachedDishes = JsonSerializer.Deserialize<IReadOnlyList<SavedDishDto>>(cached.ResponseJson);
+
+            if (_connectivityService.IsOnline)
+                _ = BackgroundRefreshSavedDishesAsync(householdId, cached.ResponseJson);
+
+            return new SavedDishesFetchResult(cachedDishes, false, false);
+        }
+
+        // Cold cache path.
+        if (!_connectivityService.IsOnline)
+            return new SavedDishesFetchResult(null, true, false);
+
+        var dishes = await FetchAndCacheSavedDishesAsync(householdId);
+        if (dishes is null)
+            return new SavedDishesFetchResult(null, false, true);
+
+        return new SavedDishesFetchResult(dishes, false, false);
+    }
+
+    public async Task RefreshSavedDishesCacheAsync()
+    {
+        var householdId = await GetHouseholdIdAsync();
+        if (householdId is null)
+            return;
+
+        try
+        {
+            var response = await _httpClient.GetAsync("saved-dishes");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                // Refetch failed: delete the cache entry so next access triggers a fresh fetch.
+                await _cacheStore.DeleteSavedDishesAsync(householdId);
+                return;
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            await _cacheStore.PutSavedDishesAsync(householdId, json);
+
+            var dishes = JsonSerializer.Deserialize<IReadOnlyList<SavedDishDto>>(json);
+            if (dishes is not null)
+                OnSavedDishesUpdated?.Invoke(dishes);
+        }
+        catch
+        {
+            // Network error: delete cache entry so next access triggers fresh fetch.
+            await _cacheStore.DeleteSavedDishesAsync(householdId);
+        }
     }
 
     public async Task<bool> SaveAttendanceAsync(string date, Guid housemateId, AttendanceStatus status)
@@ -446,6 +515,104 @@ public class CachedApiClient : ICachedApiClient
         catch
         {
             // Network error or timeout: retain cached data silently.
+        }
+    }
+
+    private async Task<IReadOnlyList<SavedDishDto>?> FetchAndCacheSavedDishesAsync(string householdId)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("saved-dishes");
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                await ClearSessionAndRedirectAsync(householdId);
+                return null;
+            }
+
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            var json = await response.Content.ReadAsStringAsync();
+            await _cacheStore.PutSavedDishesAsync(householdId, json);
+            return JsonSerializer.Deserialize<IReadOnlyList<SavedDishDto>>(json);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task BackgroundRefreshSavedDishesAsync(string householdId, string previousJson)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("saved-dishes");
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                await ClearSessionAndRedirectAsync(householdId);
+                return;
+            }
+
+            if (!response.IsSuccessStatusCode)
+                return;
+
+            var freshJson = await response.Content.ReadAsStringAsync();
+
+            if (freshJson == previousJson)
+            {
+                // Identical data: just update the timestamp.
+                await _cacheStore.PutSavedDishesAsync(householdId, previousJson);
+                return;
+            }
+
+            // Data changed: update cache and notify subscribers.
+            await _cacheStore.PutSavedDishesAsync(householdId, freshJson);
+
+            var freshDishes = JsonSerializer.Deserialize<IReadOnlyList<SavedDishDto>>(freshJson);
+            if (freshDishes is not null)
+                OnSavedDishesUpdated?.Invoke(freshDishes);
+        }
+        catch (HttpRequestException)
+        {
+            // Network failure: retain existing cache, no UI change.
+        }
+        catch
+        {
+            // Any other unexpected error: retain existing cache to avoid unobserved task exceptions.
+        }
+    }
+
+    private void TriggerSavedDishesPrePopulation(string householdId)
+    {
+        if (_savedDishesPrePopulated)
+            return;
+
+        _savedDishesPrePopulated = true;
+
+        // Fire-and-forget: do not block DayPlan page render.
+        _ = PrePopulateSavedDishesAsync(householdId);
+    }
+
+    private async Task PrePopulateSavedDishesAsync(string householdId)
+    {
+        try
+        {
+            // Only pre-populate if no cache entry exists yet.
+            var existing = await _cacheStore.GetSavedDishesAsync(householdId);
+            if (existing is not null)
+                return;
+
+            // Only fetch if online.
+            if (!_connectivityService.IsOnline)
+                return;
+
+            await FetchAndCacheSavedDishesAsync(householdId);
+        }
+        catch
+        {
+            // Pre-population failure must not show any error (Requirement 6.2).
         }
     }
 

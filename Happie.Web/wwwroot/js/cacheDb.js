@@ -1,16 +1,17 @@
 // IndexedDB cache module for Happie PWA.
-// Database: happie-cache, version 1.
-// Object stores: dayPlanCache, calendarCache, mutationQueue.
+// Database: happie-cache, version 2.
+// Object stores: dayPlanCache, calendarCache, mutationQueue, savedDishCache.
 
 (function () {
     "use strict";
 
     const DB_NAME = "happie-cache";
-    const DB_VERSION = 1;
+    const DB_VERSION = 2;
 
     const STORE_DAY_PLAN = "dayPlanCache";
     const STORE_CALENDAR = "calendarCache";
     const STORE_MUTATION = "mutationQueue";
+    const STORE_SAVED_DISHES = "savedDishCache";
 
     let _db = null;
 
@@ -39,6 +40,18 @@
                     var mutationStore = db.createObjectStore(STORE_MUTATION, { keyPath: "id", autoIncrement: true });
                     mutationStore.createIndex("byHousehold", "householdId", { unique: false });
                 }
+
+                if (!db.objectStoreNames.contains(STORE_SAVED_DISHES)) {
+                    var savedDishStore = db.createObjectStore(STORE_SAVED_DISHES, { keyPath: "key" });
+                    savedDishStore.createIndex("byHousehold", "householdId", { unique: false });
+                }
+            };
+
+            request.onblocked = function () {
+                // Another tab holds a connection to the old DB version.
+                // Resolve without a DB reference so the app starts in degraded mode (cache unavailable).
+                console.warn("IndexedDB upgrade blocked by another tab. Cache unavailable until other tabs are closed.");
+                resolve();
             };
 
             request.onsuccess = function (e) {
@@ -374,10 +387,57 @@
         });
     }
 
+    // Returns the cached saved dishes entry or null.
+    function getSavedDishes(householdId) {
+        var key = householdId;
+        return new Promise(function (resolve, reject) {
+            var tx = _db.transaction(STORE_SAVED_DISHES, "readonly");
+            var store = tx.objectStore(STORE_SAVED_DISHES);
+            var request = store.get(key);
+
+            request.onsuccess = function () {
+                resolve(request.result || null);
+            };
+
+            request.onerror = function () {
+                reject(request.error);
+            };
+        });
+    }
+
+    // Stores or overwrites a saved dishes entry.
+    function putSavedDishes(householdId, responseJson, timestamp) {
+        var key = householdId;
+        return new Promise(function (resolve, reject) {
+            var tx = _db.transaction(STORE_SAVED_DISHES, "readwrite");
+            var store = tx.objectStore(STORE_SAVED_DISHES);
+            store.put({
+                key: key,
+                householdId: householdId,
+                responseJson: responseJson,
+                timestamp: timestamp
+            });
+            tx.oncomplete = function () { resolve(); };
+            tx.onerror = function () { reject(tx.error); };
+        });
+    }
+
+    // Deletes a saved dishes entry by key.
+    function deleteSavedDishes(householdId) {
+        var key = householdId;
+        return new Promise(function (resolve, reject) {
+            var tx = _db.transaction(STORE_SAVED_DISHES, "readwrite");
+            var store = tx.objectStore(STORE_SAVED_DISHES);
+            store.delete(key);
+            tx.oncomplete = function () { resolve(); };
+            tx.onerror = function () { reject(tx.error); };
+        });
+    }
+
     // Deletes all entries across all stores for the given householdId.
     function clearAll(householdId) {
         return new Promise(function (resolve, reject) {
-            var tx = _db.transaction([STORE_DAY_PLAN, STORE_CALENDAR, STORE_MUTATION], "readwrite");
+            var tx = _db.transaction([STORE_DAY_PLAN, STORE_CALENDAR, STORE_MUTATION, STORE_SAVED_DISHES], "readwrite");
 
             // Clear dayPlanCache entries.
             var dayPlanStore = tx.objectStore(STORE_DAY_PLAN);
@@ -415,15 +475,29 @@
                 }
             };
 
+            // Clear savedDishCache entries.
+            var savedDishStore = tx.objectStore(STORE_SAVED_DISHES);
+            var savedDishIndex = savedDishStore.index("byHousehold");
+            var savedDishRequest = savedDishIndex.openCursor(IDBKeyRange.only(householdId));
+            savedDishRequest.onsuccess = function (e) {
+                var cursor = e.target.result;
+                if (cursor) {
+                    cursor.delete();
+                    cursor.continue();
+                }
+            };
+
             tx.oncomplete = function () { resolve(); };
             tx.onerror = function () { reject(tx.error); };
         });
     }
 
-    // Returns true if IndexedDB is accessible, false otherwise.
+    // Returns true if IndexedDB is accessible and the database is open, false otherwise.
     function isAvailable() {
         try {
             if (!window.indexedDB)
+                return false;
+            if (!_db)
                 return false;
             return true;
         } catch (e) {
@@ -444,6 +518,9 @@
         deleteCalendar: deleteCalendar,
         getEvictableCalendarKey: getEvictableCalendarKey,
         getCalendarKeys: getCalendarKeys,
+        getSavedDishes: getSavedDishes,
+        putSavedDishes: putSavedDishes,
+        deleteSavedDishes: deleteSavedDishes,
         enqueueMutation: enqueueMutation,
         dequeueMutation: dequeueMutation,
         peekAllMutations: peekAllMutations,

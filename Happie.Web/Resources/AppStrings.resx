@@ -561,6 +561,9 @@
   <data name="DishPanel_SavedDishIndicator" xml:space="preserve">
     <value>Opgeslagen gerecht</value>
   </data>
+  <data name="SavedDish_OfflineUnavailable" xml:space="preserve">
+    <value>Opgeslagen gerechten zijn niet beschikbaar zonder internet.</value>
+  </data>
   <data name="SavedDish_Promote" xml:space="preserve">
     <value>Voeg {0} toe aan opgeslagen gerechten</value>
   </data>
@@ -581,6 +584,9 @@
   </data>
   <data name="SavedDish_LoadError" xml:space="preserve">
     <value>Gerechten laden mislukt.</value>
+  </data>
+  <data name="SavedDish_PromoteOffline" xml:space="preserve">
+    <value>Opslaan als gerecht vereist internet.</value>
   </data>
   <data name="SavedDish_SelectionLimit" xml:space="preserve">
     <value>Maximaal 10 gerechten</value>

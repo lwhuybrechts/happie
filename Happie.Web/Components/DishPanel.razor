@@ -1,7 +1,6 @@
 @using Happie.Shared.Contracts
 @using Happie.Web.Services.Caching
 @inject ICachedApiClient CachedApi
-@inject HttpClient Http
 @inject IStringLocalizer<AppStrings> Localizer
 @inject IJSRuntime JS
 
@@ -377,31 +376,28 @@
         if (SavedDishModalRef is null)
             return;
 
-        try
-        {
-            var response = await Http.GetAsync("saved-dishes");
-            if (response.IsSuccessStatusCode)
-            {
-                var dishes = await response.Content.ReadFromJsonAsync<SavedDishDto[]>() ?? [];
-                // Pass pre-selected IDs: use current selection if in saved mode.
-                // In custom mode, only pass committed IDs if the input still matches the committed description.
-                IReadOnlyList<Guid>? preSelectedIds;
-                if (_isSavedMode && _selectedSavedDishIds.Count > 0)
-                    preSelectedIds = _selectedSavedDishIds;
-                else if (!_isSavedMode && _committedSavedDishIds is { Count: > 0 } && _editValue.Trim() == _committedValue)
-                    preSelectedIds = _committedSavedDishIds;
-                else
-                    preSelectedIds = null;
+        var result = await CachedApi.GetSavedDishesAsync();
 
-                SavedDishModalRef.Open(_editValue, dishes, preSelectedIds);
-            }
+        if (result.Dishes is not null)
+        {
+            // Pass pre-selected IDs: use current selection if in saved mode.
+            // In custom mode, only pass committed IDs if the input still matches the committed description.
+            IReadOnlyList<Guid>? preSelectedIds;
+            if (_isSavedMode && _selectedSavedDishIds.Count > 0)
+                preSelectedIds = _selectedSavedDishIds;
+            else if (!_isSavedMode && _committedSavedDishIds is { Count: > 0 } && _editValue.Trim() == _committedValue)
+                preSelectedIds = _committedSavedDishIds;
             else
-            {
-                _promoteErrorMessage = Localizer["SavedDish_LoadError"].Value;
-                _showPromoteError = true;
-            }
+                preSelectedIds = null;
+
+            SavedDishModalRef.Open(_editValue, result.Dishes, preSelectedIds);
         }
-        catch
+        else if (result.IsColdCache)
+        {
+            _promoteErrorMessage = Localizer["SavedDish_OfflineUnavailable"].Value;
+            _showPromoteError = true;
+        }
+        else if (result.HasError)
         {
             _promoteErrorMessage = Localizer["SavedDish_LoadError"].Value;
             _showPromoteError = true;

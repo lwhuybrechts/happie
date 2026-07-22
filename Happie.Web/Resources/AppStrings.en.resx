@@ -561,6 +561,9 @@
   <data name="DishPanel_SavedDishIndicator" xml:space="preserve">
     <value>Saved dish</value>
   </data>
+  <data name="SavedDish_OfflineUnavailable" xml:space="preserve">
+    <value>Saved dishes are not available offline.</value>
+  </data>
   <data name="SavedDish_Promote" xml:space="preserve">
     <value>Add {0} to saved dishes</value>
   </data>
@@ -581,6 +584,9 @@
   </data>
   <data name="SavedDish_LoadError" xml:space="preserve">
     <value>Failed to load dishes.</value>
+  </data>
+  <data name="SavedDish_PromoteOffline" xml:space="preserve">
+    <value>Saving as a dish requires internet.</value>
   </data>
   <data name="SavedDish_SelectionLimit" xml:space="preserve">
     <value>Maximum 10 dishes</value>

@@ -263,3 +263,11 @@
 .saved-dish-modal__action-item--promote:hover:not(:disabled) {
     background-color: #c8e6c9;
 }
+
+.saved-dish-modal__offline-note {
+    font-size: 12px;
+    color: #666666;
+    font-style: italic;
+    margin: 0;
+    padding: 0 16px;
+}

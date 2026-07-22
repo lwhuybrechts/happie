@@ -2,6 +2,7 @@
 @inject IStringLocalizer<AppStrings> Localizer
 @inject IJSRuntime JS
 @inject HttpClient Http
+@inject IConnectivityService ConnectivityService
 
 @if (_isOpen)
 {
@@ -31,9 +32,14 @@
             {
                 <button class="saved-dish-modal__action-item saved-dish-modal__action-item--promote"
                         @onclick="HandlePromoteAsync"
-                        disabled="@_isPromoting">
+                        disabled="@(_isPromoting || !ConnectivityService.IsOnline)">
                     @string.Format(Localizer["SavedDish_Promote"].Value, _currentDescription.Trim())
                 </button>
+
+                @if (!ConnectivityService.IsOnline)
+                {
+                    <p class="saved-dish-modal__offline-note">@Localizer["SavedDish_PromoteOffline"]</p>
+                }
             }
 
             @if (_sortedDishes.Count > 0)

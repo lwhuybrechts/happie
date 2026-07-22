@@ -24,6 +24,15 @@ public interface ICacheStore
     /// <summary>Deletes a cached Calendar entry.</summary>
     Task DeleteCalendarAsync(string householdId, string month);
 
+    /// <summary>Gets a cached saved dishes entry, or null if not found or unavailable.</summary>
+    Task<CachedSavedDishes?> GetSavedDishesAsync(string householdId);
+
+    /// <summary>Stores a saved dishes entry for the household.</summary>
+    Task PutSavedDishesAsync(string householdId, string responseJson);
+
+    /// <summary>Deletes a cached saved dishes entry.</summary>
+    Task DeleteSavedDishesAsync(string householdId);
+
     /// <summary>Clears all cache and mutation queue entries for the given household.</summary>
     Task ClearAllAsync(string householdId);
 }

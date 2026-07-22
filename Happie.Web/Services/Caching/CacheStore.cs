@@ -175,6 +175,59 @@ public class CacheStore : ICacheStore
     }
 
     /// <inheritdoc />
+    public async Task<CachedSavedDishes?> GetSavedDishesAsync(string householdId)
+    {
+        if (!_isAvailable)
+            return null;
+
+        try
+        {
+            var entry = await _jsRuntime.InvokeAsync<SavedDishesEntry?>("window.happieCache.getSavedDishes", householdId);
+            if (entry is null)
+                return null;
+
+            return new CachedSavedDishes(entry.ResponseJson, entry.Timestamp);
+        }
+        catch (JSException)
+        {
+            return null;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task PutSavedDishesAsync(string householdId, string responseJson)
+    {
+        if (!_isAvailable)
+            return;
+
+        try
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            await _jsRuntime.InvokeVoidAsync("window.happieCache.putSavedDishes", householdId, responseJson, timestamp);
+        }
+        catch (JSException)
+        {
+            // IndexedDB operation failed; treat as unavailable gracefully.
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteSavedDishesAsync(string householdId)
+    {
+        if (!_isAvailable)
+            return;
+
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("window.happieCache.deleteSavedDishes", householdId);
+        }
+        catch (JSException)
+        {
+            // IndexedDB operation failed; treat as unavailable gracefully.
+        }
+    }
+
+    /// <inheritdoc />
     public async Task ClearAllAsync(string householdId)
     {
         if (!_isAvailable)
@@ -202,6 +255,13 @@ public class CacheStore : ICacheStore
     private sealed class CalendarEntry
     {
         public string Month { get; set; } = string.Empty;
+        public string ResponseJson { get; set; } = string.Empty;
+        public long Timestamp { get; set; }
+    }
+
+    /// <summary>Internal DTO for deserializing saved dishes entries from JS interop.</summary>
+    private sealed class SavedDishesEntry
+    {
         public string ResponseJson { get; set; } = string.Empty;
         public long Timestamp { get; set; }
     }

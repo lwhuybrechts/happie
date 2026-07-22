@@ -59,6 +59,30 @@
     transform: scale(1.05);
 }
 
+.saved-dishes-page__add-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.saved-dishes-page__add-btn:disabled:hover {
+    background-color: #4CAF50;
+    transform: none;
+}
+
+/* Offline banner. */
+.saved-dishes-page__offline-banner {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background-color: #fff3e0;
+    border: 1px solid #ffcc80;
+    border-radius: 12px;
+    font-size: 0.8125rem;
+    color: #e65100;
+    font-weight: 500;
+}
+
 /* Add panel: input + ✓/✗ buttons. */
 .saved-dishes-page__add-panel {
     display: flex;
@@ -199,6 +223,11 @@
 .saved-dishes-page__icon-btn:hover:not(:disabled) {
     background-color: #f3f4f6;
     color: #6b7280;
+}
+
+.saved-dishes-page__icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .saved-dishes-page__icon-btn--danger:hover:not(:disabled) {
