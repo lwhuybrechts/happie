@@ -49,7 +49,7 @@ public class VersionTracker
         {
             using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             var request = new ReportVersionRequest(version);
-            await _httpClient.PutAsJsonAsync("api/housemates/version", request, cancellationTokenSource.Token);
+            await _httpClient.PutAsJsonAsync("housemates/version", request, cancellationTokenSource.Token);
         }
         catch
         {
