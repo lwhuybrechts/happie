@@ -128,20 +128,20 @@ Repartition `DayPlanDishLinkEntity` from composite partition key (`{HouseholdId}
     - Confirm all operations work correctly with the migrated data
     - Ask the user to verify via the web app if needed
 
-- [ ] 11. Deploy and run production migration
-  - [-] 11.1 Deploy updated code to Azure
+- [x] 11. Deploy and run production migration
+  - [x] 11.1 Deploy updated code to Azure
     - Push changes and trigger deployment (or deploy manually)
     - Confirm the Functions app is running the new code in Azure
-  - [~] 11.2 Run migration script against Azure Table Storage
+  - [x] 11.2 Run migration script against Azure Table Storage
     - Execute the migration script targeting the production Azure Table Storage connection string
     - Verify output reports expected totals (migrated, skipped, failed)
     - Confirm no failures occurred; if failures exist, investigate and re-run (script is idempotent)
-  - [~] 11.3 Verify production application works after migration
+  - [x] 11.3 Verify production application works after migration
     - Confirm the live app serves correct data with the new partition scheme
     - Ask the user to do a quick smoke test on the deployed app
 
-- [ ] 12. Remove migration script
-  - [~] 12.1 Delete migration script project and related test files
+- [x] 12. Remove migration script
+  - [x] 12.1 Delete migration script project and related test files
     - Remove the migration console project/script directory created in task 7.1
     - Remove any associated unit test files created in task 7.2
     - Remove any project references to the migration project from the solution (if added)
