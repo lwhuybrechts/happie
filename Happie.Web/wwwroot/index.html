@@ -581,14 +581,25 @@
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         };
 
-        // Applies scroll lock to the document body (prevents background scrolling when modal is open).
+        // Applies scroll lock (prevents background scrolling when modal is open).
+        // Sets overflow:hidden on both html and body, plus touch-action:none for iOS Safari.
         happie.lockScroll = function () {
+            if (document.body.dataset.scrollLocked === 'true')
+                return;
+            document.body.dataset.scrollLocked = 'true';
+            document.documentElement.style.overflow = 'hidden';
             document.body.style.overflow = 'hidden';
+            document.documentElement.style.touchAction = 'none';
         };
 
-        // Restores scroll behavior on the document body (removes scroll lock when modal closes).
+        // Restores scroll behavior (removes scroll lock when modal closes).
         happie.unlockScroll = function () {
+            if (document.body.dataset.scrollLocked !== 'true')
+                return;
+            document.body.dataset.scrollLocked = '';
+            document.documentElement.style.overflow = '';
             document.body.style.overflow = '';
+            document.documentElement.style.touchAction = '';
         };
     </script>
     <script src="js/cacheDb.js"></script>

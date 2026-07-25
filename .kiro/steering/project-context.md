@@ -103,17 +103,9 @@ Unhandled enum values in switch expressions throw `InvalidOperationException` ra
 4. `ActiveHousemateId` stored separately in `localStorage`, sent as `X-Housemate-Id`
 5. On return visits the stored JWT is validated; if still valid the user skips the password screen
 
-## Running Locally (quick reference)
+## Running Locally
 
-Start all three processes in this order:
-
-1. `azurite --silent`
-2. `func start` (from `Happie.Api/`)
-3. `dotnet run --project Happie.Web --launch-profile http`
-
-Blazor WASM does NOT support hot reload — restart the frontend after .razor/.razor.css changes. Restart the API after backend code changes.
-
-For detailed instructions (seeding, prerequisites, re-seeding after integration tests), read `.kiro/steering/local-dev.md`.
+When asked to start the app or run locally, ALWAYS read `.kiro/steering/local-dev.md` first and follow the instructions there. That file contains the full startup procedure, ports, seeding, and troubleshooting details.
 
 ## Steering File Index
 
@@ -131,6 +123,6 @@ Additional conventions are loaded automatically when working on relevant files. 
 | `i18n-conventions.md` | Localization, resx files, SharedStringResolver | Editing `.resx` / `.razor` / API / Shared |
 | `offline-cache-conventions.md` | IndexedDB cache, CachedApiClient, sync | Editing `Caching/` / `cacheDb` |
 | `domain-rules.md` | Business rules, validation, entity lifecycles | Editing Handlers / Functions / Domain / Components |
-| `local-dev.md` | Full local dev setup, seeding, prerequisites | Manual (`#local-dev`) |
+| `local-dev.md` | Full local dev setup, seeding, prerequisites | Starting the app or running locally |
 | `infrastructure.md` | Azure resources, Bicep, deployment | Manual (`#infrastructure`) |
 | `lan-testing.md` | iPhone LAN testing setup | Manual (`#lan-testing`) |
