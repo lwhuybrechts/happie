@@ -50,7 +50,7 @@ public class ExampleEntity : MyTableEntity
 | `DayHistoryEntity` | `{HouseholdId}` | `{YYYY-MM-DD}_{InvertedTimestamp}` |
 | `PushSubscriptionEntity` | `{HouseholdId}` | `{HousemateId}` |
 | `SavedDishEntity` | `{HouseholdId}` | `{SavedDishId}` |
-| `DayPlanDishLinkEntity` | `{HouseholdId}_{YYYY-MM-DD}` | `{SavedDishId}` |
+| `DayPlanDishLinkEntity` | `{HouseholdId}` | `{YYYY-MM-DD}_{SavedDishId}` |
 
 `DayHistory` uses an inverted timestamp (`DateTimeOffset.MaxValue.Ticks - entry.ChangedAt.Ticks`) so entries are returned in reverse-chronological order by default.
 

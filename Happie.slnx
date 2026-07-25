@@ -6,4 +6,6 @@
   <Project Path="Happie.Shared.Tests/Happie.Shared.Tests.csproj" />
   <Project Path="Happie.Web/Happie.Web.csproj" />
   <Project Path="Happie.Web.Tests/Happie.Web.Tests.csproj" />
+  <Project Path="Happie.Migration/Happie.Migration.csproj" />
+  <Project Path="Happie.Migration.Tests/Happie.Migration.Tests.csproj" />
 </Solution>

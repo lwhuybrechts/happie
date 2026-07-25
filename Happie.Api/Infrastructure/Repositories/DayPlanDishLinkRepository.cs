@@ -18,39 +18,36 @@ public class DayPlanDishLinkRepository : BaseRepository<DayPlanDishLinkEntity>, 
     }
 
     /// <inheritdoc/>
-    public async Task<IReadOnlyList<DayPlanDishLink>> GetByDateAsync(Guid householdId, DateOnly date, CancellationToken ct = default)
+    public async Task<IReadOnlyList<DayPlanDishLink>> GetByDateAsync(Guid householdId, DateOnly date, CancellationToken cancellationToken = default)
     {
-        var partitionKey = $"{householdId}_{date:yyyy-MM-dd}";
-        var entities = await QueryByPartitionAsync(partitionKey, ct);
+        var entities = await QueryByRowKeyPrefixAsync(householdId.ToString(), $"{date:yyyy-MM-dd}_", cancellationToken);
         return entities.Select(x => _mapper.ToModel(x)).OrderBy(x => x.SortOrder).ToList();
     }
 
     /// <inheritdoc/>
-    public async Task ReplaceAllAsync(Guid householdId, DateOnly date, IReadOnlyList<DayPlanDishLink> links, CancellationToken ct = default)
+    public async Task ReplaceAllAsync(Guid householdId, DateOnly date, IReadOnlyList<DayPlanDishLink> links, CancellationToken cancellationToken = default)
     {
-        await DeleteAllAsync(householdId, date, ct);
+        await DeleteAllAsync(householdId, date, cancellationToken);
         foreach (var link in links)
-            await UpsertAsync(_mapper.ToEntity(link), ct);
+            await UpsertAsync(_mapper.ToEntity(link), cancellationToken);
     }
 
     /// <inheritdoc/>
-    public async Task DeleteAllAsync(Guid householdId, DateOnly date, CancellationToken ct = default)
+    public async Task DeleteAllAsync(Guid householdId, DateOnly date, CancellationToken cancellationToken = default)
     {
-        var partitionKey = $"{householdId}_{date:yyyy-MM-dd}";
-        var existing = await QueryByPartitionAsync(partitionKey, ct);
-        foreach (var entity in existing)
-            await DeleteAsync(entity.PartitionKey, entity.RowKey, ct);
+        var entities = await QueryByRowKeyPrefixAsync(householdId.ToString(), $"{date:yyyy-MM-dd}_", cancellationToken);
+        foreach (var entity in entities)
+            await DeleteAsync(entity.PartitionKey, entity.RowKey, cancellationToken);
     }
 
     /// <inheritdoc/>
-    public async Task<IReadOnlyList<DayPlanDishLink>> GetAllByHouseholdAsync(Guid householdId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<DayPlanDishLink>> GetAllByHouseholdAsync(Guid householdId, CancellationToken cancellationToken = default)
     {
-        var prefix = $"{householdId}_";
-        var entities = await QueryByPartitionPrefixAsync(prefix, ct);
+        var entities = await QueryByPartitionAsync(householdId.ToString(), cancellationToken);
         return entities.Select(x => _mapper.ToModel(x)).ToList();
     }
 
     /// <inheritdoc/>
-    public Task CreateAsync(DayPlanDishLink link, CancellationToken ct = default)
-        => UpsertAsync(_mapper.ToEntity(link), ct);
+    public Task CreateAsync(DayPlanDishLink link, CancellationToken cancellationToken = default)
+        => UpsertAsync(_mapper.ToEntity(link), cancellationToken);
 }

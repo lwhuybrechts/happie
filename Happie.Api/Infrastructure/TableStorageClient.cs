@@ -104,4 +104,26 @@ public class TableStorageClient : ITableStorageClient
         }
         return results;
     }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<T>> QueryByRowKeyRangeAsync<T>(string tableName, string partitionKey, string rowKeyStart, string rowKeyEnd, CancellationToken cancellationToken = default)
+        where T : MyTableEntity
+    {
+        // Return empty list when the range is invalid (start >= end).
+        if (string.Compare(rowKeyStart, rowKeyEnd, StringComparison.Ordinal) >= 0)
+            return Array.Empty<T>();
+
+        var tableClient = _serviceClient.GetTableClient(tableName);
+        await tableClient.CreateIfNotExistsAsync(cancellationToken);
+
+        var filter = TableClient.CreateQueryFilter(
+            $"PartitionKey eq {partitionKey} and RowKey ge {rowKeyStart} and RowKey lt {rowKeyEnd}");
+
+        var results = new List<T>();
+        await foreach (var entity in tableClient.QueryAsync<T>(filter, cancellationToken: cancellationToken))
+        {
+            results.Add(entity);
+        }
+        return results;
+    }
 }

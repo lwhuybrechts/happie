@@ -9,11 +9,9 @@ public class DayPlanDishLinkMapper : IDayPlanDishLinkMapper
     /// <inheritdoc/>
     public DayPlanDishLink ToModel(DayPlanDishLinkEntity entity)
     {
-        // PK format: "{HouseholdId}_{YYYY-MM-DD}".
-        var parts = entity.PartitionKey.Split('_', 2);
-        var householdId = Guid.Parse(parts[0]);
-        var date = DateOnly.ParseExact(parts[1], "yyyy-MM-dd");
-        var savedDishId = Guid.Parse(entity.RowKey);
+        var householdId = Guid.Parse(entity.PartitionKey);
+        var date = DateOnly.ParseExact(entity.RowKey[..10], "yyyy-MM-dd");
+        var savedDishId = Guid.Parse(entity.RowKey[11..]);
         return new DayPlanDishLink(householdId, date, savedDishId, entity.SortOrder);
     }
 
