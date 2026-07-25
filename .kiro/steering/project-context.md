@@ -36,27 +36,40 @@ For local development, set `KeyVaultUri` in `local.settings.json` and authentica
 
 ## Pages and Routes
 
+<!-- MAINTENANCE: when adding a new page, add a row to this table. -->
+
 | Page | Route | Description |
 |---|---|---|
 | LoginPage | `/` | Password entry and housemate selection |
-| DayPlanPage | `/day/{date}` | Full day plan: attendance, dish, comments, nudge, history |
+| DayPlanPage | `/day/{date}` | Full day plan: attendance, dishes, comments, nudge, history |
 | CalendarPage | `/calendar` | Calendar overview with color indicators |
 | HousematesPage | `/housemates` | Housemate management (add, rename, remove, color) |
+| SavedDishesPage | `/saved-dishes` | Manage reusable saved dishes (add, rename, delete) |
+| PushHelpPage | `/push-help` | Help page explaining how to enable push notifications |
 
 The browser tab title MUST always be **Happie** on every page. Use `<PageTitle>Happie</PageTitle>` — do not append page-specific text or localized strings.
 
 ## Key Components
 
+<!-- MAINTENANCE: when adding a new reusable component, add a row to this table. -->
+
 | Component | Description |
 |---|---|
 | `AttendanceToggle` | Three-state toggle (eating in / not eating in / unknown) per housemate |
-| `DishEditor` | Inline editable field for the dish, max 100 chars |
+| `DishPanel` | Displays the day's dinner time, free-text dish description, and linked saved dishes with add/remove controls |
+| `SavedDishModal` | Multi-select modal for linking saved dishes to a day plan |
 | `CommentEditor` | Inline editable field for a housemate's comment slot, max 200 chars |
-| `NudgeDialog` | Modal for selecting recipients and optional message (max 20 chars) |
+| `NudgeModal` | Modal for selecting recipients and optional message (max 20 chars) |
 | `CalendarGrid` | Month grid with color dot indicators per day |
-| `DayHistoryLog` | Audit log of changes for a given day, shown in reverse-chronological order |
+| `HistorySection` | Audit log of changes for a given day, shown in reverse-chronological order |
 | `HousemateColorPicker` | Predefined palette of up to 30 colors |
+| `ColorPickerModal` | Modal wrapper for housemate color selection |
+| `DateNavigationPanel` | Swipeable date navigation with today/yesterday shortcuts |
 | `OfflineBanner` | Shown when the app detects no network connectivity |
+| `SyncToast` | Toast notification showing offline sync status and failures |
+| `LoadingIndicator` | Spinner shown during background API operations |
+| `LocaleSwitcher` | Language toggle between Dutch and English |
+| `HousemateAvatar` | Colored circle with housemate initial |
 
 ## API Conventions
 
@@ -90,170 +103,34 @@ Unhandled enum values in switch expressions throw `InvalidOperationException` ra
 4. `ActiveHousemateId` stored separately in `localStorage`, sent as `X-Housemate-Id`
 5. On return visits the stored JWT is validated; if still valid the user skips the password screen
 
-## Azure Table Storage Schema
+## Running Locally (quick reference)
 
-PartitionKey is always `HouseholdId` (string) so all records for a household are co-located.
+Start all three processes in this order:
 
-| Table | PartitionKey | RowKey |
+1. `azurite --silent`
+2. `func start` (from `Happie.Api/`)
+3. `dotnet run --project Happie.Web --launch-profile http`
+
+Blazor WASM does NOT support hot reload — restart the frontend after .razor/.razor.css changes. Restart the API after backend code changes.
+
+For detailed instructions (seeding, prerequisites, re-seeding after integration tests), read `.kiro/steering/local-dev.md`.
+
+## Steering File Index
+
+<!-- MAINTENANCE: when adding a new steering file, add a row to this table. -->
+
+Additional conventions are loaded automatically when working on relevant files. When you need guidance on a topic without a matching file in context, read the relevant steering file:
+
+| File | Topic | Loaded when |
 |---|---|---|
-| `Households` | `"households"` | `{HouseholdId}` |
-| `Housemates` | `{HouseholdId}` | `{HousemateId}` |
-| `AttendanceRecords` | `{HouseholdId}` | `{YYYY-MM-DD}_{HousemateId}` |
-| `DishRecords` | `{HouseholdId}` | `{YYYY-MM-DD}` |
-| `Comments` | `{HouseholdId}` | `{YYYY-MM-DD}_{HousemateId}` |
-| `DayHistory` | `{HouseholdId}` | `{YYYY-MM-DD}_{InvertedTimestamp}` |
-| `PushSubscriptions` | `{HouseholdId}` | `{HousemateId}` |
-
-`DayHistory` uses an inverted timestamp (`DateTimeOffset.MaxValue.Ticks - entry.ChangedAt.Ticks`) so entries are returned in reverse-chronological order by default.
-
-## i18n
-
-- Supported locales: `"en"` (English) and `"nl"` (Dutch)
-- Default locale when none is set: `"nl"`
-- Locale is persisted across sessions
-- Language switches immediately without a page reload
-- All source code, identifiers, and comments remain in English regardless of active locale
-- Push subscription records store the housemate's locale so predefined nudge messages are resolved server-side in the recipient's language
-- **All user-visible strings MUST use `IStringLocalizer<AppStrings>`** — NEVER hardcode English text directly in `.razor` components or service classes. This includes labels like "Today"/"Yesterday", relative time strings like "min ago", section headers, button text, placeholders, and error messages. Add keys to both `AppStrings.resx` (Dutch) and `AppStrings.en.resx` (English). For static utility classes that cannot inject `IStringLocalizer`, accept localized strings as method parameters.
-
-## Testing Conventions
-
-- Unit tests: xUnit
-- Property-based tests: FsCheck, minimum 100 iterations per property
-- Each property test must be tagged: `// Feature: happie, Property {N}: {property_text}`
-- Both client-side and server-side validation must be enforced for all field length rules
-
-## Running Locally
-
-### Prerequisites
-
-- [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local) (`func` on PATH)
-- [Azurite](https://learn.microsoft.com/azure/storage/common/storage-use-azurite) running on default ports (Table: 10002)
-- `az login` is only required if `KeyVaultUri` is set in `local.settings.json`; if it is absent the app skips Key Vault entirely and reads secrets directly from `local.settings.json`
-
-### Start the Full App
-
-When asked to "start the app" or "run locally", start **all three** processes in this order:
-
-1. **Azurite** (Table Storage emulator — must be running before the API starts):
-   ```bash
-   azurite --silent
-   ```
-
-2. **API** (Azure Functions):
-   ```bash
-   cd Happie.Api
-   func start
-   ```
-   The API starts on **http://localhost:7071**. All function endpoints are listed in the startup output.
-
-3. **Frontend** (Blazor WASM):
-   ```bash
-   dotnet run --project Happie.Web --launch-profile http
-   ```
-   The frontend starts on **http://localhost:5195**.
-
-The `local.settings.json` includes a `Host.CORS` entry that allows requests from the Blazor dev server (`http://localhost:5195`). This is required because the browser enforces CORS when the frontend and API run on different ports locally.
-
-### Applying Changes During Development
-
-Blazor WebAssembly does NOT support hot reload for `.razor` or `.razor.css` file changes. A browser hard refresh (Ctrl+Shift+R) is not sufficient to pick up changes. After making code or CSS changes, you MUST stop and restart the frontend dev server (`dotnet run --project Happie.Web --launch-profile http`) for the changes to take effect. The same applies to the API (`func start`) when backend code changes.
-
-### Local Test Data — Seed a Household
-
-The `Households` table in Azurite must contain at least one record before login works. Run the seed script to insert a test household and housemates:
-
-```bash
-dotnet-script Happie.Api.IntegrationTests/Scripts/seed-local.csx
-```
-
-This inserts a test household (password: **`happie`**) with two housemates (Alice and Bob). The script is idempotent (uses upsert), so it's safe to run after integration tests truncate the tables or after restarting Azurite.
-
-### Re-seed After Integration Tests
-
-Integration tests truncate Azure Table Storage tables as part of their setup. This leaves the local database empty after a test run, which breaks manual testing (login fails because no household exists).
-
-**After running integration tests, ALWAYS re-seed the database:**
-
-```bash
-dotnet-script Happie.Api.IntegrationTests/Scripts/seed-local.csx
-```
-
-When asked to run integration tests (e.g., `dotnet test` on the integration test project), always follow up with the seed script so the local environment remains usable for manual testing.
-
-
-## Blazor WebAssembly Patterns
-
-### Locale switching — forceLoad pattern
-
-Blazor WASM's `ResourceManager` caches satellite assemblies per culture and cannot switch them mid-session. The only reliable way to change the active locale at runtime is to persist the choice and reload the page.
-
-**Pattern:**
-1. Persist the new locale via `LocaleService.SetLocaleAsync(locale)` (writes to `localStorage`)
-2. Call `NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true)` to reload
-3. On startup, `Program.cs` reads the stored locale via `LocaleService.InitializeAsync()` and sets `CultureInfo.DefaultThreadCurrentCulture` / `DefaultThreadCurrentUICulture` before rendering
-
-**Preserving component state across reload:**
-If the page has in-memory state that must survive the reload (e.g., a list fetched from the API), store it in `sessionStorage` before the reload and read it back in `OnInitializedAsync`. Clean up `sessionStorage` once the state is no longer needed.
-
-### CSS isolation — `::deep` for child component elements
-
-Blazor's scoped CSS adds a unique attribute to elements rendered directly by the component, but NOT to elements rendered by child Blazor components (e.g., `<InputText>` renders an `<input>`). To style those inner elements, use the `::deep` combinator in the scoped `.razor.css` file.
-
-### Login page auto-redirect guard
-
-The login page (`/`) checks for an existing session on load. It MUST only redirect to the day plan if **both** conditions are met:
-- `jwt` exists in `localStorage` (user has authenticated)
-- `activeHousemateId` exists in `localStorage` (user has selected a housemate)
-
-If only the JWT exists (e.g., user is on the housemate selection step and reloads), the page MUST show the housemate selection view, not redirect.
-
-## Offline Cache & Sync Architecture
-
-The app uses application-level caching (IndexedDB via JS interop) for offline support. This is separate from the Service Worker's static asset caching.
-
-### Key Services (all in `Happie.Web/Services/Caching/`)
-
-| Service | Responsibility |
-|---|---|
-| `ICachedApiClient` / `CachedApiClient` | Central API facade: stale-while-revalidate for GETs, offline queueing for writes |
-| `ICacheStore` / `CacheStore` | IndexedDB CRUD for DayPlan and Calendar cache entries |
-| `IMutationQueue` / `MutationQueue` | IndexedDB queue for offline write operations |
-| `ISyncService` / `SyncService` | Replays queued mutations on reconnect with exponential backoff |
-| `IConnectivityService` / `ConnectivityService` | Tracks online/offline state via `navigator.onLine` events |
-| `LoadingIndicatorState` | Tracks active background operations for the spinner |
-
-### JS Interop Module
-
-`wwwroot/js/cacheDb.js` — manages the `happie-cache` IndexedDB database with three object stores:
-- `dayPlanCache` — cached DayPlan responses (max 30 per household, LRU eviction)
-- `calendarCache` — cached Calendar responses (max 2 per household)
-- `mutationQueue` — offline mutations awaiting replay (FIFO)
-
-### Initialization
-
-All caching services MUST be initialized in `Program.cs` after the host is built:
-
-```csharp
-var cacheStore = host.Services.GetRequiredService<ICacheStore>();
-await cacheStore.InitializeAsync();
-var mutationQueue = host.Services.GetRequiredService<IMutationQueue>();
-await mutationQueue.InitializeAsync();
-var connectivityService = host.Services.GetRequiredService<IConnectivityService>();
-await connectivityService.InitializeAsync();
-var syncService = host.Services.GetRequiredService<ISyncService>();
-await syncService.InitializeAsync();
-```
-
-Without these calls, IndexedDB is never opened and all cache operations silently no-op.
-
-### Session handling
-
-- `AuthHeaderHandler` only injects headers — it does NOT handle 401 responses or redirect.
-- 401 handling is done by `CachedApiClient` (clears session + cache + queue, saves returnUrl, redirects to login).
-- When `householdId` is missing from localStorage (no session), `CachedApiClient` GET methods redirect to login automatically.
-- `SyncService` treats 401 during replay as a 4xx (discard mutation + rollback).
-
-### Server-side conflict detection
-
-Mutation endpoints support `If-Unmodified-Since` header. When present and the entity's `LastModified` is strictly after the header value, the server returns HTTP 409 (`CONFLICT`). The `SyncService` adds this header from the mutation's `createdAt` timestamp during replay.
+| `api-conventions.md` | Functions, request validation, options pattern | Editing `Happie.Api/` or `Happie.Shared/` |
+| `entity-conventions.md` | Entities, repositories, mappers | Editing `Infrastructure/` |
+| `testing-conventions.md` | xUnit, FsCheck, test naming, assertions | Editing `*Tests*/` |
+| `bunit-testing.md` | bUnit component test patterns | Editing `Happie.Web.Tests/` |
+| `ui-conventions.md` | Blazor patterns, modals, CSS | Editing `.razor` / `Happie.Web/` |
+| `i18n-conventions.md` | Localization, resx files, SharedStringResolver | Editing `.resx` / `.razor` / API / Shared |
+| `offline-cache-conventions.md` | IndexedDB cache, CachedApiClient, sync | Editing `Caching/` / `cacheDb` |
+| `domain-rules.md` | Business rules, validation, entity lifecycles | Editing Handlers / Functions / Domain / Components |
+| `local-dev.md` | Full local dev setup, seeding, prerequisites | Manual (`#local-dev`) |
+| `infrastructure.md` | Azure resources, Bicep, deployment | Manual (`#infrastructure`) |
+| `lan-testing.md` | iPhone LAN testing setup | Manual (`#lan-testing`) |

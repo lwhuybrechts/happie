@@ -1,3 +1,8 @@
+---
+inclusion: fileMatch
+fileMatchPattern: "**/Handlers/**,**/Functions/**,**/Domain/**,**/*.razor,**/Contracts/**"
+---
+
 # Happie — Domain Rules & Constraints
 
 ## Multi-Household Data Scoping
@@ -40,12 +45,23 @@
 - Setting attendance is always an overwrite (last write wins)
 - The day plan response MUST include an attendance entry for every active (non-deleted) housemate
 
-## Dish
+## Dishes
 
-- One dish per day per household (not per housemate)
-- Setting a dish is always an overwrite; the last writer wins
-- Max 100 characters, trimmed — enforced on both client and server
+- A day plan can have zero or more linked saved dishes (many-to-many via `DayPlanDishLinks`)
+- Saved dishes are reusable descriptions managed at the household level (`SavedDishes` table)
+- Each saved dish has a description (max 100 characters, trimmed) and can be soft-deleted
+- Linking/unlinking dishes to a day is a full replacement (client sends the complete list of `savedDishIds`)
+- `DayPlanDishLink` records store a `SortOrder` (0-based) representing the order dishes were selected
+- The free-text dish description on `DishRecords` remains for backward compatibility and custom one-off text
+- Max 100 characters for dish description, trimmed — enforced on both client and server
 - Saving is attributed to the active housemate in `DishRecords.LastChangedByHousemateId`
+
+## Saved Dishes
+
+- Managed on the `SavedDishesPage` — add, rename, delete
+- Saved dish names must be unique within a household (case-insensitive comparison)
+- Deleting a saved dish that is linked to day plans → soft delete (`IsDeleted = true`)
+- Soft-deleted saved dishes do NOT appear in the selection modal but remain visible on historical day plans
 
 ## Comments
 
