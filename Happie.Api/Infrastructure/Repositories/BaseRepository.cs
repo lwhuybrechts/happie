@@ -39,7 +39,4 @@ public abstract class BaseRepository<TEntity> where TEntity : MyTableEntity
     protected Task<IReadOnlyList<TEntity>> QueryByRowKeyRangeAsync(string partitionKey, string rowKeyStart, string rowKeyEnd, CancellationToken cancellationToken = default)
         => _client.QueryByRowKeyRangeAsync<TEntity>(_tableName, partitionKey, rowKeyStart, rowKeyEnd, cancellationToken);
 
-    /// <summary>Queries entities whose partition key starts with the given prefix (cross-partition scan).</summary>
-    protected Task<IReadOnlyList<TEntity>> QueryByPartitionPrefixAsync(string partitionKeyPrefix, CancellationToken ct = default)
-        => _client.QueryByPartitionPrefixAsync<TEntity>(_tableName, partitionKeyPrefix, ct);
 }

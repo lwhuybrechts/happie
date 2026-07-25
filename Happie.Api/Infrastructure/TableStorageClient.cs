@@ -89,23 +89,6 @@ public class TableStorageClient : ITableStorageClient
     }
 
     /// <inheritdoc/>
-    public async Task<IReadOnlyList<T>> QueryByPartitionPrefixAsync<T>(string tableName, string partitionKeyPrefix, CancellationToken cancellationToken = default)
-        where T : MyTableEntity
-    {
-        var tableClient = _serviceClient.GetTableClient(tableName);
-        await tableClient.CreateIfNotExistsAsync(cancellationToken);
-        var prefixEnd = partitionKeyPrefix + "\uffff";
-        var filter = TableClient.CreateQueryFilter(
-            $"PartitionKey ge {partitionKeyPrefix} and PartitionKey lt {prefixEnd}");
-        var results = new List<T>();
-        await foreach (var entity in tableClient.QueryAsync<T>(filter, cancellationToken: cancellationToken))
-        {
-            results.Add(entity);
-        }
-        return results;
-    }
-
-    /// <inheritdoc/>
     public async Task<IReadOnlyList<T>> QueryByRowKeyRangeAsync<T>(string tableName, string partitionKey, string rowKeyStart, string rowKeyEnd, CancellationToken cancellationToken = default)
         where T : MyTableEntity
     {

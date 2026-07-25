@@ -22,10 +22,6 @@ public interface ITableStorageClient
     Task<IReadOnlyList<T>> QueryByRowKeyPrefixAsync<T>(string tableName, string partitionKey, string rowKeyPrefix, CancellationToken cancellationToken = default)
         where T : MyTableEntity;
 
-    /// <summary>Queries entities whose partition key starts with the given prefix.</summary>
-    Task<IReadOnlyList<T>> QueryByPartitionPrefixAsync<T>(string tableName, string partitionKeyPrefix, CancellationToken cancellationToken = default)
-        where T : MyTableEntity;
-
     /// <summary>
     /// Queries entities within a partition where RowKey >= <paramref name="rowKeyStart"/> and RowKey &lt; <paramref name="rowKeyEnd"/>.
     /// Returns an empty list when <paramref name="rowKeyStart"/> is lexicographically >= <paramref name="rowKeyEnd"/>.
