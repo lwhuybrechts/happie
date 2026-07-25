@@ -3,6 +3,7 @@ using Happie.Web.Pages;
 using Happie.Web.Resources;
 using Happie.Web.Services;
 using Happie.Web.Services.Caching;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
@@ -36,6 +37,10 @@ public class LoginPageTests : BunitContext
 
         // Register SessionService so LoginPage can clear stale sessions.
         Services.AddScoped<SessionService>();
+
+        // Register IConfiguration and VersionTracker so LoginPage can report the app version.
+        Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        Services.AddScoped<VersionTracker>();
     }
 
     [Fact]

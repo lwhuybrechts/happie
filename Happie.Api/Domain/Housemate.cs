@@ -8,5 +8,6 @@ public record Housemate(
     // Hex code from the predefined palette, e.g. "#E91E63".
     string Color,
     bool IsDeleted,
-    int SortOrder = 0
+    int SortOrder = 0,
+    string? AppVersion = null
 );

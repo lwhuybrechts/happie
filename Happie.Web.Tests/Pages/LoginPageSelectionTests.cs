@@ -8,6 +8,7 @@ using Happie.Web.Services;
 using Happie.Web.Services.Caching;
 using Happie.Web.Tests.Helpers;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
 using Moq;
@@ -37,6 +38,10 @@ public class LoginPageSelectionTests : BunitContext
                 serviceProvider.GetRequiredService<IJSRuntime>(),
                 serviceProvider.GetRequiredService<NavigationManager>(),
                 serviceProvider.GetRequiredService<ICacheStore>()));
+
+        // Register IConfiguration and VersionTracker so LoginPage can report the app version.
+        Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        Services.AddScoped<VersionTracker>();
 
         Services.AddLocalization();
     }

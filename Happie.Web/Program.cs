@@ -67,6 +67,9 @@ builder.Services.AddScoped<PushNotificationService>();
 // Register the connectivity service as scoped for online/offline detection.
 builder.Services.AddScoped<IConnectivityService, ConnectivityService>();
 
+// Register the version tracker as scoped for one-time version reporting per session.
+builder.Services.AddScoped<VersionTracker>();
+
 // Register the loading indicator state as scoped for tracking background operations.
 builder.Services.AddScoped<IDelayService, RealDelayService>();
 builder.Services.AddScoped<LoadingIndicatorState>();

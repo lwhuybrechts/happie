@@ -34,4 +34,10 @@ public interface IHousemateHandler
     /// Reorders housemates by assigning sort order based on the provided list of IDs.
     /// </summary>
     Task ReorderHousematesAsync(Guid householdId, List<Guid> orderedIds, CancellationToken ct = default);
+
+    /// <summary>
+    /// Reports the app version for a housemate. Trims the version string, rejects whitespace-only
+    /// values, skips the local development version "1.0.0", and persists all other valid versions.
+    /// </summary>
+    Task<ReportVersionOutcome> ReportVersionAsync(Guid householdId, Guid housemateId, string version, CancellationToken cancellationToken = default);
 }

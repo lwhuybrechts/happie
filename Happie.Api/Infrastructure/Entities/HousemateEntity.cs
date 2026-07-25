@@ -26,4 +26,7 @@ public class HousemateEntity : MyTableEntity
 
     /// <summary>Sort order for display purposes. Lower values appear first.</summary>
     public int SortOrder { get; set; }
+
+    /// <summary>The last reported app version, or null if never reported.</summary>
+    public string? AppVersion { get; set; }
 }

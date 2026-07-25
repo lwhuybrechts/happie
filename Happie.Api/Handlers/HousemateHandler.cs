@@ -160,4 +160,26 @@ public class HousemateHandler : IHousemateHandler
             }
         }
     }
+
+    /// <inheritdoc/>
+    public async Task<ReportVersionOutcome> ReportVersionAsync(Guid householdId, Guid housemateId, string version, CancellationToken cancellationToken = default)
+    {
+        var trimmedVersion = version.Trim();
+
+        if (string.IsNullOrWhiteSpace(trimmedVersion))
+            return ReportVersionOutcome.ValidationError;
+
+        if (trimmedVersion == "1.0.0")
+            return ReportVersionOutcome.Skipped;
+
+        var housemate = await _housemateRepository.GetAsync(householdId, housemateId, cancellationToken);
+
+        if (housemate is null || housemate.IsDeleted)
+            return ReportVersionOutcome.NotFound;
+
+        var updated = housemate with { AppVersion = trimmedVersion };
+        await _housemateRepository.UpsertAsync(updated, cancellationToken);
+
+        return ReportVersionOutcome.Success;
+    }
 }

@@ -10,6 +10,7 @@ using Happie.Web.Pages;
 using Happie.Web.Services;
 using Happie.Web.Services.Caching;
 using Happie.Web.Tests.Helpers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
 using Moq;
@@ -158,6 +159,8 @@ public class LoginPagePropertyTests
         context.Services.AddSingleton(new Mock<ICacheStore>().Object);
         context.Services.AddSingleton(new Mock<IConnectivityService>().Object);
         context.Services.AddScoped<SessionService>();
+        context.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        context.Services.AddScoped<VersionTracker>();
         context.Services.AddLocalization();
         context.RegisterHttpClient(HttpStatusCode.Unauthorized, null);
         return context;

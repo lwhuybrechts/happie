@@ -124,4 +124,30 @@ public class HousematesFunction
 
         return new NoContentResult();
     }
+
+    /// <summary>Reports the app version for the authenticated housemate.</summary>
+    [Function("ReportVersion")]
+    public async Task<IActionResult> ReportVersionAsync(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "housemates/version")] HttpRequest request,
+        FunctionContext context,
+        CancellationToken cancellationToken)
+    {
+        var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
+        var housemateId = (Guid)context.Items[FunctionContextKeys.HousemateId];
+
+        var readResult = await RequestValidator.ReadAndValidateAsync<ReportVersionRequest>(request, cancellationToken);
+        if (!readResult.IsSuccess)
+            return readResult.Error;
+
+        var outcome = await _housemateHandler.ReportVersionAsync(householdId, housemateId, readResult.Body.Version!, cancellationToken);
+
+        return outcome switch
+        {
+            ReportVersionOutcome.Success => new NoContentResult(),
+            ReportVersionOutcome.Skipped => new NoContentResult(),
+            ReportVersionOutcome.NotFound => new NotFoundObjectResult(new ApiErrorResponse("Housemate not found.", ApiErrorCodes.NotFound)),
+            ReportVersionOutcome.ValidationError => new UnprocessableEntityObjectResult(new ApiErrorResponse("Version is invalid.", ApiErrorCodes.ValidationError)),
+            _ => throw new InvalidOperationException($"Unhandled {nameof(ReportVersionOutcome)}: {outcome}"),
+        };
+    }
 }
