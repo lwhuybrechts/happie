@@ -1,0 +1,200 @@
+/* Base layout: vertical stack, matching other pages. */
+.housemate-details-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Desktop (≥641px): center content within available space, max-width 600px. */
+@media (min-width: 641px) {
+    .housemate-details-page {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 24px 16px;
+    }
+}
+
+/* Mobile (<641px): full viewport width with 16px horizontal padding. */
+@media (max-width: 640.98px) {
+    .housemate-details-page {
+        width: 100%;
+        padding: 16px;
+    }
+}
+
+/* Header card with housemate name. */
+.housemate-details-page__header {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.housemate-details-page__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+/* Section title used for sub-sections like top dishes. */
+.housemate-details-page__section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 12px 0;
+}
+
+/* Top dishes card container. */
+.housemate-details-page__top-dishes {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+/* Top dishes list reset. */
+.housemate-details-page__top-dishes-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Individual dish row. */
+.housemate-details-page__top-dish-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.housemate-details-page__top-dish-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* Dish description text. */
+.housemate-details-page__top-dish-description {
+    font-size: 0.9375rem;
+    color: #374151;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Dish link wrapper. */
+.housemate-details-page__top-dish-link {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-decoration: none;
+    color: inherit;
+}
+
+.housemate-details-page__top-dish-link:hover .housemate-details-page__top-dish-description,
+.housemate-details-page__top-dish-link:active .housemate-details-page__top-dish-description {
+    text-decoration: underline;
+    color: #2563eb;
+}
+
+/* Dish count badge. */
+.housemate-details-page__top-dish-count {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-left: 12px;
+    flex-shrink: 0;
+}
+
+/* Summary statistics card. */
+.housemate-details-page__summary {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.housemate-details-page__summary-header {
+    display: flex;
+    justify-content: center;
+}
+
+.housemate-details-page__summary-header-center {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.housemate-details-page__summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 16px 0;
+}
+
+.housemate-details-page__summary-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.housemate-details-page__summary-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+}
+
+.housemate-details-page__summary-label {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    text-align: center;
+}
+
+/* Empty state message. */
+.housemate-details-page__empty-state {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.875rem;
+    padding: 24px 16px;
+    margin: 0;
+}
+
+/* Stats container with loading overlay support. */
+.housemate-details-page__stats-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: opacity 0.25s ease;
+}
+
+.housemate-details-page__stats-container--loading {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.housemate-details-page__stats-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}

@@ -1,0 +1,411 @@
+@page "/housemates/{Id}"
+@using Happie.Shared.Contracts
+@using Happie.Web.Http
+@inject HttpClient Http
+@inject IStatisticsApiClient StatisticsApi
+@inject NavigationManager NavigationManager
+@inject LoadingIndicatorState LoadingIndicator
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>Happie</PageTitle>
+
+<div class="housemate-details-page">
+    @if (_isLoading)
+    {
+        <LoadingIndicator />
+    }
+    else if (_statistics is not null)
+    {
+        <div class="housemate-details-page__header">
+            <h1 class="housemate-details-page__title">@_housemateName</h1>
+        </div>
+
+        <TimelineChart Rows="_timelineRows"
+                       StartDate="_timelineStartDate"
+                       EndDate="_timelineEndDate"
+                       OnLoadMore="OnLoadMoreTimelineAsync"
+                       CanLoadMore="_canLoadMoreTimeline"
+                       MaxVisibleRows="5" />
+
+        <TimeRangeSelector SelectedRange="_selectedRange" OnRangeSelected="OnTimeRangeChangedAsync" />
+
+        <div class="housemate-details-page__stats-container @(_isChangingRange ? "housemate-details-page__stats-container--loading" : "")">
+            @if (_isChangingRange)
+            {
+                <div class="housemate-details-page__stats-overlay">
+                    <LoadingIndicator />
+                </div>
+            }
+
+            @if (_statistics.TimesCooked > 0)
+            {
+                <div class="housemate-details-page__summary">
+                    <div class="housemate-details-page__summary-header">
+                        <span class="housemate-details-page__summary-header-center">@GetRangeHeaderLabel()</span>
+                    </div>
+                    <div class="housemate-details-page__summary-grid">
+                        <div class="housemate-details-page__summary-cell">
+                            <span class="housemate-details-page__summary-value">@_statistics.TimesCooked</span>
+                            <span class="housemate-details-page__summary-label">@Localizer["Stats_TimesCooked"]</span>
+                        </div>
+                        <div class="housemate-details-page__summary-cell">
+                            <span class="housemate-details-page__summary-value">@_statistics.DaysEatingIn</span>
+                            <span class="housemate-details-page__summary-label">@Localizer["Stats_DaysEatingIn"]</span>
+                        </div>
+                        <div class="housemate-details-page__summary-cell">
+                            <span class="housemate-details-page__summary-value">🔥 @_statistics.LongestStreak</span>
+                            <span class="housemate-details-page__summary-label">@Localizer["Stats_LongestStreak"]</span>
+                        </div>
+                        <div class="housemate-details-page__summary-cell">
+                            <span class="housemate-details-page__summary-value">@_statistics.BusiestWeek</span>
+                            <span class="housemate-details-page__summary-label">@Localizer["Stats_MostInOneWeek"]</span>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <p class="housemate-details-page__empty-state">@Localizer["Stats_EmptyState"]</p>
+            }
+
+        @if (_statistics.CookRatioEatingInDays > 0)
+            {
+                <CookRatioRing CookDays="_statistics.CookRatioDays"
+                               EatingInDays="_statistics.CookRatioEatingInDays"
+                               Color="@_housemateColor" />
+            }
+
+            @if (_statistics.CookingShares.Sum(x => x.ChefDayCount) > 0)
+            {
+                <DonutChart Segments="_statistics.CookingShares" HighlightedHousemateId="_housemateId" Title="@Localizer["Stats_CookingShare"]" InfoText="@Localizer["Stats_CookingShare_Info"]" />
+            }
+
+            @if (_statistics.TimesCooked > 0 && _statistics.TopDishes.Count > 0)
+            {
+                <div class="housemate-details-page__top-dishes">
+                    <h2 class="housemate-details-page__section-title">@Localizer["Stats_TopDishes"]</h2>
+                    <ul class="housemate-details-page__top-dishes-list">
+                        @foreach (var dish in _statistics.TopDishes)
+                        {
+                            <li class="housemate-details-page__top-dish-item">
+                                <a class="housemate-details-page__top-dish-link" href="saved-dishes/@dish.SavedDishId">
+                                    <span class="housemate-details-page__top-dish-description">@dish.Description</span>
+                                </a>
+                                <span class="housemate-details-page__top-dish-count">@Localizer["Stats_TopDishCount", dish.Count]</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private TimeRange _selectedRange = TimeRange.ThirtyDays;
+    private HousemateStatisticsResponse? _statistics;
+    private string _housemateName = string.Empty;
+    private string _housemateColor = "#6b7280";
+    private Guid _housemateId;
+    private bool _isLoading = true;
+    private bool _isChangingRange;
+
+    // Timeline state.
+    private IReadOnlyList<TimelineChart.TimelineChartRow> _timelineRows = [];
+    private DateOnly _timelineStartDate;
+    private DateOnly _timelineEndDate;
+    private bool _canLoadMoreTimeline = true;
+    private DateOnly? _timelineFloor;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!Guid.TryParse(Id, out var housemateId))
+        {
+            NavigationManager.NavigateTo("/housemates", replace: true);
+            return;
+        }
+
+        _housemateId = housemateId;
+        await LoadDataAsync(housemateId);
+    }
+
+    private async Task LoadDataAsync(Guid housemateId)
+    {
+        _isLoading = true;
+        LoadingIndicator.IncrementAsync();
+        StateHasChanged();
+
+        try
+        {
+            // Load the housemate name and color from the housemates API.
+            await LoadHousemateNameAsync(housemateId);
+
+            if (string.IsNullOrEmpty(_housemateName))
+            {
+                NavigationManager.NavigateTo("/housemates", replace: true);
+                return;
+            }
+
+            // Load statistics and timeline in parallel.
+            var (from, to) = GetDateRange(_selectedRange);
+            var (timelineFrom, timelineTo) = GetTimelineRange();
+
+            var statisticsTask = StatisticsApi.GetHousemateStatisticsAsync(housemateId, from, to);
+            var timelineTask = StatisticsApi.GetHousemateTimelineAsync(housemateId, timelineFrom, timelineTo);
+
+            await Task.WhenAll(statisticsTask, timelineTask);
+
+            _statistics = await statisticsTask;
+            var timeline = await timelineTask;
+
+            if (_statistics is null)
+            {
+                NavigationManager.NavigateTo("/housemates", replace: true);
+                return;
+            }
+
+            _timelineStartDate = timelineFrom;
+            _timelineEndDate = timelineTo;
+            _timelineRows = timeline is not null ? BuildTimelineRows(timeline.Entries) : [];
+
+            // Compute the floor: 1st of the month of the earliest cooking date.
+            if (timeline?.FirstCookedDate is not null && DateOnly.TryParse(timeline.FirstCookedDate, out var firstCooked))
+                _timelineFloor = new DateOnly(firstCooked.Year, firstCooked.Month, 1);
+            else
+                _timelineFloor = null;
+
+            // Cap the start date at the floor so we don't show empty months before the first record.
+            _timelineStartDate = _timelineFloor.HasValue && _timelineFloor.Value > timelineFrom
+                ? _timelineFloor.Value
+                : timelineFrom;
+
+            _canLoadMoreTimeline = _timelineFloor.HasValue && _timelineStartDate > _timelineFloor.Value;
+        }
+        catch
+        {
+            NavigationManager.NavigateTo("/housemates", replace: true);
+            return;
+        }
+        finally
+        {
+            _isLoading = false;
+            LoadingIndicator.DecrementAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadHousemateNameAsync(Guid housemateId)
+    {
+        try
+        {
+            var housemates = await Http.GetFromJsonAsync<List<HousemateDto>>("housemates");
+            if (housemates is not null)
+            {
+                var housemate = housemates.FirstOrDefault(x => x.Id == housemateId);
+                if (housemate is not null)
+                {
+                    _housemateName = housemate.Name;
+                    _housemateColor = housemate.Color;
+                }
+            }
+        }
+        catch
+        {
+            // If we cannot load the housemate list, the name will remain empty and trigger redirect.
+        }
+    }
+
+    private async Task OnTimeRangeChangedAsync(TimeRange newRange)
+    {
+        _selectedRange = newRange;
+
+        if (!Guid.TryParse(Id, out var housemateId))
+            return;
+
+        _isChangingRange = true;
+        StateHasChanged();
+
+        try
+        {
+            var (from, to) = GetDateRange(_selectedRange);
+            var response = await StatisticsApi.GetHousemateStatisticsAsync(housemateId, from, to);
+
+            if (response is not null)
+                _statistics = response;
+        }
+        catch
+        {
+            // Silently handle — keep previous statistics visible.
+        }
+        finally
+        {
+            _isChangingRange = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnLoadMoreTimelineAsync()
+    {
+        // Fetch data for the previous month (1st of previous month to the day before current start).
+        var newEnd = _timelineStartDate.AddDays(-1);
+        var newStart = _timelineStartDate.AddMonths(-1);
+
+        // Cap at the timeline floor (1st of the month of the first cooking record).
+        if (_timelineFloor.HasValue && newStart < _timelineFloor.Value)
+            newStart = _timelineFloor.Value;
+
+        try
+        {
+            var response = await StatisticsApi.GetHousemateTimelineAsync(_housemateId, newStart, newEnd);
+
+            if (response is null)
+                return;
+
+            // If no new cooking days were returned, stop further loading.
+            var hasNewData = response.Entries.Any(x => x.CookingDays.Count > 0);
+            if (!hasNewData)
+            {
+                _canLoadMoreTimeline = false;
+                _timelineStartDate = newStart;
+                StateHasChanged();
+                return;
+            }
+
+            // Merge new timeline data into existing rows.
+            MergeTimelineData(response.Entries);
+            _timelineStartDate = newStart;
+
+            // Stop loading if we've reached the floor.
+            if (_timelineFloor.HasValue && newStart <= _timelineFloor.Value)
+                _canLoadMoreTimeline = false;
+
+            StateHasChanged();
+        }
+        catch
+        {
+            // Silently handle — user can try scrolling again.
+        }
+    }
+
+    private void MergeTimelineData(IReadOnlyList<HousemateTimelineDto> newTimeline)
+    {
+        // Build a mutable dictionary of existing rows keyed by dish description.
+        var rowsByDescription = _timelineRows.ToDictionary(
+            x => x.Label,
+            x => new HashSet<DateOnly>(x.Dates));
+
+        // Track which dishes are newly added in this merge.
+        var newDishDescriptions = new List<string>();
+
+        foreach (var entry in newTimeline)
+        {
+            // Only include dishes that have cooking days in the new chunk.
+            if (entry.CookingDays.Count == 0)
+                continue;
+
+            var dates = entry.CookingDays
+                .Select(x => DateOnly.Parse(x))
+                .ToList();
+
+            if (rowsByDescription.TryGetValue(entry.DishDescription, out var existingDates))
+            {
+                foreach (var date in dates)
+                    existingDates.Add(date);
+            }
+            else
+            {
+                rowsByDescription[entry.DishDescription] = new HashSet<DateOnly>(dates);
+                newDishDescriptions.Add(entry.DishDescription);
+            }
+        }
+
+        // Build a lookup for SavedDishId by description from existing and new data.
+        var dishIdByDescription = new Dictionary<string, Guid>();
+        foreach (var row in _timelineRows)
+        {
+            if (row.NavigationUri is not null)
+            {
+                var idPart = row.NavigationUri.Replace("/saved-dishes/", "");
+                if (Guid.TryParse(idPart, out var existingDishId))
+                    dishIdByDescription.TryAdd(row.Label, existingDishId);
+            }
+        }
+        foreach (var entry in newTimeline)
+            dishIdByDescription.TryAdd(entry.DishDescription, entry.SavedDishId);
+
+        // Preserve existing row order, then append new dishes sorted by total cooking days descending.
+        var orderedDescriptions = _timelineRows
+            .Select(x => x.Label)
+            .ToList();
+
+        var sortedNewDishes = newDishDescriptions
+            .OrderByDescending(x => rowsByDescription[x].Count)
+            .ThenBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        orderedDescriptions.AddRange(sortedNewDishes);
+
+        _timelineRows = orderedDescriptions
+            .Where(x => rowsByDescription.ContainsKey(x))
+            .Select(x => new TimelineChart.TimelineChartRow(
+                x,
+                _housemateColor,
+                rowsByDescription[x],
+                dishIdByDescription.TryGetValue(x, out var dishId) ? $"/saved-dishes/{dishId}" : null))
+            .ToList();
+    }
+
+    private IReadOnlyList<TimelineChart.TimelineChartRow> BuildTimelineRows(IReadOnlyList<HousemateTimelineDto> timeline)
+    {
+        // Sort by most cooked by this housemate in the loaded timeline data.
+        // Only include dishes that have cooking days in the loaded range.
+        return timeline
+            .Where(x => x.CookingDays.Count > 0)
+            .OrderByDescending(x => x.CookingDays.Count)
+            .ThenBy(x => x.DishDescription, StringComparer.OrdinalIgnoreCase)
+            .Select(x => new TimelineChart.TimelineChartRow(
+                x.DishDescription,
+                _housemateColor,
+                x.CookingDays.Select(d => DateOnly.Parse(d)).ToHashSet(),
+                $"/saved-dishes/{x.SavedDishId}"))
+            .ToList();
+    }
+
+    private static (DateOnly From, DateOnly To) GetDateRange(TimeRange range)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var from = range switch
+        {
+            TimeRange.ThirtyDays => today.AddDays(-30),
+            TimeRange.ThreeMonths => today.AddMonths(-3),
+            TimeRange.OneYear => today.AddYears(-1),
+            TimeRange.AllTime => new DateOnly(2000, 1, 1),
+            _ => throw new InvalidOperationException($"Unknown TimeRange value: {range}")
+        };
+        return (from, today);
+    }
+
+    private static (DateOnly TimelineFrom, DateOnly TimelineTo) GetTimelineRange()
+    {
+        // Pre-load timeline data from the 1st of two months prior through today.
+        // E.g. if today is July 26, load from May 1. If today is July 1, still load from May 1.
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var timelineFrom = new DateOnly(today.Year, today.Month, 1).AddMonths(-2);
+        return (timelineFrom, today);
+    }
+
+    private string GetRangeHeaderLabel()
+    {
+        return _selectedRange switch
+        {
+            TimeRange.ThirtyDays => Localizer["Stats_RangeHeader_30Days"],
+            TimeRange.ThreeMonths => Localizer["Stats_RangeHeader_3Months"],
+            TimeRange.OneYear => Localizer["Stats_RangeHeader_1Year"],
+            TimeRange.AllTime => Localizer["Stats_AllTime"],
+            _ => throw new InvalidOperationException($"Unknown TimeRange value: {_selectedRange}")
+        };
+    }
+}

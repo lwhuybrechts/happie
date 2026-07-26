@@ -601,6 +601,55 @@
             document.body.style.overflow = '';
             document.documentElement.style.touchAction = '';
         };
+
+        // Timeline chart scroll management.
+        happie.timelineChart = {};
+
+        // Initializes the timeline chart: scrolls to the right edge and registers a scroll listener
+        // that invokes OnScrolledToLeftEdge on the .NET reference when the user scrolls near the left edge.
+        happie.timelineChart.init = function (scrollElement, dotNetRef) {
+            if (!scrollElement) return;
+            // Scroll to the right edge so the most recent dates are visible.
+            scrollElement.scrollLeft = scrollElement.scrollWidth - scrollElement.clientWidth;
+
+            var threshold = 540;
+            var handler = function () {
+                if (scrollElement.scrollLeft <= threshold) {
+                    dotNetRef.invokeMethodAsync('OnScrolledToLeftEdge');
+                }
+            };
+            scrollElement.addEventListener('scroll', handler, { passive: true });
+            scrollElement._timelineHandler = handler;
+            scrollElement._timelineDotNetRef = dotNetRef;
+        };
+
+        // Cleans up the timeline chart scroll listener.
+        happie.timelineChart.dispose = function (scrollElement) {
+            if (!scrollElement) return;
+            if (scrollElement._timelineHandler) {
+                scrollElement.removeEventListener('scroll', scrollElement._timelineHandler);
+                scrollElement._timelineHandler = null;
+            }
+            scrollElement._timelineDotNetRef = null;
+        };
+
+        // Adjusts scroll position after new data is prepended to the left.
+        happie.timelineChart.adjustScroll = function (scrollElement, pixelsToAdd) {
+            if (!scrollElement) return;
+            scrollElement.scrollLeft += pixelsToAdd;
+        };
+
+        // Checks whether a label with the given text is visually truncated (ellipsis).
+        happie.timelineChart.isLabelTruncated = function (containerElement, labelText) {
+            if (!containerElement) return false;
+            var labels = containerElement.querySelectorAll('.timeline-chart__label');
+            for (var i = 0; i < labels.length; i++) {
+                if (labels[i].textContent === labelText) {
+                    return labels[i].scrollWidth > labels[i].clientWidth;
+                }
+            }
+            return false;
+        };
     </script>
     <script src="js/cacheDb.js"></script>
     <script src="js/swipeCarousel.js"></script>

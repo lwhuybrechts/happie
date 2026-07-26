@@ -68,10 +68,71 @@ var savedDish3 = new TableEntity(HouseholdId, "00000000-0000-0000-0000-000000000
 savedDishesClient.UpsertEntity(savedDish3);
 Console.WriteLine("Upserted saved dish: Stamppot");
 
-// Seed DayPlanDishLinks table (so the day plan shows a linked dish).
+// Seed DayPlanDishLinks table with some dishes on recent dates.
 var linksClient = new TableClient(ConnectionString, "DayPlanDishLinks");
 linksClient.CreateIfNotExists();
-Console.WriteLine("Ensured DayPlanDishLinks table exists.");
+
+const string PastaId = "00000000-0000-0000-0000-000000000010";
+const string PizzaId = "00000000-0000-0000-0000-000000000011";
+const string StamppotId = "00000000-0000-0000-0000-000000000012";
+const string AliceId = "00000000-0000-0000-0000-000000000002";
+const string BobId = "00000000-0000-0000-0000-000000000003";
+
+// Generate dates: today minus 1..30 days.
+var today = DateTime.Today;
+var dates = Enumerable.Range(1, 30).Select(x => today.AddDays(-x).ToString("yyyy-MM-dd")).ToList();
+
+// Link dishes to days: Pasta on days 1-12, Pizza on days 5-20, Stamppot on days 15-28.
+void SeedLink(string date, string dishId, int sortOrder)
+{
+    var entity = new TableEntity(HouseholdId, $"{date}_{dishId}") { ["SortOrder"] = sortOrder };
+    linksClient.UpsertEntity(entity);
+}
+
+for (int i = 0; i < 12; i++) SeedLink(dates[i], PastaId, 0);
+for (int i = 4; i < 20; i++) SeedLink(dates[i], PizzaId, i < 12 ? 1 : 0);
+for (int i = 14; i < 28; i++) SeedLink(dates[i], StamppotId, i < 20 ? 1 : 0);
+Console.WriteLine("Seeded DayPlanDishLinks (Pasta: 12 days, Pizza: 16 days, Stamppot: 14 days)");
+
+// Seed AttendanceRecords table with attendance and chef assignments.
+var attendanceClient = new TableClient(ConnectionString, "AttendanceRecords");
+attendanceClient.CreateIfNotExists();
+
+void SeedAttendance(string date, string housemateId, string status, bool isChef)
+{
+    var entity = new TableEntity(HouseholdId, $"{date}_{housemateId}")
+    {
+        ["HousemateId"] = Guid.Parse(housemateId),
+        ["Status"] = status,
+        ["IsChef"] = isChef,
+        ["LastModified"] = DateTimeOffset.UtcNow
+    };
+    attendanceClient.UpsertEntity(entity);
+}
+
+// Alice: eating in most days (1-25), chef on days 1-8 and 15-20.
+for (int i = 0; i < 25; i++)
+{
+    bool isChef = i < 8 || (i >= 14 && i < 20);
+    SeedAttendance(dates[i], AliceId, "EatingIn", isChef);
+}
+// Alice not eating in on days 26-28.
+for (int i = 25; i < 28; i++)
+    SeedAttendance(dates[i], AliceId, "NotEatingIn", false);
+
+// Bob: eating in on days 1-20, not eating in 21-30. Chef on days 3-6, 9-14, 22-24.
+for (int i = 0; i < 20; i++)
+{
+    bool isChef = (i >= 2 && i < 6) || (i >= 8 && i < 14);
+    SeedAttendance(dates[i], BobId, "EatingIn", isChef);
+}
+for (int i = 20; i < 30; i++)
+{
+    bool isChef = i >= 21 && i < 24;
+    SeedAttendance(dates[i], BobId, "NotEatingIn", isChef);
+}
+
+Console.WriteLine("Seeded AttendanceRecords (Alice: 14 chef days, Bob: 13 chef days)");
 
 Console.WriteLine();
 Console.WriteLine("Done. Login with password: happie");

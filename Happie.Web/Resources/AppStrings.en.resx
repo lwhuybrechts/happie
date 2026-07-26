@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
@@ -253,6 +253,21 @@
   </data>
   <data name="Housemates_RemoveConfirm" xml:space="preserve">
     <value>Remove</value>
+  </data>
+  <data name="Housemates_Statistics" xml:space="preserve">
+    <value>Statistics for {0}</value>
+  </data>
+  <data name="Housemates_MoreActions" xml:space="preserve">
+    <value>More actions</value>
+  </data>
+  <data name="Housemates_MoveUpLabel" xml:space="preserve">
+    <value>Move up</value>
+  </data>
+  <data name="Housemates_MoveDownLabel" xml:space="preserve">
+    <value>Move down</value>
+  </data>
+  <data name="Housemates_DeleteLabel" xml:space="preserve">
+    <value>Delete</value>
   </data>
   <data name="Nav_DayPlan" xml:space="preserve">
     <value>Today</value>
@@ -552,6 +567,9 @@
   <data name="SavedDishes_SuggestionError" xml:space="preserve">
     <value>Failed to add. Please try again.</value>
   </data>
+  <data name="SavedDishes_Statistics" xml:space="preserve">
+    <value>Statistics for {0}</value>
+  </data>
   <data name="DishPanel_ModeToggle" xml:space="preserve">
     <value>Switch between custom dish and saved dish</value>
   </data>
@@ -596,5 +614,118 @@
   </data>
   <data name="SavedDish_SelectPlaceholder" xml:space="preserve">
     <value>Select dishes</value>
+  </data>
+  <data name="TimeRange_AriaLabel" xml:space="preserve">
+    <value>Time range</value>
+  </data>
+  <data name="TimeRange_ThirtyDays" xml:space="preserve">
+    <value>30d</value>
+  </data>
+  <data name="TimeRange_ThreeMonths" xml:space="preserve">
+    <value>3mo</value>
+  </data>
+  <data name="TimeRange_OneYear" xml:space="preserve">
+    <value>1yr</value>
+  </data>
+  <data name="TimeRange_AllTime" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Timeline_Empty" xml:space="preserve">
+    <value>No cooking history available.</value>
+  </data>
+  <data name="Stats_TimesCooked" xml:space="preserve">
+    <value>times cooked</value>
+  </data>
+  <data name="Stats_AllTimeTimesCooked" xml:space="preserve">
+    <value>{0} times cooked (all time)</value>
+  </data>
+  <data name="Stats_DaysEatingIn" xml:space="preserve">
+    <value>days eating in</value>
+  </data>
+  <data name="Stats_CookRatio" xml:space="preserve">
+    <value>Cooked {0} of {1} eating-in days</value>
+  </data>
+  <data name="Stats_LongestStreak" xml:space="preserve">
+    <value>longest streak</value>
+  </data>
+  <data name="Stats_BusiestWeek" xml:space="preserve">
+    <value>busiest week</value>
+  </data>
+  <data name="Stats_EmptyState" xml:space="preserve">
+    <value>No cooking data available for the selected period.</value>
+  </data>
+  <data name="Stats_TopDishes" xml:space="preserve">
+    <value>Top dishes</value>
+  </data>
+  <data name="Stats_TopDishCount" xml:space="preserve">
+    <value>{0}×</value>
+  </data>
+  <data name="Stats_LastCookedToday" xml:space="preserve">
+    <value>Last cooked: today</value>
+  </data>
+  <data name="Stats_LastCookedOneDayAgo" xml:space="preserve">
+    <value>Last cooked: 1 day ago</value>
+  </data>
+  <data name="Stats_LastCookedDaysAgo" xml:space="preserve">
+    <value>Last cooked: {0} days ago</value>
+  </data>
+  <data name="Stats_LastCookedOn" xml:space="preserve">
+    <value>Last cooked: {0}</value>
+  </data>
+  <data name="Stats_FirstCookedOn" xml:space="preserve">
+    <value>First cooked: {0}</value>
+  </data>
+  <data name="Stats_AllTime" xml:space="preserve">
+    <value>All time</value>
+  </data>
+  <data name="Stats_RangeHeader_30Days" xml:space="preserve">
+    <value>Last 30 days</value>
+  </data>
+  <data name="Stats_RangeHeader_3Months" xml:space="preserve">
+    <value>Last 3 months</value>
+  </data>
+  <data name="Stats_RangeHeader_1Year" xml:space="preserve">
+    <value>Last year</value>
+  </data>
+  <data name="Stats_LastCooked" xml:space="preserve">
+    <value>Last cooked</value>
+  </data>
+  <data name="Stats_FirstCooked" xml:space="preserve">
+    <value>First cooked</value>
+  </data>
+  <data name="Stats_Today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="Stats_OneDayAgo" xml:space="preserve">
+    <value>1 day ago</value>
+  </data>
+  <data name="Stats_DaysAgo" xml:space="preserve">
+    <value>{0} days ago</value>
+  </data>
+  <data name="Stats_CookedBy" xml:space="preserve">
+    <value>Cooked by</value>
+  </data>
+  <data name="Stats_CookingShare" xml:space="preserve">
+    <value>Cooking share</value>
+  </data>
+  <data name="Stats_CookingShare_Info" xml:space="preserve">
+    <value>This shows this housemate's cooking days compared to other housemates. "Of all the days someone cooked in this household, what percentage was me?" It answers: "Who carries the cooking load?"</value>
+  </data>
+  <data name="Stats_CookedBy_Info" xml:space="preserve">
+    <value>This shows which housemates cooked this dish in the selected time period.</value>
+  </data>
+  <data name="Stats_CookRatio_Title" xml:space="preserve">
+    <value>Cook ratio</value>
+  </data>
+  <data name="Stats_CookRatio_Info" xml:space="preserve">
+    <value>This shows how often this housemate cooks relative to their own eating-in days. "Of the days I was home for dinner, how many did I cook?" It answers: "How often do I cook when I'm home?"
+
+This may differ from the total times cooked, since you can be chef on days you're not eating in.</value>
+  </data>
+  <data name="Stats_CookRatio_Detail" xml:space="preserve">
+    <value>Cooked on {0} of {1} eating-in days</value>
+  </data>
+  <data name="Stats_MostInOneWeek" xml:space="preserve">
+    <value>most in one week</value>
   </data>
 </root>

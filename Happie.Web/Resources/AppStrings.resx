@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
@@ -252,6 +252,21 @@
     <value>Annuleren</value>
   </data>
   <data name="Housemates_RemoveConfirm" xml:space="preserve">
+    <value>Verwijderen</value>
+  </data>
+  <data name="Housemates_Statistics" xml:space="preserve">
+    <value>Statistieken voor {0}</value>
+  </data>
+  <data name="Housemates_MoreActions" xml:space="preserve">
+    <value>Meer acties</value>
+  </data>
+  <data name="Housemates_MoveUpLabel" xml:space="preserve">
+    <value>Omhoog</value>
+  </data>
+  <data name="Housemates_MoveDownLabel" xml:space="preserve">
+    <value>Omlaag</value>
+  </data>
+  <data name="Housemates_DeleteLabel" xml:space="preserve">
     <value>Verwijderen</value>
   </data>
   <data name="Nav_DayPlan" xml:space="preserve">
@@ -552,6 +567,9 @@
   <data name="SavedDishes_SuggestionError" xml:space="preserve">
     <value>Toevoegen mislukt. Probeer het opnieuw.</value>
   </data>
+  <data name="SavedDishes_Statistics" xml:space="preserve">
+    <value>Statistieken voor {0}</value>
+  </data>
   <data name="DishPanel_ModeToggle" xml:space="preserve">
     <value>Wissel tussen eigen gerecht en opgeslagen gerecht</value>
   </data>
@@ -596,5 +614,118 @@
   </data>
   <data name="SavedDish_SelectPlaceholder" xml:space="preserve">
     <value>Selecteer gerechten</value>
+  </data>
+  <data name="TimeRange_AriaLabel" xml:space="preserve">
+    <value>Tijdsbereik</value>
+  </data>
+  <data name="TimeRange_ThirtyDays" xml:space="preserve">
+    <value>30d</value>
+  </data>
+  <data name="TimeRange_ThreeMonths" xml:space="preserve">
+    <value>3mnd</value>
+  </data>
+  <data name="TimeRange_OneYear" xml:space="preserve">
+    <value>1jr</value>
+  </data>
+  <data name="TimeRange_AllTime" xml:space="preserve">
+    <value>Alles</value>
+  </data>
+  <data name="Timeline_Empty" xml:space="preserve">
+    <value>Geen kookgeschiedenis beschikbaar.</value>
+  </data>
+  <data name="Stats_TimesCooked" xml:space="preserve">
+    <value>keer gekookt</value>
+  </data>
+  <data name="Stats_AllTimeTimesCooked" xml:space="preserve">
+    <value>{0} keer gekookt (totaal)</value>
+  </data>
+  <data name="Stats_DaysEatingIn" xml:space="preserve">
+    <value>dagen mee-eten</value>
+  </data>
+  <data name="Stats_CookRatio" xml:space="preserve">
+    <value>Gekookt {0} van {1} mee-eetdagen</value>
+  </data>
+  <data name="Stats_LongestStreak" xml:space="preserve">
+    <value>langste reeks</value>
+  </data>
+  <data name="Stats_BusiestWeek" xml:space="preserve">
+    <value>drukste week</value>
+  </data>
+  <data name="Stats_EmptyState" xml:space="preserve">
+    <value>Geen kookgegevens beschikbaar voor de geselecteerde periode.</value>
+  </data>
+  <data name="Stats_TopDishes" xml:space="preserve">
+    <value>Topgerechten</value>
+  </data>
+  <data name="Stats_TopDishCount" xml:space="preserve">
+    <value>{0}×</value>
+  </data>
+  <data name="Stats_LastCookedToday" xml:space="preserve">
+    <value>Laatst gekookt: vandaag</value>
+  </data>
+  <data name="Stats_LastCookedOneDayAgo" xml:space="preserve">
+    <value>Laatst gekookt: 1 dag geleden</value>
+  </data>
+  <data name="Stats_LastCookedDaysAgo" xml:space="preserve">
+    <value>Laatst gekookt: {0} dagen geleden</value>
+  </data>
+  <data name="Stats_LastCookedOn" xml:space="preserve">
+    <value>Laatst gekookt: {0}</value>
+  </data>
+  <data name="Stats_FirstCookedOn" xml:space="preserve">
+    <value>Eerst gekookt: {0}</value>
+  </data>
+  <data name="Stats_AllTime" xml:space="preserve">
+    <value>Totaal</value>
+  </data>
+  <data name="Stats_RangeHeader_30Days" xml:space="preserve">
+    <value>Afgelopen 30 dagen</value>
+  </data>
+  <data name="Stats_RangeHeader_3Months" xml:space="preserve">
+    <value>Afgelopen 3 maanden</value>
+  </data>
+  <data name="Stats_RangeHeader_1Year" xml:space="preserve">
+    <value>Afgelopen jaar</value>
+  </data>
+  <data name="Stats_LastCooked" xml:space="preserve">
+    <value>Laatst gekookt</value>
+  </data>
+  <data name="Stats_FirstCooked" xml:space="preserve">
+    <value>Eerst gekookt</value>
+  </data>
+  <data name="Stats_Today" xml:space="preserve">
+    <value>Vandaag</value>
+  </data>
+  <data name="Stats_OneDayAgo" xml:space="preserve">
+    <value>1 dag geleden</value>
+  </data>
+  <data name="Stats_DaysAgo" xml:space="preserve">
+    <value>{0} dagen geleden</value>
+  </data>
+  <data name="Stats_CookedBy" xml:space="preserve">
+    <value>Gekookt door</value>
+  </data>
+  <data name="Stats_CookingShare" xml:space="preserve">
+    <value>Kookverdeling</value>
+  </data>
+  <data name="Stats_CookingShare_Info" xml:space="preserve">
+    <value>Dit toont de kookdagen van deze huisgenoot ten opzichte van andere huisgenoten. "Van alle dagen dat iemand heeft gekookt, welk percentage was ik?" Het antwoord: "Wie draagt de kooklast?"</value>
+  </data>
+  <data name="Stats_CookedBy_Info" xml:space="preserve">
+    <value>Dit toont welke huisgenoten dit gerecht hebben gekookt in de geselecteerde periode.</value>
+  </data>
+  <data name="Stats_CookRatio_Title" xml:space="preserve">
+    <value>Kookratio</value>
+  </data>
+  <data name="Stats_CookRatio_Info" xml:space="preserve">
+    <value>Dit toont hoe vaak deze huisgenoot kookt ten opzichte van de eigen eetdagen. "Van de dagen dat ik thuis at, hoe vaak heb ik gekookt?" Het antwoord: "Hoe vaak kook ik als ik thuis ben?"
+
+Dit kan afwijken van het totaal aantal keer gekookt, omdat je ook kok kunt zijn op dagen dat je niet mee-eet.</value>
+  </data>
+  <data name="Stats_CookRatio_Detail" xml:space="preserve">
+    <value>Gekookt op {0} van {1} eetdagen</value>
+  </data>
+  <data name="Stats_MostInOneWeek" xml:space="preserve">
+    <value>meeste in één week</value>
   </data>
 </root>

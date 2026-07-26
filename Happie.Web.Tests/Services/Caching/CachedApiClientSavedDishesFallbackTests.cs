@@ -119,9 +119,12 @@ public class CachedApiClientSavedDishesFallbackTests : BunitContext
         var addButton = cut.Find(".saved-dishes-page__add-btn");
         Assert.True(addButton.HasAttribute("disabled"));
 
-        var editButtons = cut.FindAll(".saved-dishes-page__icon-btn");
-        Assert.True(editButtons.Count >= 2);
-        foreach (var button in editButtons)
+        // Statistics buttons remain enabled offline (read-only navigation).
+        var mutationButtons = cut.FindAll(".saved-dishes-page__icon-btn")
+            .Where(x => x.GetAttribute("aria-label")?.Contains("Statistics") != true)
+            .ToList();
+        Assert.True(mutationButtons.Count >= 2);
+        foreach (var button in mutationButtons)
             Assert.True(button.HasAttribute("disabled"));
     }
 

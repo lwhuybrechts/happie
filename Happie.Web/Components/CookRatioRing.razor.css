@@ -1,0 +1,91 @@
+.cook-ratio-ring {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.cook-ratio-ring__header {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.cook-ratio-ring__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+    flex: 1;
+}
+
+.cook-ratio-ring__info-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    color: #2563eb;
+    transition: background-color 0.15s ease;
+}
+
+.cook-ratio-ring__info-btn:hover {
+    background-color: rgba(37, 99, 235, 0.12);
+}
+
+.cook-ratio-ring__info-wrapper {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease;
+    width: 100%;
+}
+
+.cook-ratio-ring__info-wrapper--open {
+    max-height: 200px;
+}
+
+.cook-ratio-ring__info-text {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    margin: 0;
+    padding: 0 0 8px 0;
+    line-height: 1.4;
+    white-space: pre-line;
+}
+
+.cook-ratio-ring__svg {
+    width: 180px;
+    height: 110px;
+}
+
+.cook-ratio-ring__label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin-top: 4px;
+}
+
+.cook-ratio-ring__percentage {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+}
+
+.cook-ratio-ring__detail {
+    font-size: 0.8125rem;
+    color: #6b7280;
+}

@@ -1,0 +1,292 @@
+@using Happie.Web.Resources
+@implements IDisposable
+@inject IStringLocalizer<AppStrings> Localizer
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+@if (!Rows.Any())
+{
+    <div class="timeline-chart timeline-chart--empty">
+        <p class="timeline-chart__empty-message">@Localizer["Timeline_Empty"]</p>
+    </div>
+}
+else
+{
+    <div class="timeline-chart" @ref="_containerRef" @onclick="OnChartClicked">
+        <div class="timeline-chart__scroll @(MaxVisibleRows.HasValue ? "timeline-chart__scroll--constrained" : "")"
+             @ref="_scrollRef"
+             style="@(MaxVisibleRows.HasValue ? $"max-height: {(MaxVisibleRows.Value * 26) + 50}px;" : "")">
+            <div class="timeline-chart__grid">
+                @* Column headers: month labels (sticky) and day numbers. *@
+                <div class="timeline-chart__header-row">
+                    <div class="timeline-chart__label-cell"></div>
+                    <div class="timeline-chart__header-cells">
+                        @* Month labels row — positioned above day numbers. *@
+                        <div class="timeline-chart__month-row">
+                            @{
+                                var prevMonth = "";
+                                var monthStartIndex = 0;
+                            }
+                            @for (var i = 0; i < _visibleDates.Count; i++)
+                            {
+                                var date = _visibleDates[i];
+                                var monthName = date.ToString("MMM");
+                                var isFirstOfMonth = date.Day == 1;
+                                var isFirstVisible = i == 0;
+
+                                if (isFirstOfMonth || isFirstVisible)
+                                {
+                                    if (i > 0 && prevMonth != "")
+                                    {
+                                        // Close the previous month span by calculating its width.
+                                        var spanWidth = i - monthStartIndex;
+                                        <span class="timeline-chart__month-span" style="min-width: @(spanWidth * CellWidth)px; width: @(spanWidth * CellWidth)px;">
+                                            <span class="timeline-chart__month-label">@prevMonth</span>
+                                        </span>
+                                    }
+                                    prevMonth = monthName;
+                                    monthStartIndex = i;
+                                }
+                            }
+                            @* Final month span to end of visible range. *@
+                            @{
+                                var finalWidth = _visibleDates.Count - monthStartIndex;
+                            }
+                            <span class="timeline-chart__month-span" style="min-width: @(finalWidth * CellWidth)px; width: @(finalWidth * CellWidth)px;">
+                                <span class="timeline-chart__month-label">@prevMonth</span>
+                            </span>
+                        </div>
+                        @* Day numbers row. *@
+                        <div class="timeline-chart__day-row">
+                            @for (var i = 0; i < _visibleDates.Count; i++)
+                            {
+                                var date = _visibleDates[i];
+                                var isFirstOfMonth = date.Day == 1;
+                                <div class="timeline-chart__header-cell @(isFirstOfMonth ? "timeline-chart__header-cell--month-start" : "")">
+                                    <span class="timeline-chart__day-number">@date.Day</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @* Data rows. *@
+                @foreach (var row in Rows)
+                {
+                    <div class="timeline-chart__row">
+                        <div class="timeline-chart__label-cell"
+                             @ontouchstart="(e) => OnLabelTouchStart(row)"
+                             @ontouchend="OnLabelTouchEnd"
+                             @ontouchmove="OnLabelTouchMove"
+                             @onclick="() => OnLabelClicked(row)"
+                             @onclick:stopPropagation="true">
+                            <span class="timeline-chart__label @(row.NavigationUri is not null ? "timeline-chart__label--clickable" : "")"
+                                  style="color: @row.Color;">@row.Label</span>
+                        </div>
+                        @foreach (var date in _visibleDates)
+                        {
+                            var hasDot = row.Dates.Contains(date);
+                            <div class="timeline-chart__cell">
+                                @if (hasDot)
+                                {
+                                    <span class="timeline-chart__dot" style="background-color: @row.Color;" aria-hidden="true"></span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* Long-press overlay for full label text. *@
+        @if (_longPressRow is not null)
+        {
+            <div class="timeline-chart__label-overlay" @onclick="DismissOverlay" @onclick:stopPropagation="true">
+                <span class="timeline-chart__label-overlay-text">@_longPressRow.Label</span>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>The rows to display in the timeline chart.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<TimelineChartRow> Rows { get; set; } = [];
+
+    /// <summary>The start date of the visible timeline window (inclusive).</summary>
+    [Parameter, EditorRequired]
+    public DateOnly StartDate { get; set; }
+
+    /// <summary>The end date of the visible timeline window (inclusive).</summary>
+    [Parameter, EditorRequired]
+    public DateOnly EndDate { get; set; }
+
+    /// <summary>Callback emitted when the user scrolls to the left edge, requesting more data.</summary>
+    [Parameter]
+    public EventCallback OnLoadMore { get; set; }
+
+    /// <summary>Whether additional historical data is available for loading.</summary>
+    [Parameter]
+    public bool CanLoadMore { get; set; } = true;
+
+    /// <summary>Optional maximum number of rows visible before vertical scrolling is required.</summary>
+    [Parameter]
+    public int? MaxVisibleRows { get; set; }
+
+    private ElementReference _containerRef;
+    private ElementReference _scrollRef;
+    private DotNetObjectReference<TimelineChart>? _dotNetRef;
+    private IReadOnlyList<DateOnly> _visibleDates = [];
+    private bool _isLoadingMore;
+
+    // Long-press state.
+    private TimelineChartRow? _longPressRow;
+    private System.Threading.Timer? _longPressTimer;
+    private bool _longPressFired;
+
+    // Cell width in pixels for each day column.
+    private const int CellWidth = 18;
+
+    // Scroll position preservation on data prepend.
+    private int _previousDateCount;
+    private bool _needsScrollAdjust;
+
+    protected override void OnParametersSet()
+    {
+        var oldCount = _visibleDates.Count;
+        _visibleDates = BuildDateRange(StartDate, EndDate);
+
+        // If dates were prepended (count increased while loading more), flag for scroll adjustment.
+        if (oldCount > 0 && _visibleDates.Count > oldCount && _isLoadingMore)
+        {
+            _previousDateCount = oldCount;
+            _needsScrollAdjust = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Rows.Any())
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            // Scroll to the right edge initially and register scroll listener.
+            await JS.InvokeVoidAsync("happie.timelineChart.init", _scrollRef, _dotNetRef);
+        }
+
+        // After re-render with prepended data, adjust scroll position to stay in place.
+        if (_needsScrollAdjust)
+        {
+            _needsScrollAdjust = false;
+            var addedDays = _visibleDates.Count - _previousDateCount;
+            var scrollAdjust = addedDays * CellWidth;
+            await JS.InvokeVoidAsync("happie.timelineChart.adjustScroll", _scrollRef, scrollAdjust);
+        }
+    }
+
+    /// <summary>Called from JS when scroll reaches the left edge.</summary>
+    [JSInvokable]
+    public async Task OnScrolledToLeftEdge()
+    {
+        if (_isLoadingMore || !CanLoadMore)
+            return;
+
+        _isLoadingMore = true;
+        await OnLoadMore.InvokeAsync();
+        _isLoadingMore = false;
+    }
+
+    private void OnLabelTouchStart(TimelineChartRow row)
+    {
+        _longPressFired = false;
+        _longPressTimer?.Dispose();
+        _longPressTimer = new System.Threading.Timer(async _ =>
+        {
+            // Only show overlay if the label text is actually truncated.
+            var isTruncated = await JS.InvokeAsync<bool>("happie.timelineChart.isLabelTruncated", _containerRef, row.Label);
+            if (!isTruncated)
+                return;
+
+            _longPressFired = true;
+            _longPressRow = row;
+            await InvokeAsync(StateHasChanged);
+        }, null, 500, Timeout.Infinite);
+    }
+
+    private void OnLabelTouchEnd()
+    {
+        _longPressTimer?.Dispose();
+        _longPressTimer = null;
+    }
+
+    private void OnLabelTouchMove()
+    {
+        // Cancel long press if user moves finger.
+        _longPressTimer?.Dispose();
+        _longPressTimer = null;
+    }
+
+    private void OnLabelClicked(TimelineChartRow row)
+    {
+        // If long press just fired, don't navigate.
+        if (_longPressFired)
+        {
+            _longPressFired = false;
+            return;
+        }
+
+        // Dismiss overlay if open.
+        if (_longPressRow is not null)
+        {
+            _longPressRow = null;
+            return;
+        }
+
+        if (row.NavigationUri is not null)
+            NavigationManager.NavigateTo(row.NavigationUri);
+    }
+
+    private void OnChartClicked()
+    {
+        // Dismiss overlay when clicking anywhere on the chart.
+        if (_longPressRow is not null)
+        {
+            _longPressRow = null;
+            StateHasChanged();
+        }
+    }
+
+    private void DismissOverlay()
+    {
+        _longPressRow = null;
+    }
+
+    private static IReadOnlyList<DateOnly> BuildDateRange(DateOnly start, DateOnly end)
+    {
+        var dates = new List<DateOnly>();
+        var current = start;
+        while (current <= end)
+        {
+            dates.Add(current);
+            current = current.AddDays(1);
+        }
+        return dates;
+    }
+
+    public void Dispose()
+    {
+        _longPressTimer?.Dispose();
+        if (_dotNetRef is not null)
+        {
+            // Fire-and-forget JS cleanup since Dispose is synchronous.
+            _ = JS.InvokeVoidAsync("happie.timelineChart.dispose", _scrollRef);
+            _dotNetRef.Dispose();
+        }
+    }
+
+    /// <summary>Represents a single row in the timeline chart.</summary>
+    /// <param name="Label">Display text for the row.</param>
+    /// <param name="Color">Color used for dots and label text.</param>
+    /// <param name="Dates">Set of dates that have a dot in this row.</param>
+    /// <param name="NavigationUri">Optional URI to navigate to when the label is clicked.</param>
+    public record TimelineChartRow(string Label, string Color, HashSet<DateOnly> Dates, string? NavigationUri = null);
+}

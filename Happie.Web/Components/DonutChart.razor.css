@@ -1,0 +1,127 @@
+.donut-chart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.donut-chart__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+    flex: 1;
+}
+
+.donut-chart__header {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.donut-chart__info-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    color: #2563eb;
+    transition: background-color 0.15s ease;
+}
+
+.donut-chart__info-btn:hover {
+    background-color: rgba(37, 99, 235, 0.12);
+}
+
+.donut-chart__info-wrapper {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease;
+    width: 100%;
+}
+
+.donut-chart__info-wrapper--open {
+    max-height: 200px;
+}
+
+.donut-chart__info-text {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    margin: 0;
+    padding: 4px 0 0 0;
+    line-height: 1.4;
+    align-self: flex-start;
+}
+
+.donut-chart__svg {
+    width: 180px;
+    height: 180px;
+    transform: rotate(-90deg);
+}
+
+.donut-chart__segment {
+    transition: stroke-width 0.2s ease;
+}
+
+.donut-chart__segment--highlighted {
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.3));
+}
+
+.donut-chart__labels {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.donut-chart__label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.donut-chart__label-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.donut-chart__label-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.donut-chart__label-link {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: inherit;
+    text-decoration: none;
+}
+
+.donut-chart__label-link:hover {
+    text-decoration: underline;
+}
+
+.donut-chart__label-percentage {
+    font-weight: 600;
+    flex-shrink: 0;
+}

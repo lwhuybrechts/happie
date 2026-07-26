@@ -1,0 +1,123 @@
+@using Happie.Shared.Contracts
+@inject NavigationManager NavigationManager
+
+@if (Segments is not null && Total > 0)
+{
+    <div class="donut-chart">
+        @if (Title is not null)
+        {
+            <div class="donut-chart__header">
+                <h2 class="donut-chart__title">@Title</h2>
+                @if (InfoText is not null)
+                {
+                    <button class="donut-chart__info-btn" @onclick="ToggleInfo" aria-label="Info">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="17" x2="12" y2="11" />
+                            <circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none" />
+                        </svg>
+                    </button>
+                }
+            </div>
+            @if (InfoText is not null)
+            {
+                <div class="donut-chart__info-wrapper @(_showInfo ? "donut-chart__info-wrapper--open" : "")">
+                    <p class="donut-chart__info-text">@InfoText</p>
+                </div>
+            }
+        }
+        <svg viewBox="0 0 200 200" class="donut-chart__svg" aria-label="Cooking share donut chart" role="img">
+            @{
+                var cumulativePercentage = 0.0;
+            }
+            @foreach (var segment in ComputedSegments)
+            {
+                var dashArray = $"{segment.DashLength.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} {(Circumference - segment.DashLength).ToString("F2", System.Globalization.CultureInfo.InvariantCulture)}";
+                var dashOffset = (Circumference - (cumulativePercentage / 100.0 * Circumference)).ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+                var isHighlighted = segment.HousemateId == HighlightedHousemateId;
+
+                <circle class="donut-chart__segment @(isHighlighted ? "donut-chart__segment--highlighted" : "")"
+                        cx="100"
+                        cy="100"
+                        r="@Radius.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                        fill="none"
+                        stroke="@segment.Color"
+                        stroke-width="@((isHighlighted ? HighlightedStrokeWidth : StrokeWidth).ToString(System.Globalization.CultureInfo.InvariantCulture))"
+                        stroke-dasharray="@dashArray"
+                        stroke-dashoffset="@dashOffset" />
+
+                cumulativePercentage += segment.Percentage;
+            }
+        </svg>
+
+        <div class="donut-chart__labels">
+            @foreach (var segment in ComputedSegments)
+            {
+                <div class="donut-chart__label">
+                    <span class="donut-chart__label-swatch" style="background-color: @segment.Color;"></span>
+                    @if (segment.HousemateId != HighlightedHousemateId)
+                    {
+                        <a class="donut-chart__label-link" href="housemates/@segment.HousemateId">@segment.Name</a>
+                    }
+                    else
+                    {
+                        <span class="donut-chart__label-text">@segment.Name</span>
+                    }
+                    <span class="donut-chart__label-percentage">@segment.RoundedPercentage%</span>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private const double StrokeWidth = 30;
+    private const double HighlightedStrokeWidth = 38;
+    private const double Radius = 70;
+    private const double Circumference = 2 * Math.PI * Radius;
+
+    /// <summary>The list of cooking share segments to render.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<CookingShareDto>? Segments { get; set; }
+
+    /// <summary>The housemate ID to visually distinguish in the chart.</summary>
+    [Parameter, EditorRequired]
+    public Guid HighlightedHousemateId { get; set; }
+
+    /// <summary>Optional title displayed above the donut chart.</summary>
+    [Parameter]
+    public string? Title { get; set; }
+
+    /// <summary>Optional info text shown when the info button is clicked.</summary>
+    [Parameter]
+    public string? InfoText { get; set; }
+
+    private bool _showInfo;
+
+    private int Total => Segments?.Sum(x => x.ChefDayCount) ?? 0;
+
+    private void ToggleInfo()
+    {
+        _showInfo = !_showInfo;
+    }
+
+    private IReadOnlyList<ComputedSegment> ComputedSegments => Segments?
+        .Where(x => x.ChefDayCount > 0)
+        .Select(x => new ComputedSegment(
+            x.HousemateId,
+            x.HousemateName,
+            x.HousemateColor,
+            (double)x.ChefDayCount / Total * 100,
+            (int)Math.Round((double)x.ChefDayCount / Total * 100),
+            (double)x.ChefDayCount / Total * Circumference))
+        .ToList() ?? [];
+
+    private record ComputedSegment(
+        Guid HousemateId,
+        string Name,
+        string Color,
+        double Percentage,
+        int RoundedPercentage,
+        double DashLength);
+}

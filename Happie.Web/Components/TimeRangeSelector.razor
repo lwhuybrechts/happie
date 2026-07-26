@@ -1,0 +1,40 @@
+@using Happie.Web.Resources
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="time-range-selector" role="group" aria-label="@Localizer["TimeRange_AriaLabel"]">
+    @foreach (var range in _ranges)
+    {
+        <button class="time-range-selector__pill @(range == SelectedRange ? "time-range-selector__pill--active" : "")"
+                @onclick="() => OnRangeSelected.InvokeAsync(range)"
+                aria-pressed="@(range == SelectedRange ? "true" : "false")">
+            @GetLabel(range)
+        </button>
+    }
+</div>
+
+@code {
+    /// <summary>The currently selected time range.</summary>
+    [Parameter]
+    public TimeRange SelectedRange { get; set; }
+
+    /// <summary>Callback invoked when the user selects a different time range.</summary>
+    [Parameter]
+    public EventCallback<TimeRange> OnRangeSelected { get; set; }
+
+    private static readonly TimeRange[] _ranges =
+    [
+        TimeRange.ThirtyDays,
+        TimeRange.ThreeMonths,
+        TimeRange.OneYear,
+        TimeRange.AllTime,
+    ];
+
+    private string GetLabel(TimeRange range) => range switch
+    {
+        TimeRange.ThirtyDays => Localizer["TimeRange_ThirtyDays"],
+        TimeRange.ThreeMonths => Localizer["TimeRange_ThreeMonths"],
+        TimeRange.OneYear => Localizer["TimeRange_OneYear"],
+        TimeRange.AllTime => Localizer["TimeRange_AllTime"],
+        _ => throw new InvalidOperationException($"Unknown TimeRange value: {range}")
+    };
+}

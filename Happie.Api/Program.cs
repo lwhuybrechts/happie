@@ -95,6 +95,10 @@ builder.Services.AddSingleton<IDayHandler, DayHandler>();
 // Register saved dish handlers.
 builder.Services.AddSingleton<ISavedDishHandler, SavedDishHandler>();
 
+// Register statistics handlers.
+builder.Services.AddSingleton<IDishStatisticsHandler, DishStatisticsHandler>();
+builder.Services.AddSingleton<IHousemateStatisticsHandler, HousemateStatisticsHandler>();
+
 // Register the shared string resolver for server-side history and nudge translation resolution.
 builder.Services.AddSingleton<SharedStringResolver>();
 

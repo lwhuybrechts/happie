@@ -1,0 +1,82 @@
+/* Container: positioned relative for dropdown placement. */
+.overflow-menu {
+    position: relative;
+    display: inline-flex;
+}
+
+/* Three-dot trigger button. */
+.overflow-menu__trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.overflow-menu__trigger:hover {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+/* Dropdown menu — positioned below the trigger. */
+.overflow-menu__dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    min-width: 160px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    padding: 6px 0;
+    z-index: 1050;
+    animation: overflow-menu-in 0.12s ease-out;
+}
+
+/* Individual menu item. */
+.overflow-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    text-align: left;
+    transition: background-color 0.12s ease;
+}
+
+.overflow-menu__item:hover {
+    background-color: #f3f4f6;
+}
+
+.overflow-menu__item--danger {
+    color: #F44336;
+}
+
+.overflow-menu__item--danger:hover {
+    background-color: rgba(244, 67, 54, 0.06);
+}
+
+@keyframes overflow-menu-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -8,6 +8,7 @@
 @inject ActiveHousemateService ActiveHousemateService
 @inject PushNotificationService PushNotificationService
 @inject SyncToastState SyncToastState
+@inject NavigationManager NavigationManager
 @inject IConfiguration Configuration
 
 <PageTitle>Happie</PageTitle>
@@ -134,6 +135,17 @@
                             </div>
                             <div class="housemates-page__actions">
                                 <button class="housemates-page__icon-btn"
+                                        @onclick="() => NavigateToStatistics(housemate)"
+                                        @onclick:stopPropagation="true"
+                                        aria-label="@Localizer["Housemates_Statistics", housemate.Name]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <line x1="18" y1="20" x2="18" y2="10" />
+                                        <line x1="12" y1="20" x2="12" y2="4" />
+                                        <line x1="6" y1="20" x2="6" y2="14" />
+                                    </svg>
+                                </button>
+                                <button class="housemates-page__icon-btn"
                                         @onclick="() => StartRename(housemate)"
                                         @onclick:stopPropagation="true"
                                         aria-label="@Localizer["Housemates_Rename", housemate.Name]">
@@ -156,36 +168,11 @@
                                         <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12c0 2.4.846 4.604 2.256 6.328.39.477.863.672 1.394.672H8.5a1.5 1.5 0 0 0 1.5-1.5V17a2 2 0 0 1 2-2z" />
                                     </svg>
                                 </button>
-                                <button class="housemates-page__icon-btn housemates-page__icon-btn--danger"
-                                        @onclick="() => ConfirmRemove(housemate)"
-                                        @onclick:stopPropagation="true"
-                                        aria-label="@Localizer["Housemates_Remove", housemate.Name]">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <polyline points="3 6 5 6 21 6" />
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                    </svg>
-                                </button>
-                                <button class="housemates-page__icon-btn"
-                                        @onclick="() => MoveHousemateAsync(index, -1)"
-                                        @onclick:stopPropagation="true"
-                                        disabled="@(index == 0)"
-                                        aria-label="@Localizer["Housemates_MoveUp", housemate.Name]">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <polyline points="18 15 12 9 6 15" />
-                                    </svg>
-                                </button>
-                                <button class="housemates-page__icon-btn"
-                                        @onclick="() => MoveHousemateAsync(index, 1)"
-                                        @onclick:stopPropagation="true"
-                                        disabled="@(index == _housemates.Count - 1)"
-                                        aria-label="@Localizer["Housemates_MoveDown", housemate.Name]">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <polyline points="6 9 12 15 18 9" />
-                                    </svg>
-                                </button>
+                                <OverflowMenu IsFirst="@(index == 0)"
+                                              IsLast="@(index == _housemates.Count - 1)"
+                                              OnMoveUp="() => MoveHousemateAsync(index, -1)"
+                                              OnMoveDown="() => MoveHousemateAsync(index, 1)"
+                                              OnDelete="() => ConfirmRemove(housemate)" />
                             </div>
                         </div>
                     }
@@ -532,6 +519,11 @@
     }
 
     // --- Reorder ---
+
+    private void NavigateToStatistics(HousemateDto housemate)
+    {
+        NavigationManager.NavigateTo($"/housemates/{housemate.Id}");
+    }
 
     private async Task MoveHousemateAsync(int currentIndex, int direction)
     {

@@ -89,6 +89,9 @@ builder.Services.AddScoped<SyncToastState>();
 // Register the sync service as scoped for replaying queued mutations on reconnect.
 builder.Services.AddScoped<ISyncService, SyncService>();
 
+// Register the statistics API client as scoped for fetching dish and housemate statistics.
+builder.Services.AddScoped<IStatisticsApiClient, StatisticsApiClient>();
+
 var host = builder.Build();
 
 // Initialize the LocaleService and set the thread culture before rendering so the correct locale is active from the first frame.

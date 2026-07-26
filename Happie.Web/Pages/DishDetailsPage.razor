@@ -1,0 +1,464 @@
+@page "/saved-dishes/{Id}"
+@using Happie.Shared.Contracts
+@using Happie.Web.Http
+@using Happie.Web.Services.Caching
+@inject IStatisticsApiClient StatisticsApi
+@inject ICachedApiClient CachedApi
+@inject NavigationManager NavigationManager
+@inject LoadingIndicatorState LoadingIndicator
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>Happie</PageTitle>
+
+<div class="dish-details-page">
+    @if (_isLoading)
+    {
+        <LoadingIndicator />
+    }
+    else if (_statistics is not null)
+    {
+        <div class="dish-details-page__header">
+            <h1 class="dish-details-page__title">@_dishDescription</h1>
+        </div>
+
+        @if (_statistics.AllTimeTimesCooked > 0)
+        {
+            <TimelineChart Rows="_timelineRows"
+                           StartDate="_timelineStartDate"
+                           EndDate="_timelineEndDate"
+                           OnLoadMore="OnLoadMoreTimelineAsync"
+                           CanLoadMore="_canLoadMoreTimeline" />
+        }
+
+        <TimeRangeSelector SelectedRange="_selectedRange" OnRangeSelected="OnTimeRangeChangedAsync" />
+
+        <div class="dish-details-page__stats-container @(_isChangingRange ? "dish-details-page__stats-container--loading" : "")">
+            @if (_isChangingRange)
+            {
+                <div class="dish-details-page__stats-overlay">
+                    <LoadingIndicator />
+                </div>
+            }
+
+            @if (_statistics.TimesCooked > 0)
+        {
+            <div class="dish-details-page__summary">
+                @if (_selectedRange == TimeRange.AllTime)
+                {
+                    <div class="dish-details-page__summary-header dish-details-page__summary-header--centered">
+                        <span class="dish-details-page__summary-header-center">@Localizer["Stats_AllTime"]</span>
+                    </div>
+                    <div class="dish-details-page__summary-single">
+                        <div class="dish-details-page__summary-cell">
+                            <span class="dish-details-page__primary-count">@_statistics.TimesCooked</span>
+                            <span class="dish-details-page__primary-label">@Localizer["Stats_TimesCooked"]</span>
+                        </div>
+                        <div class="dish-details-page__summary-dates">
+                            @if (_statistics.LastCookedDate is not null)
+                            {
+                                <div class="dish-details-page__summary-cell">
+                                    <span class="dish-details-page__date-caption">@Localizer["Stats_LastCooked"]</span>
+                                    <span class="dish-details-page__date-value">@GetLastCookedDateFormatted()</span>
+                                </div>
+                            }
+                            @if (_statistics.FirstCookedDate is not null)
+                            {
+                                <div class="dish-details-page__summary-cell">
+                                    <span class="dish-details-page__date-caption">@Localizer["Stats_FirstCooked"]</span>
+                                    <span class="dish-details-page__date-value">@GetFirstCookedDateFormatted()</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="dish-details-page__summary-header">
+                        <span class="dish-details-page__summary-header-left">@GetRangeHeaderLabel()</span>
+                        <span class="dish-details-page__summary-header-right">@Localizer["Stats_AllTime"]</span>
+                    </div>
+                    <div class="dish-details-page__summary-grid">
+                        <div class="dish-details-page__summary-cell">
+                            <span class="dish-details-page__primary-count">@_statistics.TimesCooked</span>
+                            <span class="dish-details-page__primary-label">@Localizer["Stats_TimesCooked"]</span>
+                        </div>
+                        <div class="dish-details-page__summary-cell">
+                            <span class="dish-details-page__primary-count">@_statistics.AllTimeTimesCooked</span>
+                            <span class="dish-details-page__primary-label">@Localizer["Stats_TimesCooked"]</span>
+                        </div>
+                        <div class="dish-details-page__summary-cell">
+                            @if (_statistics.LastCookedDate is not null)
+                            {
+                                <span class="dish-details-page__date-caption">@Localizer["Stats_LastCooked"]</span>
+                                <span class="dish-details-page__date-value">@GetLastCookedDateFormatted()</span>
+                            }
+                        </div>
+                        <div class="dish-details-page__summary-cell">
+                            @if (_statistics.FirstCookedDate is not null)
+                            {
+                                <span class="dish-details-page__date-caption">@Localizer["Stats_FirstCooked"]</span>
+                                <span class="dish-details-page__date-value">@GetFirstCookedDateFormatted()</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (_statistics.CookingShares.Sum(x => x.ChefDayCount) > 0)
+            {
+                <DonutChart Segments="_statistics.CookingShares" HighlightedHousemateId="Guid.Empty" Title="@Localizer["Stats_CookedBy"]" InfoText="@Localizer["Stats_CookedBy_Info"]" />
+            }
+        }
+        else
+        {
+            <div class="dish-details-page__empty-state">
+                <p class="dish-details-page__empty-message">@Localizer["Stats_EmptyState"]</p>
+            </div>
+        }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private TimeRange _selectedRange = TimeRange.ThirtyDays;
+    private DishStatisticsResponse? _statistics;
+    private string _dishDescription = string.Empty;
+    private bool _isLoading = true;
+    private bool _isChangingRange;
+
+    // Timeline state.
+    private IReadOnlyList<TimelineChart.TimelineChartRow> _timelineRows = [];
+    private DateOnly _timelineStartDate;
+    private DateOnly _timelineEndDate;
+    private bool _canLoadMoreTimeline = true;
+    private DateOnly? _timelineFloor;
+
+    // Keep the initial timeline response for sort-order reference during merge.
+    private IReadOnlyList<DishTimelineDto> _initialTimelineEntries = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!Guid.TryParse(Id, out var dishId))
+        {
+            NavigationManager.NavigateTo("/saved-dishes", replace: true);
+            return;
+        }
+
+        await LoadDataAsync(dishId);
+    }
+
+    private async Task LoadDataAsync(Guid dishId)
+    {
+        _isLoading = true;
+        LoadingIndicator.IncrementAsync();
+        StateHasChanged();
+
+        try
+        {
+            // Load the dish description from the saved dishes cache.
+            await LoadDishDescriptionAsync(dishId);
+
+            // Load statistics and timeline in parallel.
+            var (from, to) = GetDateRange(_selectedRange);
+            var (timelineFrom, timelineTo) = GetTimelineRange();
+
+            var statisticsTask = StatisticsApi.GetDishStatisticsAsync(dishId, from, to);
+            var timelineTask = StatisticsApi.GetDishTimelineAsync(dishId, timelineFrom, timelineTo);
+
+            await Task.WhenAll(statisticsTask, timelineTask);
+
+            _statistics = await statisticsTask;
+            var timeline = await timelineTask;
+
+            if (_statistics is null)
+            {
+                NavigationManager.NavigateTo("/saved-dishes", replace: true);
+                return;
+            }
+
+            _timelineStartDate = timelineFrom;
+            _timelineEndDate = timelineTo;
+            _initialTimelineEntries = timeline?.Entries ?? [];
+            _timelineRows = BuildTimelineRows(_initialTimelineEntries);
+
+            // Compute the floor: 1st of the month of the earliest cooking date.
+            if (timeline?.FirstCookedDate is not null && DateOnly.TryParse(timeline.FirstCookedDate, out var firstCooked))
+                _timelineFloor = new DateOnly(firstCooked.Year, firstCooked.Month, 1);
+            else
+                _timelineFloor = null;
+
+            // Cap the start date at the floor so we don't show empty months before the first record.
+            _timelineStartDate = _timelineFloor.HasValue && _timelineFloor.Value > timelineFrom
+                ? _timelineFloor.Value
+                : timelineFrom;
+
+            _canLoadMoreTimeline = _timelineFloor.HasValue && _timelineStartDate > _timelineFloor.Value;
+        }
+        catch
+        {
+            NavigationManager.NavigateTo("/saved-dishes", replace: true);
+            return;
+        }
+        finally
+        {
+            _isLoading = false;
+            LoadingIndicator.DecrementAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadDishDescriptionAsync(Guid dishId)
+    {
+        var result = await CachedApi.GetSavedDishesAsync();
+        if (result.Dishes is not null)
+        {
+            var dish = result.Dishes.FirstOrDefault(x => x.Id == dishId);
+            if (dish is not null)
+                _dishDescription = dish.Description;
+        }
+    }
+
+    private async Task OnTimeRangeChangedAsync(TimeRange newRange)
+    {
+        _selectedRange = newRange;
+
+        if (!Guid.TryParse(Id, out var dishId))
+            return;
+
+        _isChangingRange = true;
+        StateHasChanged();
+
+        try
+        {
+            var (from, to) = GetDateRange(_selectedRange);
+            var response = await StatisticsApi.GetDishStatisticsAsync(dishId, from, to);
+
+            if (response is not null)
+                _statistics = response;
+        }
+        catch
+        {
+            // Silently handle — keep previous statistics visible.
+        }
+        finally
+        {
+            _isChangingRange = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnLoadMoreTimelineAsync()
+    {
+        if (!Guid.TryParse(Id, out var dishId))
+            return;
+
+        // Fetch data for the previous month (1st of previous month to the day before current start).
+        var newEnd = _timelineStartDate.AddDays(-1);
+        var newStart = _timelineStartDate.AddMonths(-1);
+
+        // Cap at the timeline floor (1st of the month of the first cooking record).
+        if (_timelineFloor.HasValue && newStart < _timelineFloor.Value)
+            newStart = _timelineFloor.Value;
+
+        try
+        {
+            var response = await StatisticsApi.GetDishTimelineAsync(dishId, newStart, newEnd);
+
+            if (response is null)
+                return;
+
+            // If no new cooking days were returned, stop further loading.
+            var hasNewData = response.Entries.Any(x => x.CookingDays.Count > 0);
+            if (!hasNewData)
+            {
+                _canLoadMoreTimeline = false;
+                _timelineStartDate = newStart;
+                StateHasChanged();
+                return;
+            }
+
+            // Merge new timeline data into existing rows.
+            MergeTimelineData(response.Entries);
+            _timelineStartDate = newStart;
+
+            // Stop loading if we've reached the floor.
+            if (_timelineFloor.HasValue && newStart <= _timelineFloor.Value)
+                _canLoadMoreTimeline = false;
+
+            StateHasChanged();
+        }
+        catch
+        {
+            // Silently handle — user can try scrolling again.
+        }
+    }
+
+    private void MergeTimelineData(IReadOnlyList<DishTimelineDto> newTimeline)
+    {
+        // Build a mutable dictionary of existing rows keyed by housemate name.
+        var rowsByLabel = _timelineRows.ToDictionary(
+            x => x.Label,
+            x => new HashSet<DateOnly>(x.Dates));
+
+        foreach (var entry in newTimeline)
+        {
+            var dates = entry.CookingDays
+                .Select(x => DateOnly.Parse(x))
+                .ToList();
+
+            if (rowsByLabel.TryGetValue(entry.HousemateName, out var existingDates))
+            {
+                foreach (var date in dates)
+                    existingDates.Add(date);
+            }
+            else
+            {
+                rowsByLabel[entry.HousemateName] = new HashSet<DateOnly>(dates);
+            }
+        }
+
+        // Rebuild sorted rows. Use the order from the initial timeline (sorted by SortOrder).
+        var orderedEntries = _initialTimelineEntries.ToList();
+
+        // Add any new housemates from scroll-back that weren't in the initial response.
+        foreach (var entry in newTimeline)
+        {
+            if (!orderedEntries.Any(x => x.HousemateName == entry.HousemateName))
+                orderedEntries.Add(entry);
+        }
+
+        _timelineRows = orderedEntries
+            .Where(x => rowsByLabel.ContainsKey(x.HousemateName))
+            .Select(x => new TimelineChart.TimelineChartRow(
+                x.HousemateName,
+                x.HousemateColor,
+                rowsByLabel[x.HousemateName],
+                $"/housemates/{x.HousemateId}"))
+            .ToList();
+    }
+
+    private IReadOnlyList<TimelineChart.TimelineChartRow> BuildTimelineRows(IReadOnlyList<DishTimelineDto> timeline)
+    {
+        // Timeline is already sorted by SortOrder from the API.
+        return timeline
+            .Select(x => new TimelineChart.TimelineChartRow(
+                x.HousemateName,
+                x.HousemateColor,
+                x.CookingDays.Select(d => DateOnly.Parse(d)).ToHashSet(),
+                $"/housemates/{x.HousemateId}"))
+            .ToList();
+    }
+
+    private string GetLastCookedLabel()
+    {
+        if (_statistics?.LastCookedDate is null)
+            return string.Empty;
+
+        if (!DateOnly.TryParse(_statistics.LastCookedDate, out var lastCooked))
+            return string.Empty;
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var daysAgo = today.DayNumber - lastCooked.DayNumber;
+
+        if (daysAgo == 0)
+            return Localizer["Stats_LastCookedToday"];
+
+        if (daysAgo == 1)
+            return Localizer["Stats_LastCookedOneDayAgo"];
+
+        if (daysAgo <= 30)
+            return string.Format(Localizer["Stats_LastCookedDaysAgo"], daysAgo);
+
+        // Beyond 30 days: show absolute date formatted according to the user's active locale.
+        var lastCookedDateTime = lastCooked.ToDateTime(TimeOnly.MinValue);
+        var formattedDate = lastCookedDateTime.ToString("d", System.Globalization.CultureInfo.CurrentUICulture);
+        return string.Format(Localizer["Stats_LastCookedOn"], formattedDate);
+    }
+
+    private string GetFirstCookedLabel()
+    {
+        if (_statistics?.FirstCookedDate is null)
+            return string.Empty;
+
+        if (!DateOnly.TryParse(_statistics.FirstCookedDate, out var firstCooked))
+            return string.Empty;
+
+        var firstCookedDateTime = firstCooked.ToDateTime(TimeOnly.MinValue);
+        var formattedDate = firstCookedDateTime.ToString("d", System.Globalization.CultureInfo.CurrentUICulture);
+        return string.Format(Localizer["Stats_FirstCookedOn"], formattedDate);
+    }
+
+    private string GetRangeHeaderLabel()
+    {
+        return _selectedRange switch
+        {
+            TimeRange.ThirtyDays => Localizer["Stats_RangeHeader_30Days"],
+            TimeRange.ThreeMonths => Localizer["Stats_RangeHeader_3Months"],
+            TimeRange.OneYear => Localizer["Stats_RangeHeader_1Year"],
+            TimeRange.AllTime => Localizer["Stats_AllTime"],
+            _ => throw new InvalidOperationException($"Unknown TimeRange value: {_selectedRange}")
+        };
+    }
+
+    private string GetLastCookedDateFormatted()
+    {
+        if (_statistics?.LastCookedDate is null)
+            return string.Empty;
+
+        if (!DateOnly.TryParse(_statistics.LastCookedDate, out var lastCooked))
+            return string.Empty;
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var daysAgo = today.DayNumber - lastCooked.DayNumber;
+
+        if (daysAgo == 0)
+            return Localizer["Stats_Today"];
+
+        if (daysAgo == 1)
+            return Localizer["Stats_OneDayAgo"];
+
+        if (daysAgo <= 30)
+            return string.Format(Localizer["Stats_DaysAgo"], daysAgo);
+
+        var lastCookedDateTime = lastCooked.ToDateTime(TimeOnly.MinValue);
+        return lastCookedDateTime.ToString("d", System.Globalization.CultureInfo.CurrentUICulture);
+    }
+
+    private string GetFirstCookedDateFormatted()
+    {
+        if (_statistics?.FirstCookedDate is null)
+            return string.Empty;
+
+        if (!DateOnly.TryParse(_statistics.FirstCookedDate, out var firstCooked))
+            return string.Empty;
+
+        var firstCookedDateTime = firstCooked.ToDateTime(TimeOnly.MinValue);
+        return firstCookedDateTime.ToString("d", System.Globalization.CultureInfo.CurrentUICulture);
+    }
+
+    private static (DateOnly From, DateOnly To) GetDateRange(TimeRange range)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var from = range switch
+        {
+            TimeRange.ThirtyDays => today.AddDays(-30),
+            TimeRange.ThreeMonths => today.AddMonths(-3),
+            TimeRange.OneYear => today.AddYears(-1),
+            TimeRange.AllTime => new DateOnly(2000, 1, 1),
+            _ => throw new InvalidOperationException($"Unknown TimeRange value: {range}")
+        };
+        return (from, today);
+    }
+
+    private static (DateOnly TimelineFrom, DateOnly TimelineTo) GetTimelineRange()
+    {
+        // Pre-load timeline data from the 1st of two months prior through today.
+        // E.g. if today is July 26, load from May 1. If today is July 1, still load from May 1.
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var timelineFrom = new DateOnly(today.Year, today.Month, 1).AddMonths(-2);
+        return (timelineFrom, today);
+    }
+}

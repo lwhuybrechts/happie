@@ -6,6 +6,7 @@
 @inject IConnectivityService ConnectivityService
 @inject IStringLocalizer<AppStrings> Localizer
 @inject IJSRuntime JS
+@inject NavigationManager NavigationManager
 @implements IDisposable
 
 <PageTitle>Happie</PageTitle>
@@ -129,6 +130,16 @@
                         <div class="saved-dishes-page__row">
                             <span class="saved-dishes-page__name">@dish.Description</span>
                             <div class="saved-dishes-page__actions">
+                                <button class="saved-dishes-page__icon-btn"
+                                        @onclick="() => NavigateToStatistics(dish.Id)"
+                                        aria-label="@Localizer["SavedDishes_Statistics", dish.Description]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <line x1="18" y1="20" x2="18" y2="10" />
+                                        <line x1="12" y1="20" x2="12" y2="4" />
+                                        <line x1="6" y1="20" x2="6" y2="14" />
+                                    </svg>
+                                </button>
                                 <button class="saved-dishes-page__icon-btn"
                                         @onclick="() => StartEdit(dish)"
                                         disabled="@(!ConnectivityService.IsOnline)"
@@ -528,6 +539,13 @@
         {
             CancelEdit();
         }
+    }
+
+    // --- Statistics navigation ---
+
+    private void NavigateToStatistics(Guid dishId)
+    {
+        NavigationManager.NavigateTo($"/saved-dishes/{dishId}");
     }
 
     // --- Delete dish ---

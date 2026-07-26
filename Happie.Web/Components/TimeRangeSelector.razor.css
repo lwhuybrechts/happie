@@ -1,0 +1,36 @@
+.time-range-selector {
+    display: flex;
+    gap: 8px;
+}
+
+.time-range-selector__pill {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px 16px;
+    border: 1.5px solid #ccc;
+    border-radius: 22px;
+    background: #fff;
+    color: #555;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.time-range-selector__pill:hover {
+    border-color: #4CAF50;
+    color: #4CAF50;
+}
+
+.time-range-selector__pill--active {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+    color: #fff;
+    font-weight: 600;
+}
+
+.time-range-selector__pill--active:hover {
+    background-color: #43A047;
+    border-color: #43A047;
+    color: #fff;
+}

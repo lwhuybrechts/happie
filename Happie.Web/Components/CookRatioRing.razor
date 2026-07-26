@@ -1,0 +1,105 @@
+@using Happie.Web.Resources
+@inject IStringLocalizer<AppStrings> Localizer
+
+@if (EatingInDays > 0)
+{
+    <div class="cook-ratio-ring">
+        <div class="cook-ratio-ring__header">
+            <h2 class="cook-ratio-ring__title">@Localizer["Stats_CookRatio_Title"]</h2>
+            <button class="cook-ratio-ring__info-btn" @onclick="ToggleInfo" aria-label="Info">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="17" x2="12" y2="11" />
+                    <circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="cook-ratio-ring__info-wrapper @(_showInfo ? "cook-ratio-ring__info-wrapper--open" : "")">
+            <p class="cook-ratio-ring__info-text">@Localizer["Stats_CookRatio_Info"]</p>
+        </div>
+
+        <svg viewBox="0 0 200 120" class="cook-ratio-ring__svg" aria-label="Cook ratio gauge" role="img">
+            @* Background track: top half of a circle, drawn via a dash pattern. *@
+            <circle cx="100"
+                    cy="100"
+                    r="@RadiusStr"
+                    fill="none"
+                    stroke="#f3f4f6"
+                    stroke-width="@StrokeWidthStr"
+                    stroke-linecap="round"
+                    stroke-dasharray="@BackgroundDashArray"
+                    transform="rotate(180 100 100)" />
+            @* Filled portion representing the cook ratio. *@
+            <circle cx="100"
+                    cy="100"
+                    r="@RadiusStr"
+                    fill="none"
+                    stroke-width="@StrokeWidthStr"
+                    stroke-linecap="round"
+                    stroke-dasharray="@FilledDashArray"
+                    transform="rotate(180 100 100)"
+                    style="stroke: @Color;" />
+        </svg>
+
+        <div class="cook-ratio-ring__label">
+            <span class="cook-ratio-ring__percentage">@Percentage%</span>
+            <span class="cook-ratio-ring__detail">@Localizer["Stats_CookRatio_Detail", CookDays, EatingInDays]</span>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Number of days the housemate cooked while eating in.</summary>
+    [Parameter, EditorRequired]
+    public int CookDays { get; set; }
+
+    /// <summary>Total number of days the housemate was eating in.</summary>
+    [Parameter, EditorRequired]
+    public int EatingInDays { get; set; }
+
+    /// <summary>The housemate's color for the filled arc.</summary>
+    [Parameter, EditorRequired]
+    public string Color { get; set; } = "#6b7280";
+
+    private bool _showInfo;
+
+    private const double StrokeWidth = 20;
+    private const double ArcRadius = 70;
+    private static readonly double Circumference = 2 * Math.PI * ArcRadius;
+    // Half the circumference — the length of the top semi-circle arc.
+    private static readonly double SemiCircle = Circumference / 2;
+
+    private int Percentage => EatingInDays > 0
+        ? (int)Math.Round((double)CookDays / EatingInDays * 100)
+        : 0;
+
+    private string RadiusStr => ArcRadius.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    private string StrokeWidthStr => StrokeWidth.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    // Draw the full top half (SemiCircle length), then a gap for the rest of the circle.
+    private string BackgroundDashArray => FormatDash(SemiCircle);
+
+    // Draw a proportional part of the top half.
+    private string FilledDashArray
+    {
+        get
+        {
+            var ratio = Math.Min((double)CookDays / EatingInDays, 1.0);
+            return FormatDash(ratio * SemiCircle);
+        }
+    }
+
+    private static string FormatDash(double drawnLength)
+    {
+        var draw = drawnLength.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+        var gap = Circumference.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+        return $"{draw} {gap}";
+    }
+
+    private void ToggleInfo()
+    {
+        _showInfo = !_showInfo;
+    }
+}

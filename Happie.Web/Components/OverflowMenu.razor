@@ -1,0 +1,144 @@
+@inject IJSRuntime JS
+@inject IStringLocalizer<AppStrings> Localizer
+@implements IAsyncDisposable
+
+<div class="overflow-menu" id="@_elementId">
+    <button class="overflow-menu__trigger"
+            @onclick="ToggleMenu"
+            @onclick:stopPropagation="true"
+            aria-label="@Localizer["Housemates_MoreActions"]"
+            aria-expanded="@_isOpen"
+            aria-haspopup="true">
+        <span aria-hidden="true">⋯</span>
+    </button>
+
+    @if (_isOpen)
+    {
+        <div class="overflow-menu__dropdown" role="menu">
+            @if (!IsFirst)
+            {
+                <button class="overflow-menu__item"
+                        role="menuitem"
+                        @onclick="OnMoveUpClickAsync"
+                        @onclick:stopPropagation="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="18 15 12 9 6 15" />
+                    </svg>
+                    <span>@Localizer["Housemates_MoveUpLabel"]</span>
+                </button>
+            }
+            @if (!IsLast)
+            {
+                <button class="overflow-menu__item"
+                        role="menuitem"
+                        @onclick="OnMoveDownClickAsync"
+                        @onclick:stopPropagation="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                    <span>@Localizer["Housemates_MoveDownLabel"]</span>
+                </button>
+            }
+            <button class="overflow-menu__item overflow-menu__item--danger"
+                    role="menuitem"
+                    @onclick="OnDeleteClickAsync"
+                    @onclick:stopPropagation="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+                <span>@Localizer["Housemates_DeleteLabel"]</span>
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public bool IsFirst { get; set; }
+    [Parameter] public bool IsLast { get; set; }
+    [Parameter] public EventCallback OnMoveUp { get; set; }
+    [Parameter] public EventCallback OnMoveDown { get; set; }
+    [Parameter] public EventCallback OnDelete { get; set; }
+
+    private bool _isOpen;
+    private bool _outsideClickRegistered;
+    private DotNetObjectReference<OverflowMenu>? _dotNetRef;
+    private readonly string _elementId = $"overflow-menu-{Guid.NewGuid():N}";
+
+    private async Task ToggleMenu()
+    {
+        _isOpen = !_isOpen;
+
+        if (_isOpen)
+            await RegisterOutsideClickAsync();
+        else
+            await UnregisterOutsideClickAsync();
+    }
+
+    private async Task CloseMenu()
+    {
+        _isOpen = false;
+        await UnregisterOutsideClickAsync();
+    }
+
+    [JSInvokable]
+    public async Task HandleOutsideClickAsync()
+    {
+        await CloseMenu();
+        StateHasChanged();
+    }
+
+    private async Task OnMoveUpClickAsync()
+    {
+        await CloseMenu();
+        await OnMoveUp.InvokeAsync();
+    }
+
+    private async Task OnMoveDownClickAsync()
+    {
+        await CloseMenu();
+        await OnMoveDown.InvokeAsync();
+    }
+
+    private async Task OnDeleteClickAsync()
+    {
+        await CloseMenu();
+        await OnDelete.InvokeAsync();
+    }
+
+    private async Task RegisterOutsideClickAsync()
+    {
+        if (_outsideClickRegistered)
+            return;
+
+        _dotNetRef ??= DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("happie.registerOutsideClick", _dotNetRef, _elementId);
+        _outsideClickRegistered = true;
+    }
+
+    private async Task UnregisterOutsideClickAsync()
+    {
+        if (!_outsideClickRegistered)
+            return;
+
+        await JS.InvokeVoidAsync("happie.unregisterOutsideClick", _elementId);
+        _outsideClickRegistered = false;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await UnregisterOutsideClickAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // Ignore — circuit is already gone.
+        }
+
+        _dotNetRef?.Dispose();
+    }
+}

@@ -238,13 +238,7 @@ public class MyRepositoryTests
 
 Integration tests that hit Azure Table Storage use the local Azurite emulator. **Azurite must be running before executing `dotnet test`**, otherwise all integration tests will fail with a connection error.
 
-Start Azurite before running tests:
-
-```bash
-azurite --silent
-```
-
-Or use the **Azurite extension** in VS Code / Visual Studio, which starts it automatically when the workspace opens.
+**CRITICAL: When you need to run integration tests, you MUST start Azurite as a background process BEFORE running `dotnet test`.** Do NOT skip integration tests because Azurite is not running — start it yourself. Refer to `.kiro/steering/local-dev.md` for the full startup procedure and ports.
 
 The connection string used by integration tests defaults to `"UseDevelopmentStorage=true"` when the `AZURE_STORAGE_CONNECTION_STRING` environment variable is not set — this points to the local Azurite instance on the default ports (Blob: 10000, Queue: 10001, Table: 10002).
 
