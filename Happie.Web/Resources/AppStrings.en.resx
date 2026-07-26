@@ -556,10 +556,10 @@
     <value>Failed to load dishes. Please try again.</value>
   </data>
   <data name="SavedDishes_ExplanationCurrent" xml:space="preserve">
-    <value>Save dishes to quickly reuse them on the day plan.</value>
+    <value>Save dishes to quickly reuse them on the day plan and view their statistics.</value>
   </data>
   <data name="SavedDishes_ExplanationFuture" xml:space="preserve">
-    <value>Coming soon: dish edit history, sharing dishes with other households, adding recipes, and viewing dish statistics.</value>
+    <value>Coming soon: dish edit history, sharing dishes with other households, and adding recipes.</value>
   </data>
   <data name="SavedDishes_SuggestionsTitle" xml:space="preserve">
     <value>Suggestions</value>

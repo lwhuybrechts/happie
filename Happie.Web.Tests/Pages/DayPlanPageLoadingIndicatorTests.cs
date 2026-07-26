@@ -64,9 +64,9 @@ public class DayPlanPageLoadingIndicatorTests : BunitContext
         // Assert — loading indicator is visible while the background refresh task is pending.
         Assert.True(_loadingIndicatorState.IsVisible);
 
-        // Complete the refresh task and trigger the minimum visibility timer.
+        // Complete the refresh task and wait for the decrement to propagate through the async pipeline.
         refreshTaskCompletionSource.SetResult();
-        await Task.Delay(50);
+        await WaitForConditionAsync(() => _fakeDelayService.HasActiveTimer || !_loadingIndicatorState.IsVisible);
         await _fakeDelayService.TriggerTimerAsync();
 
         Assert.False(_loadingIndicatorState.IsVisible);
@@ -138,4 +138,16 @@ public class DayPlanPageLoadingIndicatorTests : BunitContext
             Attendance: new List<AttendanceDto>(),
             Comments: new List<CommentDto>(),
             History: new List<HistoryEntryDto>());
+
+    private static async Task WaitForConditionAsync(Func<bool> predicate, int timeoutMs = 2000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (!predicate())
+        {
+            if (DateTime.UtcNow > deadline)
+                throw new TimeoutException("The condition was not met before the timeout period passed.");
+
+            await Task.Delay(10);
+        }
+    }
 }

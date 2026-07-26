@@ -60,7 +60,7 @@ public class CalendarPagePrefetchTests : BunitContext
     }
 
     [Fact]
-    public void LoadCalendarDataAsync_Offline_NoPrefetchCallsMade()
+    public async Task LoadCalendarDataAsync_Offline_NoPrefetchCallsMade()
     {
         // Arrange.
         var viewedMonth = new DateOnly(2025, 6, 1);
@@ -73,10 +73,21 @@ public class CalendarPagePrefetchTests : BunitContext
         // Act.
         var cut = RenderCalendarPage("2025-06-15");
 
-        // Assert — only the current month should be fetched, no prefetches.
-        // Give a small window for any async prefetch that might fire.
-        Thread.Sleep(100);
+        // Wait for the component's async lifecycle (including Task.Yield) to complete.
+        await WaitForConditionAsync(() =>
+        {
+            try
+            {
+                _cachedApiMock.Verify(x => x.GetCalendarAsync(viewedMonth), Times.Once);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        });
 
+        // Assert — only the current month should be fetched, no prefetches.
         _cachedApiMock.Verify(x => x.GetCalendarAsync(viewedMonth), Times.Once);
         _cachedApiMock.Verify(x => x.GetCalendarAsync(new DateOnly(2025, 7, 1)), Times.Never);
         _cachedApiMock.Verify(x => x.GetCalendarAsync(new DateOnly(2025, 5, 1)), Times.Never);

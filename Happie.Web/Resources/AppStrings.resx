@@ -556,10 +556,10 @@
     <value>Gerechten laden mislukt. Probeer het opnieuw.</value>
   </data>
   <data name="SavedDishes_ExplanationCurrent" xml:space="preserve">
-    <value>Sla gerechten op om ze snel te hergebruiken op het dagplan.</value>
+    <value>Sla gerechten op om ze snel te hergebruiken op het dagplan en hun statistieken te bekijken.</value>
   </data>
   <data name="SavedDishes_ExplanationFuture" xml:space="preserve">
-    <value>Binnenkort: bewerkingsgeschiedenis, gerechten delen met andere huishoudens, recepten toevoegen en gerecht statistieken bekijken.</value>
+    <value>Binnenkort: bewerkingsgeschiedenis, gerechten delen met andere huishoudens en recepten toevoegen.</value>
   </data>
   <data name="SavedDishes_SuggestionsTitle" xml:space="preserve">
     <value>Suggesties</value>

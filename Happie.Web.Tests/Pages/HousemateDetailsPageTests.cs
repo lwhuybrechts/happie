@@ -221,10 +221,10 @@ public class HousemateDetailsPageTests : BunitContext
         var cut = Render<HousemateDetailsPage>(parameters => parameters
             .Add(x => x.Id, ValidHousemateId.ToString()));
 
-        cut.WaitForState(() => cut.FindAll(".housemate-details-page__primary-value").Count > 0, TimeSpan.FromSeconds(5));
+        cut.WaitForState(() => cut.FindAll(".housemate-details-page__summary-value").Count > 0, TimeSpan.FromSeconds(5));
 
         // Assert.
-        var primaryValue = cut.Find(".housemate-details-page__primary-value");
+        var primaryValue = cut.Find(".housemate-details-page__summary-value");
         Assert.Equal("7", primaryValue.TextContent);
     }
 

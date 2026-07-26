@@ -15,6 +15,9 @@ public class FakeDelayService : IDelayService
         _blockDelays = blockDelays;
     }
 
+    /// <summary>Whether there is a pending timer that can be triggered.</summary>
+    public bool HasActiveTimer => _activeTimer is not null && _activeTimer.IsActive;
+
     /// <summary>Completes immediately unless blockDelays is true, in which case it blocks until released.</summary>
     public Task DelayAsync(int milliseconds)
     {

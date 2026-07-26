@@ -98,11 +98,11 @@ public class DonutChartTests : BunitContext
         // Act.
         var cut = RenderDonutChart(segments, HousemateA);
 
-        // Assert.
-        var names = cut.FindAll(".donut-chart__label-text");
-        Assert.Equal("Alice", names[0].TextContent);
-        Assert.Equal("Bob", names[1].TextContent);
-        Assert.Equal("Charlie", names[2].TextContent);
+        // Assert — highlighted housemate renders as span, others as links.
+        var labels = cut.FindAll(".donut-chart__label");
+        Assert.Equal("Alice", labels[0].QuerySelector(".donut-chart__label-text")!.TextContent);
+        Assert.Equal("Bob", labels[1].QuerySelector(".donut-chart__label-link")!.TextContent);
+        Assert.Equal("Charlie", labels[2].QuerySelector(".donut-chart__label-link")!.TextContent);
     }
 
     [Fact]
