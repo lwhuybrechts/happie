@@ -225,7 +225,7 @@ public class HousemateDetailsPageTests : BunitContext
 
         // Assert.
         var primaryValue = cut.Find(".housemate-details-page__summary-value");
-        Assert.Equal("7", primaryValue.TextContent);
+        Assert.Equal("7", primaryValue.TextContent.Trim());
     }
 
     [Fact]
