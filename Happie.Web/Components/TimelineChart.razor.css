@@ -6,24 +6,6 @@
     overflow: hidden;
 }
 
-.timeline-chart::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: max(25vw, 80px);
-    width: 1px;
-    background-color: #e5e7eb;
-    z-index: 2;
-    pointer-events: none;
-}
-
-@media (min-width: 641px) {
-    .timeline-chart::after {
-        left: 150px;
-    }
-}
-
 .timeline-chart--empty {
     padding: 32px 16px;
     text-align: center;
@@ -99,6 +81,29 @@
 .timeline-chart__day-row {
     display: flex;
     flex-direction: row;
+}
+
+/* Data rows container with vertical separator. */
+.timeline-chart__data-rows {
+    position: relative;
+}
+
+.timeline-chart__data-rows::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: max(25vw, 80px);
+    width: 1px;
+    background-color: #e5e7eb;
+    z-index: 2;
+    pointer-events: none;
+}
+
+@media (min-width: 641px) {
+    .timeline-chart__data-rows::after {
+        left: 150px;
+    }
 }
 
 .timeline-chart__row {
@@ -187,11 +192,11 @@
     flex-shrink: 0;
 }
 
-/* Data rows container. */
-
 /* Constrained scroll: both horizontal and vertical scrolling. */
 .timeline-chart__scroll--constrained {
     overflow-y: auto;
+    /* Remove top padding so sticky header flush-sticks to top, preventing content peeking above it. */
+    padding-top: 0;
 }
 
 .timeline-chart__scroll--constrained .timeline-chart__header-row {
@@ -199,6 +204,8 @@
     top: 0;
     z-index: 4;
     background-color: #ffffff;
+    /* Add top padding that was removed from the scroll container. */
+    padding-top: 4px;
 }
 
 .timeline-chart__scroll--constrained .timeline-chart__header-row .timeline-chart__label-cell {

@@ -646,7 +646,7 @@
     <value>Cooked {0} of {1} eating-in days</value>
   </data>
   <data name="Stats_LongestStreak" xml:space="preserve">
-    <value>longest streak</value>
+    <value>longest cooking streak</value>
   </data>
   <data name="Stats_BusiestWeek" xml:space="preserve">
     <value>busiest week</value>
@@ -718,7 +718,7 @@
     <value>Cook ratio</value>
   </data>
   <data name="Stats_CookRatio_Info" xml:space="preserve">
-    <value>This shows how often this housemate cooks relative to their own eating-in days. "Of the days I was home for dinner, how many did I cook?" It answers: "How often do I cook when I'm home?"
+    <value>This shows how often this housemate cooks relative to their own eating-in days. It answers: "How often do I cook when I'm home?"
 
 This may differ from the total times cooked, since you can be chef on days you're not eating in.</value>
   </data>
@@ -727,5 +727,26 @@ This may differ from the total times cooked, since you can be chef on days you'r
   </data>
   <data name="Stats_MostInOneWeek" xml:space="preserve">
     <value>most in one week</value>
+  </data>
+  <data name="Stats_HousemateTitle" xml:space="preserve">
+    <value>{0}'s stats</value>
+  </data>
+  <data name="Stats_DishTitle" xml:space="preserve">
+    <value>Stats for {0}</value>
+  </data>
+  <data name="Stats_TopDishesWithName" xml:space="preserve">
+    <value>{0}'s top dishes</value>
+  </data>
+  <data name="Stats_ShortRange_30d" xml:space="preserve">
+    <value>30d</value>
+  </data>
+  <data name="Stats_ShortRange_3mo" xml:space="preserve">
+    <value>3mo</value>
+  </data>
+  <data name="Stats_ShortRange_1yr" xml:space="preserve">
+    <value>1yr</value>
+  </data>
+  <data name="Stats_ShortRange_AllTime" xml:space="preserve">
+    <value>all time</value>
   </data>
 </root>

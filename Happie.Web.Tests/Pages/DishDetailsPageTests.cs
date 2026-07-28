@@ -186,7 +186,7 @@ public class DishDetailsPageTests : BunitContext
 
         // Assert.
         var title = cut.Find(".dish-details-page__title");
-        Assert.Equal("Pasta Carbonara", title.TextContent);
+        Assert.Equal("Stats_DishTitle", title.TextContent);
     }
 
     private void SetupSavedDishesCache(Guid dishId, string description)

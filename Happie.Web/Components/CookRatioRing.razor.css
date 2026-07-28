@@ -25,6 +25,13 @@
     flex: 1;
 }
 
+.cook-ratio-ring__range-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-left: 6px;
+}
+
 .cook-ratio-ring__info-btn {
     width: 32px;
     height: 32px;

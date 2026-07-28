@@ -20,6 +20,13 @@
     flex: 1;
 }
 
+.donut-chart__range-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-left: 6px;
+}
+
 .donut-chart__header {
     display: flex;
     align-items: center;

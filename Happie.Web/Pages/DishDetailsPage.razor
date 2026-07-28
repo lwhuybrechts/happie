@@ -7,6 +7,7 @@
 @inject NavigationManager NavigationManager
 @inject LoadingIndicatorState LoadingIndicator
 @inject IStringLocalizer<AppStrings> Localizer
+@inject IJSRuntime JS
 
 <PageTitle>Happie</PageTitle>
 
@@ -18,7 +19,13 @@
     else if (_statistics is not null)
     {
         <div class="dish-details-page__header">
-            <h1 class="dish-details-page__title">@_dishDescription</h1>
+            <button class="dish-details-page__back-btn" @onclick="NavigateBackAsync" aria-label="Back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6" />
+                </svg>
+            </button>
+            <h1 class="dish-details-page__title">@Localizer["Stats_DishTitle", _dishDescription]</h1>
         </div>
 
         @if (_statistics.AllTimeTimesCooked > 0)
@@ -106,7 +113,7 @@
 
             @if (_statistics.CookingShares.Sum(x => x.ChefDayCount) > 0)
             {
-                <DonutChart Segments="_statistics.CookingShares" HighlightedHousemateId="Guid.Empty" Title="@Localizer["Stats_CookedBy"]" InfoText="@Localizer["Stats_CookedBy_Info"]" />
+                <DonutChart Segments="_statistics.CookingShares" HighlightedHousemateId="Guid.Empty" Title="@Localizer["Stats_CookedBy"]" InfoText="@Localizer["Stats_CookedBy_Info"]" ShortRangeLabel="@GetShortRangeLabel()" />
             }
         }
         else
@@ -401,6 +408,23 @@
             TimeRange.AllTime => Localizer["Stats_AllTime"],
             _ => throw new InvalidOperationException($"Unknown TimeRange value: {_selectedRange}")
         };
+    }
+
+    private string GetShortRangeLabel()
+    {
+        return _selectedRange switch
+        {
+            TimeRange.ThirtyDays => Localizer["Stats_ShortRange_30d"],
+            TimeRange.ThreeMonths => Localizer["Stats_ShortRange_3mo"],
+            TimeRange.OneYear => Localizer["Stats_ShortRange_1yr"],
+            TimeRange.AllTime => Localizer["Stats_ShortRange_AllTime"],
+            _ => throw new InvalidOperationException($"Unknown TimeRange value: {_selectedRange}")
+        };
+    }
+
+    private async Task NavigateBackAsync()
+    {
+        await JS.InvokeVoidAsync("history.back");
     }
 
     private string GetLastCookedDateFormatted()

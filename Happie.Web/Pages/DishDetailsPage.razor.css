@@ -28,6 +28,29 @@
     border-radius: 16px;
     padding: 16px 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dish-details-page__back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #374151;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background-color 0.15s ease;
+}
+
+.dish-details-page__back-btn:hover {
+    background-color: #f3f4f6;
 }
 
 .dish-details-page__title {

@@ -5,7 +5,13 @@
 {
     <div class="cook-ratio-ring">
         <div class="cook-ratio-ring__header">
-            <h2 class="cook-ratio-ring__title">@Localizer["Stats_CookRatio_Title"]</h2>
+            <h2 class="cook-ratio-ring__title">
+                @Localizer["Stats_CookRatio_Title"]
+                @if (!string.IsNullOrEmpty(ShortRangeLabel))
+                {
+                    <span class="cook-ratio-ring__range-label">@ShortRangeLabel</span>
+                }
+            </h2>
             <button class="cook-ratio-ring__info-btn" @onclick="ToggleInfo" aria-label="Info">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -62,6 +68,10 @@
     /// <summary>The housemate's color for the filled arc.</summary>
     [Parameter, EditorRequired]
     public string Color { get; set; } = "#6b7280";
+
+    /// <summary>Optional short time range label displayed next to the title.</summary>
+    [Parameter]
+    public string? ShortRangeLabel { get; set; }
 
     private bool _showInfo;
 

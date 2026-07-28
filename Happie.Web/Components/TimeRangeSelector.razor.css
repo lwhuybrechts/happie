@@ -1,5 +1,6 @@
 .time-range-selector {
     display: flex;
+    justify-content: center;
     gap: 8px;
 }
 

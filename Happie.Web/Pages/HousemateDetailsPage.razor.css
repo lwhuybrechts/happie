@@ -28,6 +28,29 @@
     border-radius: 16px;
     padding: 16px 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.housemate-details-page__back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #374151;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background-color 0.15s ease;
+}
+
+.housemate-details-page__back-btn:hover {
+    background-color: #f3f4f6;
 }
 
 .housemate-details-page__title {
@@ -43,6 +66,13 @@
     font-weight: 600;
     color: #111827;
     margin: 0 0 12px 0;
+}
+
+.housemate-details-page__section-range {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-left: 6px;
 }
 
 /* Top dishes card container. */
@@ -159,6 +189,29 @@
     font-weight: 700;
     color: #111827;
     line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.housemate-details-page__stat-icon {
+    width: 1.1em;
+    height: 1.1em;
+    flex-shrink: 0;
+}
+
+.housemate-details-page__stat-icon--wide {
+    width: 1.5em;
+}
+
+.housemate-details-page__stat-icon--fire {
+    width: 0.95em;
+    height: 0.95em;
+}
+
+.housemate-details-page__stat-icon--check {
+    width: 0.9em;
+    height: 0.9em;
 }
 
 .housemate-details-page__summary-label {

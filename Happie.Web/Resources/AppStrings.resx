@@ -640,13 +640,13 @@
     <value>{0} keer gekookt (totaal)</value>
   </data>
   <data name="Stats_DaysEatingIn" xml:space="preserve">
-    <value>dagen mee-eten</value>
+    <value>dagen mee-gegeten</value>
   </data>
   <data name="Stats_CookRatio" xml:space="preserve">
     <value>Gekookt {0} van {1} mee-eetdagen</value>
   </data>
   <data name="Stats_LongestStreak" xml:space="preserve">
-    <value>langste reeks</value>
+    <value>langste kook reeks</value>
   </data>
   <data name="Stats_BusiestWeek" xml:space="preserve">
     <value>drukste week</value>
@@ -709,7 +709,7 @@
     <value>Kookverdeling</value>
   </data>
   <data name="Stats_CookingShare_Info" xml:space="preserve">
-    <value>Dit toont de kookdagen van deze huisgenoot ten opzichte van andere huisgenoten. "Van alle dagen dat iemand heeft gekookt, welk percentage was ik?" Het antwoord: "Wie draagt de kooklast?"</value>
+    <value>Dit toont de kookdagen van deze huisgenoot ten opzichte van andere huisgenoten. "Van alle dagen dat iemand heeft gekookt, welk percentage was ik?" Dit beantwoord: "Wie draagt de kooklast?"</value>
   </data>
   <data name="Stats_CookedBy_Info" xml:space="preserve">
     <value>Dit toont welke huisgenoten dit gerecht hebben gekookt in de geselecteerde periode.</value>
@@ -718,7 +718,7 @@
     <value>Kookratio</value>
   </data>
   <data name="Stats_CookRatio_Info" xml:space="preserve">
-    <value>Dit toont hoe vaak deze huisgenoot kookt ten opzichte van de eigen eetdagen. "Van de dagen dat ik thuis at, hoe vaak heb ik gekookt?" Het antwoord: "Hoe vaak kook ik als ik thuis ben?"
+    <value>Dit toont hoe vaak deze huisgenoot kookt ten opzichte van de eigen mee-eetdagen. Dit beantwoord: "Hoe vaak kook ik als ik thuis ben?"
 
 Dit kan afwijken van het totaal aantal keer gekookt, omdat je ook kok kunt zijn op dagen dat je niet mee-eet.</value>
   </data>
@@ -727,5 +727,26 @@ Dit kan afwijken van het totaal aantal keer gekookt, omdat je ook kok kunt zijn 
   </data>
   <data name="Stats_MostInOneWeek" xml:space="preserve">
     <value>meeste in één week</value>
+  </data>
+  <data name="Stats_HousemateTitle" xml:space="preserve">
+    <value>{0}'s stats</value>
+  </data>
+  <data name="Stats_DishTitle" xml:space="preserve">
+    <value>Stats voor {0}</value>
+  </data>
+  <data name="Stats_TopDishesWithName" xml:space="preserve">
+    <value>{0}'s topgerechten</value>
+  </data>
+  <data name="Stats_ShortRange_30d" xml:space="preserve">
+    <value>30d</value>
+  </data>
+  <data name="Stats_ShortRange_3mo" xml:space="preserve">
+    <value>3mnd</value>
+  </data>
+  <data name="Stats_ShortRange_1yr" xml:space="preserve">
+    <value>1jr</value>
+  </data>
+  <data name="Stats_ShortRange_AllTime" xml:space="preserve">
+    <value>totaal</value>
   </data>
 </root>

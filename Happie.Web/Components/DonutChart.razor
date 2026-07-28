@@ -7,7 +7,13 @@
         @if (Title is not null)
         {
             <div class="donut-chart__header">
-                <h2 class="donut-chart__title">@Title</h2>
+                <h2 class="donut-chart__title">
+                    @Title
+                    @if (ShortRangeLabel is not null)
+                    {
+                        <span class="donut-chart__range-label">@ShortRangeLabel</span>
+                    }
+                </h2>
                 @if (InfoText is not null)
                 {
                     <button class="donut-chart__info-btn" @onclick="ToggleInfo" aria-label="Info">
@@ -58,7 +64,7 @@
                     <span class="donut-chart__label-swatch" style="background-color: @segment.Color;"></span>
                     @if (segment.HousemateId != HighlightedHousemateId)
                     {
-                        <a class="donut-chart__label-link" href="housemates/@segment.HousemateId">@segment.Name</a>
+                        <a class="donut-chart__label-link" href="@($"housemates/{segment.HousemateId}")">@segment.Name</a>
                     }
                     else
                     {
@@ -92,6 +98,10 @@
     /// <summary>Optional info text shown when the info button is clicked.</summary>
     [Parameter]
     public string? InfoText { get; set; }
+
+    /// <summary>Optional short time range label displayed next to the title.</summary>
+    [Parameter]
+    public string? ShortRangeLabel { get; set; }
 
     private bool _showInfo;
 

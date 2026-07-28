@@ -196,7 +196,7 @@ public class HousemateDetailsPageTests : BunitContext
 
         // Assert.
         var title = cut.Find(".housemate-details-page__title");
-        Assert.Equal("Bob", title.TextContent);
+        Assert.Equal("Stats_HousemateTitle", title.TextContent);
     }
 
     [Fact]
