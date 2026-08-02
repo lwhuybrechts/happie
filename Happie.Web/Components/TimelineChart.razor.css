@@ -25,18 +25,19 @@
 
 .timeline-chart__grid {
     display: inline-grid;
-    grid-template-rows: auto;
     gap: 0;
     min-width: 100%;
 }
 
+/* Header row: sticky top so it doesn't scroll vertically. */
 .timeline-chart__header-row {
     display: flex;
     align-items: flex-end;
     border-bottom: 1px solid #eeeeee;
     padding-bottom: 4px;
-    position: relative;
-    z-index: 3;
+    position: sticky;
+    top: 0;
+    z-index: 4;
     background-color: #ffffff;
 }
 
@@ -45,7 +46,7 @@
     flex-direction: column;
 }
 
-/* Month labels row: horizontal strip of month spans. */
+/* Month labels row. */
 .timeline-chart__month-row {
     display: flex;
     flex-direction: row;
@@ -53,8 +54,6 @@
     align-items: flex-end;
 }
 
-/* Each month span covers exactly the width of its days.
-   The inner label sticks to the left edge of the scroll viewport. */
 .timeline-chart__month-span {
     display: inline-block;
     flex-shrink: 0;
@@ -83,39 +82,39 @@
     flex-direction: row;
 }
 
-/* Data rows container with vertical separator. */
-.timeline-chart__data-rows {
-    position: relative;
+.timeline-chart__header-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 18px;
+    width: 18px;
+    flex-shrink: 0;
 }
 
-.timeline-chart__data-rows::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: max(25vw, 80px);
-    width: 1px;
-    background-color: #e5e7eb;
-    z-index: 2;
-    pointer-events: none;
+.timeline-chart__header-cell--month-start {
+    border-left: 1px solid #dddddd;
 }
 
-@media (min-width: 641px) {
-    .timeline-chart__data-rows::after {
-        left: 150px;
-    }
+.timeline-chart__day-number {
+    font-size: 10px;
+    color: #999999;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
 }
 
+/* Data rows. */
 .timeline-chart__row {
     display: flex;
     align-items: center;
     min-height: 26px;
 }
 
+/* Label cells: sticky left so they don't scroll horizontally. */
 .timeline-chart__label-cell {
     position: sticky;
     left: 0;
-    z-index: 1;
+    z-index: 2;
     background-color: #ffffff;
     min-width: 80px;
     max-width: 25vw;
@@ -132,6 +131,11 @@
         max-width: 150px;
         width: 150px;
     }
+}
+
+/* Corner cell in the header row: sticky in both directions. */
+.timeline-chart__corner-cell {
+    z-index: 5;
 }
 
 .timeline-chart__label {
@@ -154,25 +158,23 @@
     text-decoration-color: currentColor;
 }
 
-.timeline-chart__header-cell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    min-width: 18px;
-    width: 18px;
+/* Separator cell: sticky left at the label column edge so it doesn't scroll horizontally. */
+.timeline-chart__separator-cell {
+    position: sticky;
+    left: max(25vw, 80px);
+    width: 1px;
+    min-width: 1px;
     flex-shrink: 0;
+    background-color: #e5e7eb;
+    align-self: stretch;
+    z-index: 2;
+    pointer-events: none;
 }
 
-.timeline-chart__header-cell--month-start {
-    border-left: 1px solid #dddddd;
-}
-
-.timeline-chart__day-number {
-    font-size: 10px;
-    color: #999999;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
+@media (min-width: 641px) {
+    .timeline-chart__separator-cell {
+        left: 150px;
+    }
 }
 
 .timeline-chart__cell {
@@ -192,24 +194,16 @@
     flex-shrink: 0;
 }
 
-/* Constrained scroll: both horizontal and vertical scrolling. */
+/* Constrained scroll: both horizontal and vertical scrolling with max-height. */
 .timeline-chart__scroll--constrained {
     overflow-y: auto;
-    /* Remove top padding so sticky header flush-sticks to top, preventing content peeking above it. */
+    /* Remove top padding so sticky header flush-sticks to top. */
     padding-top: 0;
 }
 
 .timeline-chart__scroll--constrained .timeline-chart__header-row {
-    position: sticky;
-    top: 0;
-    z-index: 4;
-    background-color: #ffffff;
     /* Add top padding that was removed from the scroll container. */
     padding-top: 4px;
-}
-
-.timeline-chart__scroll--constrained .timeline-chart__header-row .timeline-chart__label-cell {
-    z-index: 5;
 }
 
 /* Long-press overlay for full label text. */

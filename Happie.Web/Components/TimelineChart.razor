@@ -17,11 +17,11 @@ else
              @ref="_scrollRef"
              style="@(MaxVisibleRows.HasValue ? $"max-height: {(MaxVisibleRows.Value * 26) + 50}px;" : "")">
             <div class="timeline-chart__grid">
-                @* Column headers: month labels (sticky) and day numbers. *@
+                @* Column headers: month labels (sticky top) and day numbers. *@
                 <div class="timeline-chart__header-row">
-                    <div class="timeline-chart__label-cell"></div>
+                    <div class="timeline-chart__label-cell timeline-chart__corner-cell"></div>
                     <div class="timeline-chart__header-cells">
-                        @* Month labels row — positioned above day numbers. *@
+                        @* Month labels row. *@
                         <div class="timeline-chart__month-row">
                             @{
                                 var prevMonth = "";
@@ -38,7 +38,6 @@ else
                                 {
                                     if (i > 0 && prevMonth != "")
                                     {
-                                        // Close the previous month span by calculating its width.
                                         var spanWidth = i - monthStartIndex;
                                         <span class="timeline-chart__month-span" style="min-width: @(spanWidth * CellWidth)px; width: @(spanWidth * CellWidth)px;">
                                             <span class="timeline-chart__month-label">@prevMonth</span>
@@ -48,7 +47,6 @@ else
                                     monthStartIndex = i;
                                 }
                             }
-                            @* Final month span to end of visible range. *@
                             @{
                                 var finalWidth = _visibleDates.Count - monthStartIndex;
                             }
@@ -71,7 +69,6 @@ else
                 </div>
 
                 @* Data rows. *@
-                <div class="timeline-chart__data-rows">
                 @foreach (var row in Rows)
                 {
                     <div class="timeline-chart__row">
@@ -84,6 +81,7 @@ else
                             <span class="timeline-chart__label @(row.NavigationUri is not null ? "timeline-chart__label--clickable" : "")"
                                   style="color: @row.Color;">@row.Label</span>
                         </div>
+                        <div class="timeline-chart__separator-cell"></div>
                         @foreach (var date in _visibleDates)
                         {
                             var hasDot = row.Dates.Contains(date);
@@ -96,7 +94,6 @@ else
                         }
                     </div>
                 }
-                </div>
             </div>
         </div>
 
