@@ -68,7 +68,8 @@
                        @oninput="HandleDishInput"
                        @onkeydown="HandleKeyDownAsync"
                        disabled="@(_isSaving || _isSavedMode)"
-                       aria-label="@Localizer["DishPanel_InputAriaLabel"]" />
+                       aria-label="@Localizer["DishPanel_InputAriaLabel"]"
+                       @ref="_dishInputRef" />
 
                 <button class="dish-panel__mode-toggle @(_isSavedMode ? "dish-panel__mode-toggle--active" : "")"
                         @onclick="HandleModeToggleAsync"
@@ -209,6 +210,8 @@
     private string _promoteErrorMessage = string.Empty;
     private bool _isAnimating;
     private ElementReference _panelRef;
+    private ElementReference _dishInputRef;
+    private bool _shouldFocusDishInput;
 
     // Mode toggle state.
     private bool _isSavedMode;
@@ -278,6 +281,15 @@
         }
 
         _lastEditorName = ResolveEditorName();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldFocusDishInput)
+        {
+            _shouldFocusDishInput = false;
+            try { await _dishInputRef.FocusAsync(); } catch { }
+        }
     }
 
     private string? ResolveEditorName()
@@ -421,6 +433,7 @@
         _selectedSavedDishIds = [];
         _selectedSavedDishDescription = string.Empty;
         _editValue = combinedDescription;
+        _shouldFocusDishInput = true;
         StateHasChanged();
     }
 

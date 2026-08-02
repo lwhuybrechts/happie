@@ -1,8 +1,10 @@
 @using Happie.Shared.Contracts
+@using Happie.Web.Services.Caching
 @inject IStringLocalizer<AppStrings> Localizer
 @inject IJSRuntime JS
 @inject HttpClient Http
 @inject IConnectivityService ConnectivityService
+@inject ICachedApiClient CachedApi
 
 @if (_isOpen)
 {
@@ -315,6 +317,9 @@
                     _sortedDishes = _sortedDishes.OrderBy(x => x.Description, StringComparer.OrdinalIgnoreCase).ToList();
                     if (!_selectedDishIds.Contains(created.Id) && !IsAtLimit)
                         _selectedDishIds.Add(created.Id);
+
+                    // Update the saved dishes cache so the next modal open shows the new dish immediately.
+                    _ = CachedApi.RefreshSavedDishesCacheAsync();
                 }
             }
             else if ((int)response.StatusCode == 409)
