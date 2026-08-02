@@ -64,13 +64,13 @@ jobs:
         run: dotnet publish Happie.Api --configuration Release --output ./publish/api
 
       - name: Upload Web artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: happie-web
           path: ./publish/web
 
       - name: Upload API artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: happie-api
           path: ./publish/api
@@ -82,7 +82,7 @@ jobs:
 
     steps:
       - name: Download Web artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: happie-web
           path: ./web
@@ -105,7 +105,7 @@ jobs:
 
     steps:
       - name: Download API artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: happie-api
           path: ./api
