@@ -81,7 +81,6 @@
     private IReadOnlyList<CalendarDayDto> _days = [];
     private DateOnly _viewedMonth;
     private DateOnly? _selectedDate;
-    private bool _isGracefulLoading;
     private bool _loadError;
     private bool _noDataOffline;
     private CancellationTokenSource? _prefetchCts;
@@ -298,7 +297,6 @@
 
         // Clear dots but keep the grid visible so the new month renders immediately.
         _days = [];
-        _isGracefulLoading = true;
         LoadingIndicator.IncrementAsync();
 
         // Capture the month we're loading so we can detect stale results after await.
@@ -327,7 +325,6 @@
         if (fetchResult.Data is not null)
         {
             _days = fetchResult.Data.Days;
-            _isGracefulLoading = false;
 
             if (fetchResult.BackgroundRefreshTask is not null)
             {
@@ -341,20 +338,17 @@
         else if (fetchResult.HasLoadError)
         {
             _loadError = true;
-            _isGracefulLoading = false;
             LoadingIndicator.DecrementAsync();
         }
         else if (!ConnectivityService.IsOnline)
         {
             _noDataOffline = true;
-            _isGracefulLoading = false;
             LoadingIndicator.DecrementAsync();
         }
         else
         {
             // Null result with no error and online — treat as load error.
             _loadError = true;
-            _isGracefulLoading = false;
             LoadingIndicator.DecrementAsync();
         }
     }
@@ -414,7 +408,6 @@
     private async Task RetryAsync()
     {
         _loadError = false;
-        _isGracefulLoading = true;
         _days = [];
         LoadingIndicator.IncrementAsync();
 
@@ -423,20 +416,17 @@
         if (result is not null)
         {
             _days = result.Days;
-            _isGracefulLoading = false;
             LoadingIndicator.DecrementAsync();
             _ = PrefetchAdjacentMonthsAsync();
         }
         else if (!ConnectivityService.IsOnline)
         {
             _noDataOffline = true;
-            _isGracefulLoading = false;
             LoadingIndicator.DecrementAsync();
         }
         else
         {
             _loadError = true;
-            _isGracefulLoading = false;
             LoadingIndicator.DecrementAsync();
         }
     }
@@ -448,7 +438,6 @@
             return;
 
         _days = updatedCalendar.Days;
-        _isGracefulLoading = false;
         InvokeAsync(StateHasChanged);
     }
 

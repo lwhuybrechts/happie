@@ -8,6 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Explicit override for vulnerable transitive dependency from bUnit. Remove when bUnit ships with AngleSharp >= 1.7.0. -->
+    <PackageReference Include="AngleSharp" Version="1.7.0" />
     <PackageReference Include="bunit" Version="2.7.2" />
     <PackageReference Include="coverlet.collector" Version="10.0.1">
       <PrivateAssets>all</PrivateAssets>
