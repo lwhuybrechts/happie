@@ -117,6 +117,8 @@
     </div>
 }
 
+@implements IDisposable
+
 @code {
     /// <summary>All attendance entries for the day; the modal filters to Unknown status excluding the active housemate.</summary>
     [Parameter, EditorRequired]
@@ -218,5 +220,11 @@
 
         _isSending = false;
         Close();
+    }
+
+    public void Dispose()
+    {
+        if (_isOpen)
+            _ = JS.InvokeVoidAsync("happie.unlockScroll");
     }
 }
