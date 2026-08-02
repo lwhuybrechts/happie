@@ -161,8 +161,8 @@ public class DishPanelAutocompleteTests : BunitContext
         Assert.NotEmpty(cut.FindAll("span.dish-panel__ghost-text-suggestion"));
 
         // Act.
-        var tapTarget = cut.Find("span.dish-panel__ghost-tap-target");
-        tapTarget.Click();
+        var tapTarget = cut.Find("span.dish-panel__ghost-text-suggestion");
+        tapTarget.MouseDown();
 
         // Assert.
         Assert.Empty(cut.FindAll("span.dish-panel__ghost-text-suggestion"));

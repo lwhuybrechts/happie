@@ -40,6 +40,7 @@
     <!-- Copy the resx files into the test output so the translation key tests can load them at runtime. -->
     <Content Include="..\Happie.Web\Resources\AppStrings.en.resx" CopyToOutputDirectory="PreserveNewest" Link="Resources\AppStrings.en.resx" />
     <Content Include="..\Happie.Web\Resources\AppStrings.resx" CopyToOutputDirectory="PreserveNewest" Link="Resources\AppStrings.resx" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
