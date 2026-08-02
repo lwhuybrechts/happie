@@ -371,3 +371,63 @@
     font-size: 13px;
     text-align: center;
 }
+
+/* Autocomplete ghost text overlay. */
+
+.dish-panel__input-container {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.dish-panel__ghost-clip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    pointer-events: none;
+}
+
+.dish-panel__ghost-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    font-size: 16px;
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+    cursor: text;
+}
+
+.dish-panel__ghost-text-typed {
+    color: transparent;
+    white-space: pre;
+}
+
+.dish-panel__ghost-text-suggestion {
+    color: #a0aec0;
+    opacity: 0.5;
+    white-space: pre;
+    pointer-events: auto;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    border-radius: 4px;
+    padding: 2px 0;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.dish-panel__ghost-text-suggestion:hover {
+    opacity: 0.8;
+    background-color: rgba(76, 175, 80, 0.12);
+}
+
+.dish-panel__ghost-tap-target {
+    display: none;
+}

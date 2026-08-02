@@ -1,8 +1,11 @@
 @using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@using Happie.Web.Services
 @using Happie.Web.Services.Caching
 @inject ICachedApiClient CachedApi
 @inject IStringLocalizer<AppStrings> Localizer
 @inject IJSRuntime JS
+@implements IDisposable
 
 <div class="dish-panel @(_isAnimating ? "dish-panel--animating" : "")" @ref="_panelRef">
     <div class="dish-panel__header">
@@ -60,16 +63,34 @@
         @if (_isEditing)
         {
             <div class="dish-panel__input-row">
-                <input class="dish-panel__input @(_isSavedMode ? "dish-panel__input--saved" : "")"
-                       type="text"
-                       maxlength="100"
-                       placeholder="@Localizer["DishPanel_Placeholder"]"
-                       value="@_editValue"
-                       @oninput="HandleDishInput"
-                       @onkeydown="HandleKeyDownAsync"
-                       disabled="@(_isSaving || _isSavedMode)"
-                       aria-label="@Localizer["DishPanel_InputAriaLabel"]"
-                       @ref="_dishInputRef" />
+                <div class="dish-panel__input-container">
+                    <input class="dish-panel__input @(_isSavedMode ? "dish-panel__input--saved" : "")"
+                           type="text"
+                           maxlength="100"
+                           placeholder="@Localizer["DishPanel_Placeholder"]"
+                           value="@_editValue"
+                           @oninput="HandleDishInput"
+                           @onkeydown="HandleKeyDownAsync"
+                           @onfocus="HandleDishFocus"
+                           @onblur="HandleDishBlur"
+                           disabled="@(_isSaving || _isSavedMode)"
+                           aria-label="@Localizer["DishPanel_InputAriaLabel"]"
+                           @ref="_dishInputRef" />
+
+                    @if (_ghostText is not null && !_isSavedMode)
+                    {
+                        <span class="dish-panel__ghost-clip">
+                            <span class="dish-panel__ghost-text" aria-hidden="true">
+                                <span class="dish-panel__ghost-text-typed">@_editValue</span><span
+                                    class="dish-panel__ghost-text-suggestion"
+                                    @onmousedown="HandleGhostTextTap"
+                                    @onmousedown:preventDefault
+                                    @ontouchstart="HandleGhostTextTap"
+                                    @ontouchstart:preventDefault>@_ghostText</span>
+                            </span>
+                        </span>
+                    }
+                </div>
 
                 <button class="dish-panel__mode-toggle @(_isSavedMode ? "dish-panel__mode-toggle--active" : "")"
                         @onclick="HandleModeToggleAsync"
@@ -218,6 +239,13 @@
     private List<Guid> _selectedSavedDishIds = [];
     private string _selectedSavedDishDescription = string.Empty;
 
+    // Autocomplete state.
+    private string? _ghostText;
+    private IReadOnlyList<SavedDishDto>? _savedDishes;
+    private bool _cursorAtEnd = true;
+    private string? _matchedDishName;
+    private bool _tabPreventionEnabled;
+
     private bool HasDinnerTime => Dish?.DinnerTimeHour is not null && Dish?.DinnerTimeMinute is not null;
 
     private bool _hasTimeValidationError => !IsTimeValueValid(_editTimeValue);
@@ -270,6 +298,12 @@
         return string.Empty;
     }
 
+    protected override void OnInitialized()
+    {
+        CachedApi.OnSavedDishesUpdated += HandleSavedDishesUpdated;
+        _ = LoadSavedDishesAsync();
+    }
+
     protected override void OnParametersSet()
     {
         // Don't overwrite the optimistic value while a save is in progress.
@@ -289,6 +323,12 @@
         {
             _shouldFocusDishInput = false;
             try { await _dishInputRef.FocusAsync(); } catch { }
+        }
+
+        if (_isEditing && !_isSavedMode && !_tabPreventionEnabled)
+        {
+            _tabPreventionEnabled = true;
+            try { await JS.InvokeVoidAsync("happie.enableTabPrevention", _dishInputRef); } catch { }
         }
     }
 
@@ -332,6 +372,8 @@
         _isSavedMode = _committedSavedDishIds is not null && _committedSavedDishIds.Count > 0;
         _selectedSavedDishIds = _committedSavedDishIds?.ToList() ?? [];
         _selectedSavedDishDescription = _isSavedMode ? _committedValue : string.Empty;
+        _tabPreventionEnabled = false;
+        try { await JS.InvokeVoidAsync("happie.disableTabPrevention", _dishInputRef); } catch { }
         await AnimateHeightChangeAsync(() => _isEditing = false);
     }
 
@@ -362,14 +404,19 @@
         _editTimeValue = args.Value?.ToString() ?? string.Empty;
     }
 
-    private void HandleDishInput(ChangeEventArgs args)
+    private async Task HandleDishInput(ChangeEventArgs args)
     {
         _editValue = args.Value?.ToString() ?? string.Empty;
+        await UpdateAutocompleteAsync();
     }
 
     private async Task HandleKeyDownAsync(KeyboardEventArgs args)
     {
-        if (args.Key == "Enter")
+        if (args.Key == "Tab" && _ghostText is not null)
+            await AcceptAutocompleteSuggestionAsync();
+        else if (args.Key == "ArrowRight" && _ghostText is not null && _cursorAtEnd)
+            await AcceptAutocompleteSuggestionAsync();
+        else if (args.Key == "Enter")
             await SaveAsync();
         else if (args.Key == "Escape")
             await DiscardEdit();
@@ -379,6 +426,103 @@
     {
         // Always open the modal regardless of current mode.
         await OpenSavedDishModalAsync();
+    }
+
+    private async Task HandleDishFocus()
+    {
+        // Small delay to let the browser settle cursor position after focus.
+        await Task.Yield();
+        await UpdateAutocompleteAsync();
+    }
+
+    private void HandleDishBlur()
+    {
+        _ghostText = null;
+        _matchedDishName = null;
+    }
+
+    private async Task UpdateAutocompleteAsync()
+    {
+        if (_isSavedMode)
+        {
+            _ghostText = null;
+            _matchedDishName = null;
+            return;
+        }
+
+        // Check cursor position via JS interop.
+        try
+        {
+            _cursorAtEnd = await JS.InvokeAsync<bool>("happie.getCursorAtEnd", _dishInputRef);
+        }
+        catch
+        {
+            _cursorAtEnd = true;
+        }
+
+        if (!_cursorAtEnd)
+        {
+            _ghostText = null;
+            _matchedDishName = null;
+            return;
+        }
+
+        var activeSegment = DishAutocompleteEngine.ExtractActiveSegment(_editValue);
+        _ghostText = DishAutocompleteEngine.GetSuggestion(activeSegment, _savedDishes, _editValue);
+        _matchedDishName = _ghostText is not null ? activeSegment + _ghostText : null;
+
+        // Sync ghost text overlay position with input scroll after render.
+        if (_ghostText is not null)
+        {
+            StateHasChanged();
+            await Task.Yield();
+            try { await JS.InvokeVoidAsync("happie.syncGhostScroll", _dishInputRef); } catch { }
+        }
+    }
+
+    private async Task AcceptAutocompleteSuggestionAsync()
+    {
+        if (_matchedDishName is null)
+            return;
+
+        _editValue = DishAutocompleteEngine.AcceptSuggestion(_editValue, _matchedDishName);
+        _ghostText = null;
+        _matchedDishName = null;
+
+        // Let Blazor update the DOM with the new value before positioning the cursor.
+        StateHasChanged();
+        await Task.Yield();
+
+        // Set cursor to end of accepted text and scroll to show it.
+        try
+        {
+            await JS.InvokeVoidAsync("happie.setCursorPosition", _dishInputRef, _editValue.Length);
+        }
+        catch { }
+    }
+
+    private async Task HandleGhostTextTap()
+    {
+        await AcceptAutocompleteSuggestionAsync();
+        // Re-focus the input after tapping ghost text.
+        try { await _dishInputRef.FocusAsync(); } catch { }
+    }
+
+    private void HandleSavedDishesUpdated(IReadOnlyList<SavedDishDto> dishes)
+    {
+        _savedDishes = dishes;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadSavedDishesAsync()
+    {
+        var result = await CachedApi.GetSavedDishesAsync();
+        _savedDishes = result.Dishes;
+    }
+
+    public void Dispose()
+    {
+        CachedApi.OnSavedDishesUpdated -= HandleSavedDishesUpdated;
     }
 
     private async Task OpenSavedDishModalAsync()
@@ -434,6 +578,12 @@
         _selectedSavedDishDescription = string.Empty;
         _editValue = combinedDescription;
         _shouldFocusDishInput = true;
+
+        // Re-evaluate autocomplete for the new input.
+        var activeSegment = DishAutocompleteEngine.ExtractActiveSegment(_editValue);
+        _ghostText = DishAutocompleteEngine.GetSuggestion(activeSegment, _savedDishes, _editValue);
+        _matchedDishName = _ghostText is not null ? activeSegment + _ghostText : null;
+
         StateHasChanged();
     }
 
@@ -452,6 +602,8 @@
 
         // Animate the collapse from edit mode to read mode.
         _isAnimating = true;
+        _tabPreventionEnabled = false;
+        try { await JS.InvokeVoidAsync("happie.disableTabPrevention", _dishInputRef); } catch { }
         await JS.InvokeVoidAsync("happie.captureHeight", _panelRef);
         _isEditing = false;
         StateHasChanged();

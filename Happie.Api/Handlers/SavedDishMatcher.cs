@@ -1,4 +1,5 @@
 using Happie.Api.Domain;
+using Happie.Shared.Domain;
 
 namespace Happie.Api.Handlers;
 
@@ -20,8 +21,8 @@ internal static class SavedDishMatcher
             return null;
 
         // Split into segments: a single description without " & " yields one segment.
-        var segments = trimmedDescription.Contains(" & ")
-            ? trimmedDescription.Split(" & ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        var segments = trimmedDescription.Contains(DishConstants.Delimiter)
+            ? trimmedDescription.Split(DishConstants.Delimiter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             : [trimmedDescription];
 
         if (segments.Length == 0 || segments.Length > 10)
