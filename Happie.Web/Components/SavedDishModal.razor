@@ -30,13 +30,16 @@
                 <p class="saved-dish-modal__error">@_promoteError</p>
             }
 
-            @if (ShowPromoteOption)
+            @if (_promotableSegments.Count > 0)
             {
-                <button class="saved-dish-modal__action-item saved-dish-modal__action-item--promote"
-                        @onclick="HandlePromoteAsync"
-                        disabled="@(_isPromoting || !ConnectivityService.IsOnline)">
-                    @string.Format(Localizer["SavedDish_Promote"].Value, _currentDescription.Trim())
-                </button>
+                @foreach (var segment in _promotableSegments)
+                {
+                    <button class="saved-dish-modal__action-item saved-dish-modal__action-item--promote"
+                            @onclick="() => HandlePromoteAsync(segment)"
+                            disabled="@(_isPromoting || !ConnectivityService.IsOnline)">
+                        @string.Format(Localizer["SavedDish_Promote"].Value, segment)
+                    </button>
+                }
 
                 @if (!ConnectivityService.IsOnline)
                 {
@@ -115,21 +118,36 @@
 
     private bool IsAtLimit => _selectedDishIds.Count >= SelectionLimit;
 
-    private bool ShowPromoteOption
+    private List<string> _promotableSegments = [];
+
+    /// <summary>
+    /// Computes which segments of the current description can be promoted to saved dishes.
+    /// Splits on '&amp;' and returns all segments that are not already a saved dish.
+    /// </summary>
+    private void ComputePromotableSegments()
     {
-        get
+        _promotableSegments = [];
+        var trimmed = _currentDescription.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+            return;
+
+        var segments = trimmed.Split('&', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var segment in segments)
         {
-            var trimmed = _currentDescription.Trim();
-            if (string.IsNullOrEmpty(trimmed) || trimmed.Length > 100)
-                return false;
+            if (string.IsNullOrEmpty(segment) || segment.Length > 100)
+                continue;
 
-            // Hide if description contains '&' — not allowed in saved dish names.
-            if (trimmed.Contains('&'))
-                return false;
+            // Skip if it contains '&' (shouldn't happen after split, but guard).
+            if (segment.Contains('&'))
+                continue;
 
-            // Hide if it matches an existing saved dish (case-insensitive).
-            return !_sortedDishes.Any(x =>
-                string.Equals(x.Description.Trim(), trimmed, StringComparison.OrdinalIgnoreCase));
+            // Skip if it already matches an existing saved dish.
+            if (_sortedDishes.Any(x =>
+                string.Equals(x.Description.Trim(), segment, StringComparison.OrdinalIgnoreCase)))
+                continue;
+
+            _promotableSegments.Add(segment);
         }
     }
 
@@ -217,6 +235,8 @@
         if (_scrollTargetId is null && _selectedDishIds.Count > 0)
             _scrollTargetId = _selectedDishIds[0];
 
+        ComputePromotableSegments();
+
         _isOpen = true;
         StateHasChanged();
 
@@ -296,7 +316,7 @@
         await OnCustomMode.InvokeAsync(prefillText);
     }
 
-    private async Task HandlePromoteAsync()
+    private async Task HandlePromoteAsync(string segment)
     {
         _isPromoting = true;
         _promoteError = null;
@@ -304,8 +324,7 @@
 
         try
         {
-            var trimmed = _currentDescription.Trim();
-            var response = await Http.PostAsJsonAsync("saved-dishes", new CreateSavedDishRequest(trimmed));
+            var response = await Http.PostAsJsonAsync("saved-dishes", new CreateSavedDishRequest(segment));
 
             if (response.IsSuccessStatusCode)
             {
@@ -318,6 +337,9 @@
                     if (!_selectedDishIds.Contains(created.Id) && !IsAtLimit)
                         _selectedDishIds.Add(created.Id);
 
+                    // Remove from promotable segments since it's now a saved dish.
+                    _promotableSegments.Remove(segment);
+
                     // Update the saved dishes cache so the next modal open shows the new dish immediately.
                     _ = CachedApi.RefreshSavedDishesCacheAsync();
                 }
@@ -327,9 +349,11 @@
                 // Already exists — show error and auto-check the match.
                 _promoteError = Localizer["SavedDish_PromoteAlreadyExists"].Value;
                 var match = _sortedDishes.FirstOrDefault(x =>
-                    string.Equals(x.Description.Trim(), _currentDescription.Trim(), StringComparison.OrdinalIgnoreCase));
+                    string.Equals(x.Description.Trim(), segment, StringComparison.OrdinalIgnoreCase));
                 if (match is not null && !_selectedDishIds.Contains(match.Id) && !IsAtLimit)
                     _selectedDishIds.Add(match.Id);
+
+                _promotableSegments.Remove(segment);
             }
             else
             {
