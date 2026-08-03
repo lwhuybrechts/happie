@@ -90,7 +90,7 @@
                                    class="ingredients-panel__amount-input"
                                    min="@RecipeConstants.MinIngredientAmount"
                                    max="@RecipeConstants.MaxIngredientAmount"
-                                   step="0.01"
+                                   step="1"
                                    value="@FormatEditAmount(item.Amount)"
                                    @onchange="@(args => OnAmountChange(currentIndex, args))" />
                             <select class="ingredients-panel__unit-select"
@@ -98,7 +98,7 @@
                                     @onchange="@(args => OnUnitChange(currentIndex, args))">
                                 @foreach (var unit in _unitOptions)
                                 {
-                                    <option value="@((int)unit)">@GetUnitDisplayName(unit)</option>
+                                    <option value="@((int)unit)">@GetUnitDisplayName(unit, item.Amount)</option>
                                 }
                             </select>
                             <input type="text"
@@ -269,7 +269,7 @@
     private string FormatScaledAmount(IngredientDto ingredient)
     {
         if (BaseServings is null or 0)
-            return FormatDisplayAmount(ingredient.Amount, ingredient.Unit);
+            return FormatDisplayAmount(ingredient.Amount, ingredient.Unit) + FormatUnitDisplay(ingredient.Unit, ingredient.Amount);
 
         var scaledAmount = PortionScaler.Scale(ingredient.Amount, BaseServings.Value, _adjustedServings);
         return FormatDisplayAmount(scaledAmount, ingredient.Unit) + FormatUnitDisplay(ingredient.Unit, scaledAmount);
@@ -339,26 +339,29 @@
         };
     }
 
-    private string GetUnitDisplayName(UnitOfMeasurement unit)
+    private string GetUnitDisplayName(UnitOfMeasurement unit, double amount)
     {
+        var isPlural = amount > 1.0;
+        var suffix = isPlural ? "_Plural" : "";
+
         return unit switch
         {
-            UnitOfMeasurement.None => Localizer["DishDetails_UnitNone"],
-            UnitOfMeasurement.G => Localizer["DishDetails_UnitG"],
-            UnitOfMeasurement.Kg => Localizer["DishDetails_UnitKg"],
-            UnitOfMeasurement.Ml => Localizer["DishDetails_UnitMl"],
-            UnitOfMeasurement.L => Localizer["DishDetails_UnitL"],
-            UnitOfMeasurement.Tbsp => Localizer["DishDetails_UnitTbsp"],
-            UnitOfMeasurement.Tsp => Localizer["DishDetails_UnitTsp"],
-            UnitOfMeasurement.Piece => Localizer["DishDetails_UnitPiece"],
-            UnitOfMeasurement.Stalk => Localizer["DishDetails_UnitStalk"],
-            UnitOfMeasurement.Clove => Localizer["DishDetails_UnitClove"],
-            UnitOfMeasurement.Can => Localizer["DishDetails_UnitCan"],
-            UnitOfMeasurement.Slice => Localizer["DishDetails_UnitSlice"],
-            UnitOfMeasurement.Pinch => Localizer["DishDetails_UnitPinch"],
-            UnitOfMeasurement.Handful => Localizer["DishDetails_UnitHandful"],
-            UnitOfMeasurement.Bunch => Localizer["DishDetails_UnitBunch"],
-            UnitOfMeasurement.Cup => Localizer["DishDetails_UnitCup"],
+            UnitOfMeasurement.None => Localizer[$"DishDetails_UnitNone{suffix}"],
+            UnitOfMeasurement.G => Localizer[$"DishDetails_UnitG{suffix}"],
+            UnitOfMeasurement.Kg => Localizer[$"DishDetails_UnitKg{suffix}"],
+            UnitOfMeasurement.Ml => Localizer[$"DishDetails_UnitMl{suffix}"],
+            UnitOfMeasurement.L => Localizer[$"DishDetails_UnitL{suffix}"],
+            UnitOfMeasurement.Tbsp => Localizer[$"DishDetails_UnitTbsp{suffix}"],
+            UnitOfMeasurement.Tsp => Localizer[$"DishDetails_UnitTsp{suffix}"],
+            UnitOfMeasurement.Piece => Localizer[$"DishDetails_UnitPiece{suffix}"],
+            UnitOfMeasurement.Stalk => Localizer[$"DishDetails_UnitStalk{suffix}"],
+            UnitOfMeasurement.Clove => Localizer[$"DishDetails_UnitClove{suffix}"],
+            UnitOfMeasurement.Can => Localizer[$"DishDetails_UnitCan{suffix}"],
+            UnitOfMeasurement.Slice => Localizer[$"DishDetails_UnitSlice{suffix}"],
+            UnitOfMeasurement.Pinch => Localizer[$"DishDetails_UnitPinch{suffix}"],
+            UnitOfMeasurement.Handful => Localizer[$"DishDetails_UnitHandful{suffix}"],
+            UnitOfMeasurement.Bunch => Localizer[$"DishDetails_UnitBunch{suffix}"],
+            UnitOfMeasurement.Cup => Localizer[$"DishDetails_UnitCup{suffix}"],
             _ => string.Empty
         };
     }
