@@ -60,6 +60,10 @@ builder.Services.AddSingleton<IDayHistoryEntryMapper, DayHistoryEntryMapper>();
 builder.Services.AddSingleton<IPushSubscriptionMapper, PushSubscriptionMapper>();
 builder.Services.AddSingleton<ISavedDishMapper, SavedDishMapper>();
 builder.Services.AddSingleton<IDayPlanDishLinkMapper, DayPlanDishLinkMapper>();
+builder.Services.AddSingleton<IRecipeSummaryMapper, RecipeSummaryMapper>();
+builder.Services.AddSingleton<IIngredientMapper, IngredientMapper>();
+builder.Services.AddSingleton<ICookingInstructionMapper, CookingInstructionMapper>();
+builder.Services.AddSingleton<IIngredientCheckMapper, IngredientCheckMapper>();
 
 // Register all repositories as singletons.
 builder.Services.AddSingleton<IHouseholdRepository, HouseholdRepository>();
@@ -71,6 +75,10 @@ builder.Services.AddSingleton<IDayHistoryRepository, DayHistoryRepository>();
 builder.Services.AddSingleton<IPushSubscriptionRepository, PushSubscriptionRepository>();
 builder.Services.AddSingleton<ISavedDishRepository, SavedDishRepository>();
 builder.Services.AddSingleton<IDayPlanDishLinkRepository, DayPlanDishLinkRepository>();
+builder.Services.AddSingleton<IRecipeSummaryRepository, RecipeSummaryRepository>();
+builder.Services.AddSingleton<IIngredientRepository, IngredientRepository>();
+builder.Services.AddSingleton<ICookingInstructionRepository, CookingInstructionRepository>();
+builder.Services.AddSingleton<IIngredientCheckRepository, IngredientCheckRepository>();
 
 // Register SentryOptions with startup validation.
 builder.Services
@@ -94,6 +102,9 @@ builder.Services.AddSingleton<IDayHandler, DayHandler>();
 
 // Register saved dish handlers.
 builder.Services.AddSingleton<ISavedDishHandler, SavedDishHandler>();
+
+// Register recipe handlers.
+builder.Services.AddSingleton<IRecipeHandler, RecipeHandler>();
 
 // Register statistics handlers.
 builder.Services.AddSingleton<IDishStatisticsHandler, DishStatisticsHandler>();

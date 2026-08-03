@@ -1,4 +1,4 @@
-@page "/housemates/{Id}"
+@page "/housemates/{Id}/stats"
 @using Happie.Shared.Contracts
 @using Happie.Web.Http
 @inject HttpClient Http
@@ -10,21 +10,21 @@
 
 <PageTitle>Happie</PageTitle>
 
-<div class="housemate-details-page">
+<div class="housemate-stats-page">
     @if (_isLoading)
     {
         <LoadingIndicator />
     }
     else if (_statistics is not null)
     {
-        <div class="housemate-details-page__header">
-            <button class="housemate-details-page__back-btn" @onclick="NavigateBackAsync" aria-label="Back">
+        <div class="housemate-stats-page__header">
+            <button class="housemate-stats-page__back-btn" @onclick="NavigateBackAsync" aria-label="Back">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                      fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <polyline points="15 18 9 12 15 6" />
                 </svg>
             </button>
-            <h1 class="housemate-details-page__title">@Localizer["Stats_HousemateTitle", _housemateName]</h1>
+            <h1 class="housemate-stats-page__title">@Localizer["Stats_HousemateTitle", _housemateName]</h1>
         </div>
 
         <TimelineChart Rows="_timelineRows"
@@ -36,43 +36,43 @@
 
         <TimeRangeSelector SelectedRange="_selectedRange" OnRangeSelected="OnTimeRangeChangedAsync" />
 
-        <div class="housemate-details-page__stats-container @(_isChangingRange ? "housemate-details-page__stats-container--loading" : "")">
+        <div class="housemate-stats-page__stats-container @(_isChangingRange ? "housemate-stats-page__stats-container--loading" : "")">
             @if (_isChangingRange)
             {
-                <div class="housemate-details-page__stats-overlay">
+                <div class="housemate-stats-page__stats-overlay">
                     <LoadingIndicator />
                 </div>
             }
 
             @if (_statistics.TimesCooked > 0)
             {
-                <div class="housemate-details-page__summary">
-                    <div class="housemate-details-page__summary-header">
-                        <span class="housemate-details-page__summary-header-center">@GetRangeHeaderLabel()</span>
+                <div class="housemate-stats-page__summary">
+                    <div class="housemate-stats-page__summary-header">
+                        <span class="housemate-stats-page__summary-header-center">@GetRangeHeaderLabel()</span>
                     </div>
-                    <div class="housemate-details-page__summary-grid">
-                        <div class="housemate-details-page__summary-cell">
-                            <span class="housemate-details-page__summary-value">
-                                <svg class="housemate-details-page__stat-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" fill="none" stroke="#42A5F5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <div class="housemate-stats-page__summary-grid">
+                        <div class="housemate-stats-page__summary-cell">
+                            <span class="housemate-stats-page__summary-value">
+                                <svg class="housemate-stats-page__stat-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" fill="none" stroke="#42A5F5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path stroke-width="1.8" d="M11 2.5c-1.1 0-2.1.5-2.7 1.2C7.6 3.2 6.6 2.8 5.5 3.2 3.9 3.8 3.2 5.5 3.2 6.8c0 1.8.9 3.2 2.3 4.1v2.6h11v-2.6c1.4-.9 2.3-2.3 2.3-4.1 0-1.3-.7-3-2.3-3.6-1.1-.4-2.1 0-2.8.5C13.1 3 12.1 2.5 11 2.5z"/>
                                     <rect stroke-width="1.4" x="5.5" y="14.5" width="11" height="4" rx="1"/>
                                 </svg>
                                 @_statistics.TimesCooked
                             </span>
-                            <span class="housemate-details-page__summary-label">@Localizer["Stats_TimesCooked"]</span>
+                            <span class="housemate-stats-page__summary-label">@Localizer["Stats_TimesCooked"]</span>
                         </div>
-                        <div class="housemate-details-page__summary-cell">
-                            <span class="housemate-details-page__summary-value">
-                                <svg class="housemate-details-page__stat-icon housemate-details-page__stat-icon--check" xmlns="http://www.w3.org/2000/svg" viewBox="4 5 14 13" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <div class="housemate-stats-page__summary-cell">
+                            <span class="housemate-stats-page__summary-value">
+                                <svg class="housemate-stats-page__stat-icon housemate-stats-page__stat-icon--check" xmlns="http://www.w3.org/2000/svg" viewBox="4 5 14 13" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <polyline points="6 12 10 16 16 7"/>
                                 </svg>
                                 @_statistics.DaysEatingIn
                             </span>
-                            <span class="housemate-details-page__summary-label">@Localizer["Stats_DaysEatingIn"]</span>
+                            <span class="housemate-stats-page__summary-label">@Localizer["Stats_DaysEatingIn"]</span>
                         </div>
-                        <div class="housemate-details-page__summary-cell">
-                            <span class="housemate-details-page__summary-value">
-                                <svg class="housemate-details-page__stat-icon housemate-details-page__stat-icon--fire" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92.27 122.88" fill="none" stroke="none" aria-hidden="true">
+                        <div class="housemate-stats-page__summary-cell">
+                            <span class="housemate-stats-page__summary-value">
+                                <svg class="housemate-stats-page__stat-icon housemate-stats-page__stat-icon--fire" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92.27 122.88" fill="none" stroke="none" aria-hidden="true">
                                     <defs>
                                         <linearGradient id="fire-outer" x1="50%" y1="100%" x2="50%" y2="0%">
                                             <stop offset="0%" stop-color="#f7971e"/>
@@ -93,11 +93,11 @@
                                 </svg>
                                 @_statistics.LongestStreak
                             </span>
-                            <span class="housemate-details-page__summary-label">@Localizer["Stats_LongestStreak"]</span>
+                            <span class="housemate-stats-page__summary-label">@Localizer["Stats_LongestStreak"]</span>
                         </div>
-                        <div class="housemate-details-page__summary-cell">
-                            <span class="housemate-details-page__summary-value">
-                                <svg class="housemate-details-page__stat-icon housemate-details-page__stat-icon--wide" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 22" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <div class="housemate-stats-page__summary-cell">
+                            <span class="housemate-stats-page__summary-value">
+                                <svg class="housemate-stats-page__stat-icon housemate-stats-page__stat-icon--wide" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 22" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <!-- Back chef hat (offset left, lighter blue). -->
                                     <g stroke="#90CAF9">
                                         <path stroke-width="1.6" d="M8 3.5c-1 0-1.8.4-2.3 1C5.2 4.1 4.4 3.8 3.5 4.1 2.2 4.6 1.6 6 1.6 7.1c0 1.5.7 2.7 1.9 3.5v2.2h9.4v-2.2c1.2-.8 1.9-2 1.9-3.5 0-1.1-.6-2.5-1.9-3-1-.4-1.8 0-2.4.4C10.1 3.9 9 3.5 8 3.5z"/>
@@ -116,14 +116,14 @@
                                 </svg>
                                 @_statistics.BusiestWeek
                             </span>
-                            <span class="housemate-details-page__summary-label">@Localizer["Stats_MostInOneWeek"]</span>
+                            <span class="housemate-stats-page__summary-label">@Localizer["Stats_MostInOneWeek"]</span>
                         </div>
                     </div>
                 </div>
             }
             else
             {
-                <p class="housemate-details-page__empty-state">@Localizer["Stats_EmptyState"]</p>
+                <p class="housemate-stats-page__empty-state">@Localizer["Stats_EmptyState"]</p>
             }
 
             @if (_statistics.CookRatioEatingInDays > 0)
@@ -141,18 +141,18 @@
 
             @if (_statistics.TimesCooked > 0 && _statistics.TopDishes.Count > 0)
             {
-                <div class="housemate-details-page__top-dishes">
-                    <h2 class="housemate-details-page__section-title">
-                        @Localizer["Stats_TopDishesWithName", _housemateName]<span class="housemate-details-page__section-range">@GetShortRangeLabel()</span>
+                <div class="housemate-stats-page__top-dishes">
+                    <h2 class="housemate-stats-page__section-title">
+                        @Localizer["Stats_TopDishesWithName", _housemateName]<span class="housemate-stats-page__section-range">@GetShortRangeLabel()</span>
                     </h2>
-                    <ul class="housemate-details-page__top-dishes-list">
+                    <ul class="housemate-stats-page__top-dishes-list">
                         @foreach (var dish in _statistics.TopDishes)
                         {
-                            <li class="housemate-details-page__top-dish-item">
-                                <a class="housemate-details-page__top-dish-link" href="saved-dishes/@dish.SavedDishId">
-                                    <span class="housemate-details-page__top-dish-description">@dish.Description</span>
+                            <li class="housemate-stats-page__top-dish-item">
+                                <a class="housemate-stats-page__top-dish-link" href="saved-dishes/@dish.SavedDishId/stats">
+                                    <span class="housemate-stats-page__top-dish-description">@dish.Description</span>
                                 </a>
-                                <span class="housemate-details-page__top-dish-count">@Localizer["Stats_TopDishCount", dish.Count]</span>
+                                <span class="housemate-stats-page__top-dish-count">@Localizer["Stats_TopDishCount", dish.Count]</span>
                             </li>
                         }
                     </ul>
@@ -389,7 +389,7 @@
         {
             if (row.NavigationUri is not null)
             {
-                var idPart = row.NavigationUri.Replace("/saved-dishes/", "");
+                var idPart = row.NavigationUri.Replace("/saved-dishes/", "").Replace("/stats", "");
                 if (Guid.TryParse(idPart, out var existingDishId))
                     dishIdByDescription.TryAdd(row.Label, existingDishId);
             }
@@ -415,7 +415,7 @@
                 x,
                 _housemateColor,
                 rowsByDescription[x],
-                dishIdByDescription.TryGetValue(x, out var dishId) ? $"/saved-dishes/{dishId}" : null))
+                dishIdByDescription.TryGetValue(x, out var dishId) ? $"/saved-dishes/{dishId}/stats" : null))
             .ToList();
     }
 
@@ -431,7 +431,7 @@
                 x.DishDescription,
                 _housemateColor,
                 x.CookingDays.Select(d => DateOnly.Parse(d)).ToHashSet(),
-                $"/saved-dishes/{x.SavedDishId}"))
+                $"/saved-dishes/{x.SavedDishId}/stats"))
             .ToList();
     }
 

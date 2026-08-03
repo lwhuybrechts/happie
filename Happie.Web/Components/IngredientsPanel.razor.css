@@ -1,0 +1,280 @@
+/* Ingredients panel card matching the page header style. */
+.ingredients-panel {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Header with title, servings controls, and edit button. */
+.ingredients-panel__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.ingredients-panel__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
+    white-space: nowrap;
+}
+
+/* Pushes the edit button to the right. */
+.ingredients-panel__header-spacer {
+    flex: 1;
+}
+
+/* Servings display text. */
+.ingredients-panel__servings {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    min-width: 0;
+    overflow-wrap: break-word;
+}
+
+/* Icon buttons matching the SummaryPanel pattern. */
+.ingredients-panel__icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #374151;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background-color 0.15s ease;
+}
+
+.ingredients-panel__icon-btn:hover {
+    background-color: #f3f4f6;
+}
+
+.ingredients-panel__icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Body content area. */
+.ingredients-panel__body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Empty placeholder text. */
+.ingredients-panel__empty {
+    color: #9ca3af;
+    font-size: 0.875rem;
+    font-style: italic;
+    margin: 0;
+}
+
+/* Ingredients list container. */
+.ingredients-panel__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Individual ingredient row. */
+.ingredients-panel__row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 4px 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Strikethrough and muted styling for checked ingredients. */
+.ingredients-panel__row--checked .ingredients-panel__amount,
+.ingredients-panel__row--checked .ingredients-panel__name {
+    text-decoration: line-through;
+    color: #9ca3af;
+}
+
+/* Checkbox input. */
+.ingredients-panel__checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    accent-color: #6366f1;
+    margin-right: 8px;
+}
+
+/* Bold amount with unit. */
+.ingredients-panel__amount {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #111827;
+    white-space: nowrap;
+}
+
+/* Ingredient name. */
+.ingredients-panel__name {
+    font-size: 0.9375rem;
+    color: #111827;
+    margin-left: 0.25em;
+}
+
+/* Check all / Uncheck all toggle button. */
+.ingredients-panel__toggle-btn {
+    align-self: flex-start;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6366f1;
+    background: transparent;
+    border: 1.5px solid #6366f1;
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ingredients-panel__toggle-btn:hover {
+    background-color: #eef2ff;
+}
+
+/* Confirm button color. */
+.ingredients-panel__icon-btn--confirm {
+    color: #16a34a;
+}
+
+/* Discard button color. */
+.ingredients-panel__icon-btn--discard {
+    color: #dc2626;
+}
+
+/* Delete button color. */
+.ingredients-panel__icon-btn--delete {
+    color: #dc2626;
+}
+
+/* Servings row below header (read mode). */
+.ingredients-panel__servings-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+/* Edit mode row containing amount, unit, name, and overflow menu. */
+.ingredients-panel__edit-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+/* Amount number input in edit mode. */
+.ingredients-panel__amount-input {
+    width: 56px;
+    padding: 6px 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    background-color: #ffffff;
+    flex-shrink: 0;
+}
+
+.ingredients-panel__amount-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* Unit dropdown in edit mode. */
+.ingredients-panel__unit-select {
+    width: 72px;
+    padding: 6px 4px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    background-color: #ffffff;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.ingredients-panel__unit-select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* Name text input in edit mode. */
+.ingredients-panel__name-input {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    background-color: #ffffff;
+}
+
+.ingredients-panel__name-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* Add ingredient button. */
+.ingredients-panel__add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6366f1;
+    background: transparent;
+    border: 1.5px dashed #6366f1;
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    align-self: flex-start;
+}
+
+.ingredients-panel__add-btn:hover {
+    background-color: #eef2ff;
+}
+
+/* Error message. */
+.ingredients-panel__error {
+    color: #dc2626;
+    font-size: 0.8125rem;
+    margin-top: 4px;
+}
+
+/* Inline action buttons (order/delete) — shown at ≥500px. */
+.ingredients-panel__inline-actions {
+    display: none;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+/* Overflow menu wrapper — shown below 500px. */
+.ingredients-panel__overflow-actions {
+    display: flex;
+    flex-shrink: 0;
+}
+
+@media (min-width: 500px) {
+    .ingredients-panel__inline-actions {
+        display: flex;
+    }
+
+    .ingredients-panel__overflow-actions {
+        display: none;
+    }
+}

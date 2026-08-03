@@ -1,0 +1,296 @@
+@using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@inject HttpClient Http
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="instructions-panel">
+    <div class="instructions-panel__header">
+        <h2 class="instructions-panel__title">@Localizer["DishDetails_InstructionsHeader"]</h2>
+        @if (_isEditing)
+        {
+            <div class="instructions-panel__header-spacer"></div>
+            <button class="instructions-panel__icon-btn instructions-panel__icon-btn--confirm"
+                    @onclick="ConfirmAsync"
+                    aria-label="@Localizer["DishDetails_Confirm"]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m9 12 2 2 4-4" />
+                </svg>
+            </button>
+            <button class="instructions-panel__icon-btn instructions-panel__icon-btn--discard"
+                    @onclick="Discard"
+                    aria-label="@Localizer["DishDetails_Discard"]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m15 9-6 6" />
+                    <path d="m9 9 6 6" />
+                </svg>
+            </button>
+        }
+        else
+        {
+            <div class="instructions-panel__header-spacer"></div>
+            <button class="instructions-panel__icon-btn" @onclick="StartEdit" aria-label="@Localizer["DishDetails_Edit"]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                    <path d="m15 5 4 4" />
+                </svg>
+            </button>
+        }
+    </div>
+
+    <div class="instructions-panel__body">
+        @if (_isEditing)
+        {
+            @if (_editInstructions.Count > 0)
+            {
+                <div class="instructions-panel__edit-list">
+                    @for (var index = 0; index < _editInstructions.Count; index++)
+                    {
+                        var currentIndex = index;
+                        var item = _editInstructions[currentIndex];
+                        <div class="instructions-panel__edit-row" @key="item.Id">
+                            <span class="instructions-panel__number">@(currentIndex + 1)</span>
+                            <div class="instructions-panel__textarea-wrapper">
+                                <textarea class="instructions-panel__textarea"
+                                          maxlength="@RecipeConstants.MaxInstructionTextLength"
+                                          rows="3"
+                                          @onchange="@(args => OnTextChange(currentIndex, args))"
+                                          @oninput="@(args => OnTextInput(currentIndex, args))">@item.Text</textarea>
+                                <span class="instructions-panel__char-count">@item.Text.Length / @RecipeConstants.MaxInstructionTextLength</span>
+                            </div>
+                            <div class="instructions-panel__inline-actions">
+                                <button class="instructions-panel__icon-btn"
+                                        @onclick="@(() => MoveUp(currentIndex))"
+                                        disabled="@(currentIndex == 0)"
+                                        aria-label="@Localizer["DishDetails_MoveUp"]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m18 15-6-6-6 6" />
+                                    </svg>
+                                </button>
+                                <button class="instructions-panel__icon-btn"
+                                        @onclick="@(() => MoveDown(currentIndex))"
+                                        disabled="@(currentIndex == _editInstructions.Count - 1)"
+                                        aria-label="@Localizer["DishDetails_MoveDown"]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
+                                </button>
+                                <button class="instructions-panel__icon-btn instructions-panel__icon-btn--delete"
+                                        @onclick="@(() => DeleteInstruction(currentIndex))"
+                                        aria-label="@Localizer["DishDetails_DeleteInstruction"]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 6h18" />
+                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="instructions-panel__overflow-actions">
+                                <OverflowMenu IsFirst="@(currentIndex == 0)"
+                                              IsLast="@(currentIndex == _editInstructions.Count - 1)"
+                                              OnMoveUp="@(() => MoveUp(currentIndex))"
+                                              OnMoveDown="@(() => MoveDown(currentIndex))"
+                                              OnDelete="@(() => DeleteInstruction(currentIndex))" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (_editInstructions.Count < RecipeConstants.MaxInstructions)
+            {
+                <button class="instructions-panel__add-btn" @onclick="AddInstruction" aria-label="@Localizer["DishDetails_AddInstruction"]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 5v14" />
+                        <path d="M5 12h14" />
+                    </svg>
+                    @Localizer["DishDetails_AddInstruction"]
+                </button>
+            }
+
+            @if (_showError)
+            {
+                <div class="instructions-panel__error" role="alert">
+                    @Localizer["DishDetails_InstructionsSaveError"]
+                </div>
+            }
+        }
+        else if (_instructions.Count == 0)
+        {
+            <p class="instructions-panel__empty">@Localizer["DishDetails_InstructionsEmpty"]</p>
+        }
+        else
+        {
+            <ol class="instructions-panel__list">
+                @foreach (var instruction in _instructions)
+                {
+                    <li class="instructions-panel__item">
+                        <span class="instructions-panel__text">@instruction.Text</span>
+                    </li>
+                }
+            </ol>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid SavedDishId { get; set; }
+
+    // Read mode state.
+    private List<CookingInstructionDto> _instructions = new();
+    private bool _showError;
+
+    // Edit mode state.
+    private bool _isEditing;
+    private List<EditableInstruction> _editInstructions = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<InstructionsResponse>($"saved-dishes/{SavedDishId}/instructions");
+            if (response is not null)
+                _instructions = response.Instructions.OrderBy(x => x.SortOrder).ToList();
+        }
+        catch
+        {
+            // If we can't load, leave defaults (empty).
+        }
+    }
+
+    // Edit mode methods.
+
+    private void StartEdit()
+    {
+        _isEditing = true;
+        _showError = false;
+        _editInstructions = _instructions
+            .Select(x => new EditableInstruction
+            {
+                Id = x.Id,
+                Text = x.Text
+            })
+            .ToList();
+    }
+
+    private void Discard()
+    {
+        _isEditing = false;
+        _showError = false;
+        _editInstructions.Clear();
+    }
+
+    private async Task ConfirmAsync()
+    {
+        _showError = false;
+
+        // Auto-delete instructions with whitespace-only text.
+        var validInstructions = _editInstructions
+            .Where(x => !string.IsNullOrWhiteSpace(x.Text))
+            .ToList();
+
+        // Build the request with updated sort orders (continuous 1 to N).
+        var instructionDtos = validInstructions
+            .Select((x, index) => new CookingInstructionDto(x.Id, x.Text.Trim(), index))
+            .ToList();
+
+        var request = new UpdateInstructionsRequest(instructionDtos);
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"saved-dishes/{SavedDishId}/instructions", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _isEditing = false;
+
+                // Reload data from backend to get fresh state.
+                await LoadDataAsync();
+            }
+            else
+            {
+                _showError = true;
+            }
+        }
+        catch
+        {
+            _showError = true;
+        }
+    }
+
+    private void AddInstruction()
+    {
+        if (_editInstructions.Count >= RecipeConstants.MaxInstructions)
+            return;
+
+        _editInstructions.Add(new EditableInstruction
+        {
+            Id = Guid.NewGuid(),
+            Text = string.Empty
+        });
+    }
+
+    private void DeleteInstruction(int index)
+    {
+        _editInstructions.RemoveAt(index);
+    }
+
+    private void MoveUp(int index)
+    {
+        if (index <= 0)
+            return;
+
+        (_editInstructions[index], _editInstructions[index - 1]) = (_editInstructions[index - 1], _editInstructions[index]);
+    }
+
+    private void MoveDown(int index)
+    {
+        if (index >= _editInstructions.Count - 1)
+            return;
+
+        (_editInstructions[index], _editInstructions[index + 1]) = (_editInstructions[index + 1], _editInstructions[index]);
+    }
+
+    private void OnTextChange(int index, ChangeEventArgs args)
+    {
+        var text = args.Value?.ToString() ?? string.Empty;
+
+        // Enforce max length.
+        if (text.Length > RecipeConstants.MaxInstructionTextLength)
+            text = text[..RecipeConstants.MaxInstructionTextLength];
+
+        _editInstructions[index].Text = text;
+    }
+
+    private void OnTextInput(int index, ChangeEventArgs args)
+    {
+        var text = args.Value?.ToString() ?? string.Empty;
+
+        // Enforce max length.
+        if (text.Length > RecipeConstants.MaxInstructionTextLength)
+            text = text[..RecipeConstants.MaxInstructionTextLength];
+
+        _editInstructions[index].Text = text;
+    }
+
+    // Mutable model for editing an instruction.
+    private sealed class EditableInstruction
+    {
+        public Guid Id { get; set; }
+        public string Text { get; set; } = string.Empty;
+    }
+}

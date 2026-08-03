@@ -58,152 +58,102 @@
     font-weight: 700;
     color: #111827;
     margin: 0;
+    flex: 1;
 }
 
-/* Summary statistics card. */
-.dish-details-page__summary {
+.dish-details-page__stats-btn {
     display: flex;
-    flex-direction: column;
-    gap: 0;
-    background-color: #ffffff;
-    border-radius: 16px;
-    padding: 16px 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.dish-details-page__summary-header {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-    margin-bottom: 12px;
-}
-
-.dish-details-page__summary-header--centered {
-    display: flex;
-    justify-content: center;
-}
-
-.dish-details-page__summary-header-left,
-.dish-details-page__summary-header-right {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: #6b7280;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-}
-
-.dish-details-page__summary-header-center {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: #6b7280;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-}
-
-.dish-details-page__summary-single {
-    display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 12px;
-}
-
-.dish-details-page__summary-dates {
-    display: flex;
-    gap: 24px;
     justify-content: center;
-}
-
-.dish-details-page__summary-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
-    gap: 12px 0;
-}
-
-.dish-details-page__summary-cell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-.dish-details-page__primary-stat {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-}
-
-.dish-details-page__primary-count {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #111827;
-    line-height: 1;
-}
-
-.dish-details-page__primary-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #6b7280;
-}
-
-.dish-details-page__date-label {
-    font-size: 0.8125rem;
-    color: #6b7280;
-    text-align: center;
-}
-
-.dish-details-page__date-caption {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #9ca3af;
-    text-align: center;
-}
-
-.dish-details-page__date-value {
-    font-size: 0.8125rem;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
     color: #374151;
-    text-align: center;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background-color 0.15s ease;
 }
 
-/* Empty state. */
-.dish-details-page__empty-state {
+.dish-details-page__stats-btn:hover {
+    background-color: #f3f4f6;
+}
+
+/* Generic icon button used in the header. */
+.dish-details-page__icon-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #ffffff;
-    border-radius: 16px;
-    padding: 32px 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #374151;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background-color 0.15s ease;
 }
 
-.dish-details-page__empty-message {
-    font-size: 0.875rem;
-    color: #6b7280;
-    text-align: center;
-    margin: 0;
+.dish-details-page__icon-btn:hover {
+    background-color: #f3f4f6;
 }
 
-/* Stats container with loading overlay support. */
-.dish-details-page__stats-container {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    transition: opacity 0.25s ease;
-}
-
-.dish-details-page__stats-container--loading {
+.dish-details-page__icon-btn:disabled {
     opacity: 0.4;
-    pointer-events: none;
+    cursor: not-allowed;
 }
 
-.dish-details-page__stats-overlay {
-    position: absolute;
-    inset: 0;
+.dish-details-page__icon-btn--confirm {
+    color: #16a34a;
+}
+
+.dish-details-page__icon-btn--confirm:hover {
+    background-color: #f0fdf4;
+}
+
+.dish-details-page__icon-btn--discard {
+    color: #dc2626;
+}
+
+.dish-details-page__icon-btn--discard:hover {
+    background-color: #fef2f2;
+}
+
+/* Inline name editing container. */
+.dish-details-page__edit-name {
     display: flex;
     align-items: center;
-    justify-content: center;
-    z-index: 10;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.dish-details-page__name-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    padding: 6px 10px;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.dish-details-page__name-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* Inline error message shown below header when name conflict occurs. */
+.dish-details-page__name-error {
+    color: #dc2626;
+    font-size: 0.875rem;
+    padding: 4px 20px;
+    margin-top: -8px;
 }

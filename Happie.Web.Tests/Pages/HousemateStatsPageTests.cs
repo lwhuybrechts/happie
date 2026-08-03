@@ -16,7 +16,7 @@ using RichardSzalay.MockHttp;
 
 namespace Happie.Web.Tests.Pages;
 
-public class HousemateDetailsPageTests : BunitContext
+public class HousemateStatsPageTests : BunitContext
 {
     private readonly Mock<IStatisticsApiClient> _statisticsApiMock = new();
     private readonly Mock<IStringLocalizer<AppStrings>> _localizerMock = new();
@@ -26,7 +26,7 @@ public class HousemateDetailsPageTests : BunitContext
 
     private static readonly Guid ValidHousemateId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
-    public HousemateDetailsPageTests()
+    public HousemateStatsPageTests()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
 
@@ -56,7 +56,7 @@ public class HousemateDetailsPageTests : BunitContext
     public void Render_InvalidGuidId_RedirectsToHousematesPage()
     {
         // Act.
-        var cut = Render<HousemateDetailsPage>(parameters => parameters
+        var cut = Render<HousemateStatsPage>(parameters => parameters
             .Add(x => x.Id, "not-a-valid-guid"));
 
         // Assert.
@@ -78,7 +78,7 @@ public class HousemateDetailsPageTests : BunitContext
         SetupHousemateListResponse(housemates);
 
         // Act.
-        var cut = Render<HousemateDetailsPage>(parameters => parameters
+        var cut = Render<HousemateStatsPage>(parameters => parameters
             .Add(x => x.Id, ValidHousemateId.ToString()));
 
         // Wait for redirect.
@@ -113,7 +113,7 @@ public class HousemateDetailsPageTests : BunitContext
             .ReturnsAsync((HousemateStatisticsResponse?)null);
 
         // Act.
-        var cut = Render<HousemateDetailsPage>(parameters => parameters
+        var cut = Render<HousemateStatsPage>(parameters => parameters
             .Add(x => x.Id, ValidHousemateId.ToString()));
 
         // Wait for redirect.
@@ -159,13 +159,13 @@ public class HousemateDetailsPageTests : BunitContext
             .ReturnsAsync(emptyStatistics);
 
         // Act.
-        var cut = Render<HousemateDetailsPage>(parameters => parameters
+        var cut = Render<HousemateStatsPage>(parameters => parameters
             .Add(x => x.Id, ValidHousemateId.ToString()));
 
-        cut.WaitForState(() => cut.FindAll(".housemate-details-page__empty-state").Count > 0, TimeSpan.FromSeconds(5));
+        cut.WaitForState(() => cut.FindAll(".housemate-stats-page__empty-state").Count > 0, TimeSpan.FromSeconds(5));
 
         // Assert.
-        var emptyState = cut.Find(".housemate-details-page__empty-state");
+        var emptyState = cut.Find(".housemate-stats-page__empty-state");
         Assert.NotNull(emptyState);
         Assert.Equal("Stats_EmptyState", emptyState.TextContent);
     }
@@ -189,13 +189,13 @@ public class HousemateDetailsPageTests : BunitContext
             .ReturnsAsync(statistics);
 
         // Act.
-        var cut = Render<HousemateDetailsPage>(parameters => parameters
+        var cut = Render<HousemateStatsPage>(parameters => parameters
             .Add(x => x.Id, ValidHousemateId.ToString()));
 
-        cut.WaitForState(() => cut.FindAll(".housemate-details-page__title").Count > 0, TimeSpan.FromSeconds(5));
+        cut.WaitForState(() => cut.FindAll(".housemate-stats-page__title").Count > 0, TimeSpan.FromSeconds(5));
 
         // Assert.
-        var title = cut.Find(".housemate-details-page__title");
+        var title = cut.Find(".housemate-stats-page__title");
         Assert.Equal("Stats_HousemateTitle", title.TextContent);
     }
 
@@ -218,13 +218,13 @@ public class HousemateDetailsPageTests : BunitContext
             .ReturnsAsync(statistics);
 
         // Act.
-        var cut = Render<HousemateDetailsPage>(parameters => parameters
+        var cut = Render<HousemateStatsPage>(parameters => parameters
             .Add(x => x.Id, ValidHousemateId.ToString()));
 
-        cut.WaitForState(() => cut.FindAll(".housemate-details-page__summary-value").Count > 0, TimeSpan.FromSeconds(5));
+        cut.WaitForState(() => cut.FindAll(".housemate-stats-page__summary-value").Count > 0, TimeSpan.FromSeconds(5));
 
         // Assert.
-        var primaryValue = cut.Find(".housemate-details-page__summary-value");
+        var primaryValue = cut.Find(".housemate-stats-page__summary-value");
         Assert.Equal("7", primaryValue.TextContent.Trim());
     }
 
@@ -247,7 +247,7 @@ public class HousemateDetailsPageTests : BunitContext
             .ReturnsAsync(statistics);
 
         // Act.
-        var cut = Render<HousemateDetailsPage>(parameters => parameters
+        var cut = Render<HousemateStatsPage>(parameters => parameters
             .Add(x => x.Id, ValidHousemateId.ToString()));
 
         cut.WaitForState(() => cut.FindAll(".time-range-selector").Count > 0, TimeSpan.FromSeconds(5));

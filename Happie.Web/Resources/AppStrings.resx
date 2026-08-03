@@ -556,10 +556,10 @@
     <value>Gerechten laden mislukt. Probeer het opnieuw.</value>
   </data>
   <data name="SavedDishes_ExplanationCurrent" xml:space="preserve">
-    <value>Sla gerechten op om ze snel te hergebruiken op het dagplan en hun statistieken te bekijken.</value>
+    <value>Sla gerechten op om ze snel te hergebruiken op het dagplan, hun statistieken te bekijken en recepten toe te voegen.</value>
   </data>
   <data name="SavedDishes_ExplanationFuture" xml:space="preserve">
-    <value>Binnenkort: bewerkingsgeschiedenis, gerechten delen met andere huishoudens en recepten toevoegen.</value>
+    <value>Binnenkort: bewerkingsgeschiedenis en gerechten delen met andere huishoudens.</value>
   </data>
   <data name="SavedDishes_SuggestionsTitle" xml:space="preserve">
     <value>Suggesties</value>
@@ -748,5 +748,241 @@ Dit kan afwijken van het totaal aantal keer gekookt, omdat je ook kok kunt zijn 
   </data>
   <data name="Stats_ShortRange_AllTime" xml:space="preserve">
     <value>totaal</value>
+  </data>
+  <data name="DishStats_Recipe" xml:space="preserve">
+    <value>Recept voor {0}</value>
+    <comment>Aria label for the recipe icon button on DishStatsPage.</comment>
+  </data>
+  <data name="DishDetails_EditName" xml:space="preserve">
+    <value>Naam bewerken</value>
+    <comment>Aria label for the edit icon button next to the dish name.</comment>
+  </data>
+  <data name="DishDetails_Confirm" xml:space="preserve">
+    <value>Bevestigen</value>
+    <comment>Confirm button label for inline editing.</comment>
+  </data>
+  <data name="DishDetails_Discard" xml:space="preserve">
+    <value>Annuleren</value>
+    <comment>Discard button label for inline editing.</comment>
+  </data>
+  <data name="DishDetails_NameConflict" xml:space="preserve">
+    <value>Deze naam is al in gebruik.</value>
+    <comment>Error message when dish name already exists.</comment>
+  </data>
+  <data name="DishDetails_NameRequired" xml:space="preserve">
+    <value>Naam mag niet leeg zijn.</value>
+    <comment>Error message when dish name is empty or whitespace-only.</comment>
+  </data>
+  <data name="DishDetails_SaveError" xml:space="preserve">
+    <value>Opslaan mislukt. Probeer het opnieuw.</value>
+    <comment>Generic save error message for DishDetailsPage.</comment>
+  </data>
+  <data name="DishDetails_NameInputAriaLabel" xml:space="preserve">
+    <value>Nieuwe naam voor gerecht</value>
+    <comment>Aria label for the dish name inline edit input.</comment>
+  </data>
+  <data name="DishDetails_SummaryHeader" xml:space="preserve">
+    <value>Recept</value>
+    <comment>Header for the summary panel.</comment>
+  </data>
+  <data name="DishDetails_SummaryPlaceholder" xml:space="preserve">
+    <value>Samenvatting gerecht.</value>
+    <comment>Placeholder text for the summary text field.</comment>
+  </data>
+  <data name="DishDetails_SummaryEmpty" xml:space="preserve">
+    <value>Nog geen samenvatting toegevoegd.</value>
+    <comment>Placeholder shown when all summary fields are empty in read mode.</comment>
+  </data>
+  <data name="DishDetails_IngredientsHeader" xml:space="preserve">
+    <value>Ingrediënten</value>
+    <comment>Header for the ingredients panel.</comment>
+  </data>
+  <data name="DishDetails_IngredientsForPeople" xml:space="preserve">
+    <value>Voor {0} personen</value>
+    <comment>Header text showing adjusted serving count.</comment>
+  </data>
+  <data name="DishDetails_IngredientsEmpty" xml:space="preserve">
+    <value>Nog geen ingrediënten.</value>
+    <comment>Placeholder shown when no ingredients exist.</comment>
+  </data>
+  <data name="DishDetails_CheckAll" xml:space="preserve">
+    <value>Alles aanvinken</value>
+    <comment>Label for the check all toggle button.</comment>
+  </data>
+  <data name="DishDetails_UncheckAll" xml:space="preserve">
+    <value>Alles uitvinken</value>
+    <comment>Label for the uncheck all toggle button.</comment>
+  </data>
+  <data name="DishDetails_InstructionsHeader" xml:space="preserve">
+    <value>Bereidingswijze</value>
+    <comment>Header for the instructions panel.</comment>
+  </data>
+  <data name="DishDetails_InstructionsEmpty" xml:space="preserve">
+    <value>Nog geen bereidingswijze.</value>
+    <comment>Placeholder shown when no instructions exist.</comment>
+  </data>
+  <data name="DishDetails_Edit" xml:space="preserve">
+    <value>Bewerken</value>
+    <comment>Edit button label for panels.</comment>
+  </data>
+  <data name="DishDetails_Save" xml:space="preserve">
+    <value>Opslaan</value>
+    <comment>Save button label for panels.</comment>
+  </data>
+  <data name="DishDetails_Cancel" xml:space="preserve">
+    <value>Annuleren</value>
+    <comment>Cancel/discard button label for panels.</comment>
+  </data>
+  <data name="DishDetails_CheckSaveError" xml:space="preserve">
+    <value>Aanvinken mislukt. Probeer het opnieuw.</value>
+    <comment>Error message when a checkbox toggle fails.</comment>
+  </data>
+  <data name="DishDetails_CookingDuration" xml:space="preserve">
+    <value>Bereidingstijd</value>
+    <comment>Label for the cooking duration field in the summary panel.</comment>
+  </data>
+  <data name="DishDetails_Servings" xml:space="preserve">
+    <value>Porties</value>
+    <comment>Label for the servings field in the summary panel.</comment>
+  </data>
+  <data name="DishDetails_AddIngredient" xml:space="preserve">
+    <value>Ingrediënt toevoegen</value>
+    <comment>Aria label for the add ingredient button in edit mode.</comment>
+  </data>
+  <data name="DishDetails_DeleteIngredient" xml:space="preserve">
+    <value>Verwijderen</value>
+    <comment>Aria label for the delete ingredient button in edit mode.</comment>
+  </data>
+  <data name="DishDetails_MoveUp" xml:space="preserve">
+    <value>Omhoog</value>
+    <comment>Aria label for the move up reorder button.</comment>
+  </data>
+  <data name="DishDetails_MoveDown" xml:space="preserve">
+    <value>Omlaag</value>
+    <comment>Aria label for the move down reorder button.</comment>
+  </data>
+  <data name="DishDetails_UnitNone" xml:space="preserve">
+    <value>(geen)</value>
+    <comment>Display name for UnitOfMeasurement.None in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitG" xml:space="preserve">
+    <value>g</value>
+    <comment>Display name for UnitOfMeasurement.G in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitKg" xml:space="preserve">
+    <value>kg</value>
+    <comment>Display name for UnitOfMeasurement.Kg in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitMl" xml:space="preserve">
+    <value>ml</value>
+    <comment>Display name for UnitOfMeasurement.Ml in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitL" xml:space="preserve">
+    <value>l</value>
+    <comment>Display name for UnitOfMeasurement.L in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitTbsp" xml:space="preserve">
+    <value>el</value>
+    <comment>Display name for UnitOfMeasurement.Tbsp in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitTsp" xml:space="preserve">
+    <value>tl</value>
+    <comment>Display name for UnitOfMeasurement.Tsp in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitPiece" xml:space="preserve">
+    <value>stuk</value>
+    <comment>Display name for UnitOfMeasurement.Piece in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitStalk" xml:space="preserve">
+    <value>stengel</value>
+    <comment>Display name for UnitOfMeasurement.Stalk in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitClove" xml:space="preserve">
+    <value>teen</value>
+    <comment>Display name for UnitOfMeasurement.Clove in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitCan" xml:space="preserve">
+    <value>blik</value>
+    <comment>Display name for UnitOfMeasurement.Can in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitSlice" xml:space="preserve">
+    <value>plak</value>
+    <comment>Display name for UnitOfMeasurement.Slice in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitPinch" xml:space="preserve">
+    <value>snuf</value>
+    <comment>Display name for UnitOfMeasurement.Pinch in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitHandful" xml:space="preserve">
+    <value>handvol</value>
+    <comment>Display name for UnitOfMeasurement.Handful in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitBunch" xml:space="preserve">
+    <value>bos</value>
+    <comment>Display name for UnitOfMeasurement.Bunch in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitCup" xml:space="preserve">
+    <value>kopje</value>
+    <comment>Display name for UnitOfMeasurement.Cup in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitPiece_Plural" xml:space="preserve">
+    <value>stuks</value>
+    <comment>Plural display name for UnitOfMeasurement.Piece.</comment>
+  </data>
+  <data name="DishDetails_UnitStalk_Plural" xml:space="preserve">
+    <value>stengels</value>
+    <comment>Plural display name for UnitOfMeasurement.Stalk.</comment>
+  </data>
+  <data name="DishDetails_UnitClove_Plural" xml:space="preserve">
+    <value>tenen</value>
+    <comment>Plural display name for UnitOfMeasurement.Clove.</comment>
+  </data>
+  <data name="DishDetails_UnitCan_Plural" xml:space="preserve">
+    <value>blikken</value>
+    <comment>Plural display name for UnitOfMeasurement.Can.</comment>
+  </data>
+  <data name="DishDetails_UnitSlice_Plural" xml:space="preserve">
+    <value>plakken</value>
+    <comment>Plural display name for UnitOfMeasurement.Slice.</comment>
+  </data>
+  <data name="DishDetails_UnitPinch_Plural" xml:space="preserve">
+    <value>snufjes</value>
+    <comment>Plural display name for UnitOfMeasurement.Pinch.</comment>
+  </data>
+  <data name="DishDetails_UnitHandful_Plural" xml:space="preserve">
+    <value>handenvol</value>
+    <comment>Plural display name for UnitOfMeasurement.Handful.</comment>
+  </data>
+  <data name="DishDetails_UnitBunch_Plural" xml:space="preserve">
+    <value>bossen</value>
+    <comment>Plural display name for UnitOfMeasurement.Bunch.</comment>
+  </data>
+  <data name="DishDetails_UnitCup_Plural" xml:space="preserve">
+    <value>kopjes</value>
+    <comment>Plural display name for UnitOfMeasurement.Cup.</comment>
+  </data>
+  <data name="DishDetails_UnitTbsp_Plural" xml:space="preserve">
+    <value>el</value>
+    <comment>Plural display name for UnitOfMeasurement.Tbsp.</comment>
+  </data>
+  <data name="DishDetails_UnitTsp_Plural" xml:space="preserve">
+    <value>tl</value>
+    <comment>Plural display name for UnitOfMeasurement.Tsp.</comment>
+  </data>
+  <data name="DishDetails_IngredientsSaveError" xml:space="preserve">
+    <value>Opslaan ingrediënten mislukt. Probeer het opnieuw.</value>
+    <comment>Error message when batch saving ingredients fails.</comment>
+  </data>
+  <data name="DishDetails_AddInstruction" xml:space="preserve">
+    <value>Stap toevoegen</value>
+    <comment>Label for the add instruction button in edit mode.</comment>
+  </data>
+  <data name="DishDetails_DeleteInstruction" xml:space="preserve">
+    <value>Verwijderen</value>
+    <comment>Aria label for the delete instruction button in edit mode.</comment>
+  </data>
+  <data name="DishDetails_InstructionsSaveError" xml:space="preserve">
+    <value>Opslaan bereidingswijze mislukt. Probeer het opnieuw.</value>
+    <comment>Error message when batch saving instructions fails.</comment>
   </data>
 </root>

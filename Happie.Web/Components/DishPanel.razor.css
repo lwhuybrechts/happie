@@ -291,6 +291,20 @@
     margin-left: 6px;
 }
 
+.dish-panel__dish-link {
+    color: #ffffff;
+    text-decoration: none;
+    transition: text-decoration 0.15s ease;
+}
+
+.dish-panel__dish-link:hover {
+    text-decoration: underline;
+}
+
+.dish-panel__separator {
+    color: #ffffff;
+}
+
 .dish-panel__time-input-group {
     display: flex;
     flex-direction: column;

@@ -1,0 +1,327 @@
+@using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@inject HttpClient Http
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="summary-panel">
+    <div class="summary-panel__header">
+        <h2 class="summary-panel__title">@Localizer["DishDetails_SummaryHeader"]</h2>
+        @if (_isEditing)
+        {
+            <button class="summary-panel__icon-btn summary-panel__icon-btn--confirm"
+                    @onclick="ConfirmAsync"
+                    disabled="@(!IsConfirmEnabled)"
+                    aria-label="@Localizer["DishDetails_Confirm"]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m9 12 2 2 4-4" />
+                </svg>
+            </button>
+            <button class="summary-panel__icon-btn summary-panel__icon-btn--discard"
+                    @onclick="Discard"
+                    aria-label="@Localizer["DishDetails_Discard"]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m15 9-6 6" />
+                    <path d="m9 9 6 6" />
+                </svg>
+            </button>
+        }
+        else
+        {
+            <button class="summary-panel__icon-btn" @onclick="StartEdit" aria-label="@Localizer["DishDetails_Edit"]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                    <path d="m15 5 4 4" />
+                </svg>
+            </button>
+        }
+    </div>
+
+    <div class="summary-panel__body">
+        @if (_isEditing)
+        {
+            <div class="summary-panel__field">
+                <textarea class="summary-panel__textarea"
+                          placeholder="@Localizer["DishDetails_SummaryPlaceholder"]"
+                          maxlength="@RecipeConstants.MaxSummaryLength"
+                          value="@_editSummary"
+                          @oninput="OnSummaryInput"></textarea>
+                <span class="summary-panel__char-count">@_editSummary.Length / @RecipeConstants.MaxSummaryLength</span>
+            </div>
+            <div class="summary-panel__inline-row">
+                <div class="summary-panel__field summary-panel__field--inline">
+                    <div class="summary-panel__label-row">
+                        <label class="summary-panel__label">@Localizer["DishDetails_CookingDuration"]</label>
+                        @if (!string.IsNullOrEmpty(_editDuration))
+                        {
+                            <button class="summary-panel__clear-btn"
+                                    type="button"
+                                    @onclick="ClearDuration">
+                                @Localizer["DishPanel_ClearTime"]
+                            </button>
+                        }
+                    </div>
+                    <input class="summary-panel__input summary-panel__time-input"
+                           type="time"
+                           step="60"
+                           value="@_editDuration"
+                           @oninput="OnDurationInput" />
+                </div>
+                <div class="summary-panel__field summary-panel__field--inline">
+                    <label class="summary-panel__label">@Localizer["DishDetails_Servings"]</label>
+                    <input class="summary-panel__input summary-panel__servings-input"
+                           type="number"
+                           min="@RecipeConstants.MinServings"
+                           max="@RecipeConstants.MaxServings"
+                           value="@_editServings"
+                           @oninput="OnServingsInput" />
+                </div>
+            </div>
+
+            @if (_showError)
+            {
+                <div class="summary-panel__error" role="alert">
+                    @Localizer["DishDetails_SaveError"]
+                </div>
+            }
+        }
+        else if (IsAllEmpty)
+        {
+            <p class="summary-panel__empty">@Localizer["DishDetails_SummaryEmpty"]</p>
+        }
+        else
+        {
+            @if (!string.IsNullOrWhiteSpace(_savedSummary))
+            {
+                <p class="summary-panel__text">@_savedSummary</p>
+            }
+            @if (_savedDurationMinutes is not null || _savedServings is not null)
+            {
+                <div class="summary-panel__inline-row">
+                    @if (_savedDurationMinutes is not null)
+                    {
+                        <div class="summary-panel__meta-block">
+                            <span class="summary-panel__meta-label">@Localizer["DishDetails_CookingDuration"]</span>
+                            <div class="summary-panel__meta-value-row">
+                                <svg class="summary-panel__meta-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                <span class="summary-panel__meta-value">@FormatDuration(_savedDurationMinutes.Value)</span>
+                            </div>
+                        </div>
+                    }
+                    @if (_savedServings is not null)
+                    {
+                        <div class="summary-panel__meta-block">
+                            <span class="summary-panel__meta-label">@Localizer["DishDetails_Servings"]</span>
+                            <div class="summary-panel__meta-value-row">
+                                <svg class="summary-panel__meta-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                </svg>
+                                <span class="summary-panel__meta-value">@_savedServings</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid SavedDishId { get; set; }
+
+    [Parameter]
+    public EventCallback<int?> OnServingsChanged { get; set; }
+
+    // Saved state from backend.
+    private string? _savedSummary;
+    private int? _savedDurationMinutes;
+    private int? _savedServings;
+
+    // Edit state.
+    private bool _isEditing;
+    private string _editSummary = string.Empty;
+    private string _editDuration = string.Empty;
+    private string _editServings = string.Empty;
+    private bool _showError;
+
+    private bool IsAllEmpty => string.IsNullOrWhiteSpace(_savedSummary)
+        && _savedDurationMinutes is null
+        && _savedServings is null;
+
+    private bool IsConfirmEnabled
+    {
+        get
+        {
+            // Compare current edit values to saved values.
+            var summaryChanged = (_editSummary.Trim()) != (_savedSummary ?? string.Empty);
+            var durationChanged = _editDuration != FormatDurationForInput(_savedDurationMinutes);
+            var servingsChanged = _editServings != FormatServingsForInput(_savedServings);
+            return summaryChanged || durationChanged || servingsChanged;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<RecipeSummaryResponse>($"saved-dishes/{SavedDishId}/summary");
+            if (response is not null)
+            {
+                _savedSummary = response.Summary;
+                _savedDurationMinutes = response.CookingDurationMinutes;
+                _savedServings = response.Servings;
+            }
+        }
+        catch
+        {
+            // If we can't load, leave defaults (all empty).
+        }
+    }
+
+    private void StartEdit()
+    {
+        _isEditing = true;
+        _editSummary = _savedSummary ?? string.Empty;
+        _editDuration = FormatDurationForInput(_savedDurationMinutes);
+        _editServings = FormatServingsForInput(_savedServings);
+        _showError = false;
+    }
+
+    private void OnSummaryInput(ChangeEventArgs args)
+    {
+        _editSummary = args.Value?.ToString() ?? string.Empty;
+    }
+
+    private void OnDurationInput(ChangeEventArgs args)
+    {
+        _editDuration = args.Value?.ToString() ?? string.Empty;
+    }
+
+    private void ClearDuration()
+    {
+        _editDuration = string.Empty;
+    }
+
+    private void OnServingsInput(ChangeEventArgs args)
+    {
+        _editServings = args.Value?.ToString() ?? string.Empty;
+    }
+
+    private async Task ConfirmAsync()
+    {
+        _showError = false;
+
+        // Parse edit values into request format.
+        var summaryValue = string.IsNullOrWhiteSpace(_editSummary) ? null : _editSummary.Trim();
+        var durationValue = ParseDurationToMinutes(_editDuration);
+        var servingsValue = ParseServings(_editServings);
+
+        var request = new UpdateSummaryRequest(summaryValue, durationValue, servingsValue);
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"saved-dishes/{SavedDishId}/summary", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _savedSummary = summaryValue;
+                _savedDurationMinutes = durationValue;
+                _savedServings = servingsValue;
+                _isEditing = false;
+                await OnServingsChanged.InvokeAsync(servingsValue);
+            }
+            else
+            {
+                _showError = true;
+            }
+        }
+        catch
+        {
+            _showError = true;
+        }
+    }
+
+    private void Discard()
+    {
+        _isEditing = false;
+        _editSummary = _savedSummary ?? string.Empty;
+        _editDuration = FormatDurationForInput(_savedDurationMinutes);
+        _editServings = FormatServingsForInput(_savedServings);
+        _showError = false;
+    }
+
+    // Convert minutes to HH:MM string for display.
+    private static string FormatDuration(int minutes)
+    {
+        var hours = minutes / 60;
+        var mins = minutes % 60;
+        return $"{hours:D2}:{mins:D2}";
+    }
+
+    // Convert minutes to time input value.
+    private static string FormatDurationForInput(int? minutes)
+    {
+        if (minutes is null)
+            return string.Empty;
+
+        var hours = minutes.Value / 60;
+        var mins = minutes.Value % 60;
+        return $"{hours:D2}:{mins:D2}";
+    }
+
+    // Convert servings to input value.
+    private static string FormatServingsForInput(int? servings)
+    {
+        if (servings is null)
+            return string.Empty;
+
+        return servings.Value.ToString();
+    }
+
+    // Parse HH:MM string to total minutes.
+    private static int? ParseDurationToMinutes(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var parts = value.Split(':');
+        if (parts.Length < 2)
+            return null;
+
+        if (!int.TryParse(parts[0], out var hours) || !int.TryParse(parts[1], out var minutes))
+            return null;
+
+        return (hours * 60) + minutes;
+    }
+
+    // Parse servings string to int.
+    private static int? ParseServings(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        if (!int.TryParse(value, out var servings))
+            return null;
+
+        if (servings < RecipeConstants.MinServings || servings > RecipeConstants.MaxServings)
+            return null;
+
+        return servings;
+    }
+}

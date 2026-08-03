@@ -18,6 +18,7 @@ All Table Storage entity classes MUST adhere to the following rules:
 - Use nullable reference types (`?`) for optional properties
 - Use `= string.Empty` as default for required string properties
 - **NEVER use `DateTimeOffset?` (nullable) for entity properties** — the Azure.Data.Tables SDK does not serialize nullable `DateTimeOffset?` on strongly-typed `ITableEntity` classes. Use non-nullable `DateTimeOffset` instead, with `default` (`DateTimeOffset.MinValue`) as the sentinel for "not set". The mapper converts `default` back to `null` in the domain type.
+- **Enum properties are stored as their integer value** — Use the enum type directly on entity properties (e.g., `public AttendanceStatus Status { get; set; }`). Azure Table Storage serializes them as the underlying `int` value. NEVER store enums as strings. When defining new enums, only append new members at the end — never reorder or remove existing members — to preserve compatibility with stored integer values.
 - Entity classes are internal to the repository layer — NEVER reference them outside `Happie.Api/Infrastructure/`
 
 ```csharp

@@ -1,0 +1,587 @@
+@using Happie.Shared.Contracts
+@using Happie.Shared.Domain
+@using Happie.Web.Domain
+@inject HttpClient Http
+@inject IStringLocalizer<AppStrings> Localizer
+
+<div class="ingredients-panel">
+    <div class="ingredients-panel__header">
+        <h2 class="ingredients-panel__title">@Localizer["DishDetails_IngredientsHeader"]</h2>
+        @if (_isEditing)
+        {
+            @if (BaseServings is not null)
+            {
+                <span class="ingredients-panel__servings">@Localizer["DishDetails_IngredientsForPeople", BaseServings.Value]</span>
+            }
+            <div class="ingredients-panel__header-spacer"></div>
+            <button class="ingredients-panel__icon-btn ingredients-panel__icon-btn--confirm"
+                    @onclick="ConfirmAsync"
+                    aria-label="@Localizer["DishDetails_Confirm"]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m9 12 2 2 4-4" />
+                </svg>
+            </button>
+            <button class="ingredients-panel__icon-btn ingredients-panel__icon-btn--discard"
+                    @onclick="Discard"
+                    aria-label="@Localizer["DishDetails_Discard"]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m15 9-6 6" />
+                    <path d="m9 9 6 6" />
+                </svg>
+            </button>
+        }
+        else
+        {
+            <div class="ingredients-panel__header-spacer"></div>
+            <button class="ingredients-panel__icon-btn" @onclick="StartEdit" aria-label="@Localizer["DishDetails_Edit"]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                    <path d="m15 5 4 4" />
+                </svg>
+            </button>
+        }
+    </div>
+
+    @if (!_isEditing && BaseServings is not null)
+    {
+        <div class="ingredients-panel__servings-row">
+            <button class="ingredients-panel__icon-btn"
+                    @onclick="DecrementServings"
+                    disabled="@(_adjustedServings <= RecipeConstants.MinServings)"
+                    aria-label="Decrease servings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 12h8" />
+                </svg>
+            </button>
+            <span class="ingredients-panel__servings">@Localizer["DishDetails_IngredientsForPeople", _adjustedServings]</span>
+            <button class="ingredients-panel__icon-btn"
+                    @onclick="IncrementServings"
+                    disabled="@(_adjustedServings >= RecipeConstants.MaxServings)"
+                    aria-label="Increase servings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 12h8" />
+                    <path d="M12 8v8" />
+                </svg>
+            </button>
+        </div>
+    }
+
+    <div class="ingredients-panel__body">
+        @if (_isEditing)
+        {
+            @if (_editIngredients.Count > 0)
+            {
+                <div class="ingredients-panel__list">
+                    @for (var index = 0; index < _editIngredients.Count; index++)
+                    {
+                        var currentIndex = index;
+                        var item = _editIngredients[currentIndex];
+                        <div class="ingredients-panel__edit-row">
+                            <input type="number"
+                                   class="ingredients-panel__amount-input"
+                                   min="@RecipeConstants.MinIngredientAmount"
+                                   max="@RecipeConstants.MaxIngredientAmount"
+                                   step="0.01"
+                                   value="@FormatEditAmount(item.Amount)"
+                                   @onchange="@(args => OnAmountChange(currentIndex, args))" />
+                            <select class="ingredients-panel__unit-select"
+                                    value="@((int)item.Unit)"
+                                    @onchange="@(args => OnUnitChange(currentIndex, args))">
+                                @foreach (var unit in _unitOptions)
+                                {
+                                    <option value="@((int)unit)">@GetUnitDisplayName(unit)</option>
+                                }
+                            </select>
+                            <input type="text"
+                                   class="ingredients-panel__name-input"
+                                   maxlength="@RecipeConstants.MaxIngredientNameLength"
+                                   value="@item.Name"
+                                   @onchange="@(args => OnNameChange(currentIndex, args))" />
+                            <div class="ingredients-panel__inline-actions">
+                                <button class="ingredients-panel__icon-btn"
+                                        @onclick="@(() => MoveUp(currentIndex))"
+                                        disabled="@(currentIndex == 0)"
+                                        aria-label="@Localizer["DishDetails_MoveUp"]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m18 15-6-6-6 6" />
+                                    </svg>
+                                </button>
+                                <button class="ingredients-panel__icon-btn"
+                                        @onclick="@(() => MoveDown(currentIndex))"
+                                        disabled="@(currentIndex == _editIngredients.Count - 1)"
+                                        aria-label="@Localizer["DishDetails_MoveDown"]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
+                                </button>
+                                <button class="ingredients-panel__icon-btn ingredients-panel__icon-btn--delete"
+                                        @onclick="@(() => DeleteIngredient(currentIndex))"
+                                        aria-label="@Localizer["DishDetails_DeleteIngredient"]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 6h18" />
+                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="ingredients-panel__overflow-actions">
+                                <OverflowMenu IsFirst="@(currentIndex == 0)"
+                                              IsLast="@(currentIndex == _editIngredients.Count - 1)"
+                                              OnMoveUp="@(() => MoveUp(currentIndex))"
+                                              OnMoveDown="@(() => MoveDown(currentIndex))"
+                                              OnDelete="@(() => DeleteIngredient(currentIndex))" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (_editIngredients.Count < RecipeConstants.MaxIngredients)
+            {
+                <button class="ingredients-panel__add-btn" @onclick="AddIngredient" aria-label="@Localizer["DishDetails_AddIngredient"]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 5v14" />
+                        <path d="M5 12h14" />
+                    </svg>
+                    @Localizer["DishDetails_AddIngredient"]
+                </button>
+            }
+
+            @if (_showError)
+            {
+                <div class="ingredients-panel__error" role="alert">
+                    @Localizer["DishDetails_IngredientsSaveError"]
+                </div>
+            }
+        }
+        else if (_ingredients.Count == 0)
+        {
+            <p class="ingredients-panel__empty">@Localizer["DishDetails_IngredientsEmpty"]</p>
+        }
+        else
+        {
+            <div class="ingredients-panel__list">
+                @foreach (var ingredient in _ingredients)
+                {
+                    var isChecked = _checkedStates.ContainsKey(ingredient.Id) && _checkedStates[ingredient.Id];
+                    var ingredientId = ingredient.Id;
+                    <div class="ingredients-panel__row @(isChecked ? "ingredients-panel__row--checked" : "")"
+                         @onclick="@(() => ToggleCheckAsync(ingredientId, !isChecked))">
+                        <input type="checkbox"
+                               class="ingredients-panel__checkbox"
+                               checked="@isChecked"
+                               @onclick:stopPropagation="true"
+                               @onchange="@(args => ToggleCheckAsync(ingredientId, (bool)(args.Value ?? false)))" />
+                        <span class="ingredients-panel__amount">@FormatScaledAmount(ingredient)</span>
+                        <span class="ingredients-panel__name">@ingredient.Name</span>
+                    </div>
+                }
+            </div>
+
+            <button class="ingredients-panel__toggle-btn" @onclick="ToggleAllAsync">
+                @(CheckedPercentageAboveHalf ? Localizer["DishDetails_UncheckAll"] : Localizer["DishDetails_CheckAll"])
+            </button>
+
+            @if (_showError)
+            {
+                <div class="ingredients-panel__error" role="alert">
+                    @Localizer["DishDetails_CheckSaveError"]
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid SavedDishId { get; set; }
+
+    [Parameter]
+    public int? BaseServings { get; set; }
+
+    // Read mode state.
+    private List<IngredientDto> _ingredients = new();
+    private Dictionary<Guid, bool> _checkedStates = new();
+    private int _adjustedServings = 1;
+    private bool _showError;
+
+    // Edit mode state.
+    private bool _isEditing;
+    private List<EditableIngredient> _editIngredients = new();
+    private HashSet<Guid> _deletedIngredientIds = new();
+
+    // All unit options for the dropdown.
+    private static readonly UnitOfMeasurement[] _unitOptions = Enum.GetValues<UnitOfMeasurement>();
+
+    // More than 50% of ingredients are checked.
+    private bool CheckedPercentageAboveHalf =>
+        _ingredients.Count > 0 && _checkedStates.Count(x => x.Value) > _ingredients.Count / 2.0;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Reset adjusted servings to base on every parameter change (page visit).
+        _adjustedServings = BaseServings ?? 1;
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<IngredientsResponse>($"saved-dishes/{SavedDishId}/ingredients");
+            if (response is not null)
+            {
+                _ingredients = response.Ingredients.OrderBy(x => x.SortOrder).ToList();
+                _checkedStates = response.IngredientChecks.ToDictionary(x => x.IngredientId, x => x.IsChecked);
+            }
+        }
+        catch
+        {
+            // If we can't load, leave defaults (empty).
+        }
+    }
+
+    private void IncrementServings()
+    {
+        if (_adjustedServings < RecipeConstants.MaxServings)
+            _adjustedServings++;
+    }
+
+    private void DecrementServings()
+    {
+        if (_adjustedServings > RecipeConstants.MinServings)
+            _adjustedServings--;
+    }
+
+    private string FormatScaledAmount(IngredientDto ingredient)
+    {
+        if (BaseServings is null or 0)
+            return FormatDisplayAmount(ingredient.Amount, ingredient.Unit);
+
+        var scaledAmount = PortionScaler.Scale(ingredient.Amount, BaseServings.Value, _adjustedServings);
+        return FormatDisplayAmount(scaledAmount, ingredient.Unit) + FormatUnitDisplay(ingredient.Unit, scaledAmount);
+    }
+
+    // Formats the amount for display, omitting unnecessary decimals.
+    private static string FormatDisplayAmount(double amount, UnitOfMeasurement unit)
+    {
+        if (RecipeConstants.CountBasedUnits.Contains(unit))
+            return PortionScaler.FormatAmount(amount, unit);
+
+        // For weight/volume: show decimals only if there are fractional parts.
+        if (amount == Math.Floor(amount))
+            return ((int)amount).ToString();
+
+        // Show up to 2 decimal places, trimming trailing zeros.
+        return amount.ToString("0.##");
+    }
+
+    // Formats the amount for the edit input, using invariant culture.
+    private static string FormatEditAmount(double amount)
+    {
+        if (amount == Math.Floor(amount))
+            return ((int)amount).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        return amount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private string FormatUnitDisplay(UnitOfMeasurement unit, double amount)
+    {
+        if (unit == UnitOfMeasurement.None)
+            return string.Empty;
+
+        var isPlural = amount > 1.0;
+        var key = isPlural ? $"DishDetails_Unit{unit}_Plural" : $"DishDetails_Unit{unit}";
+        var localized = Localizer[key];
+
+        // Fall back to singular if plural key doesn't exist.
+        if (localized.ResourceNotFound)
+            localized = Localizer[$"DishDetails_Unit{unit}"];
+
+        return " " + localized.Value;
+    }
+
+    // Returns the appropriate singular or plural unit label.
+    private static string GetUnitLabel(UnitOfMeasurement unit, double amount)
+    {
+        var isPlural = amount != 1.0;
+        return unit switch
+        {
+            UnitOfMeasurement.G => "g",
+            UnitOfMeasurement.Kg => "kg",
+            UnitOfMeasurement.Ml => "ml",
+            UnitOfMeasurement.L => "l",
+            UnitOfMeasurement.Tbsp => isPlural ? "tbsp" : "tbsp",
+            UnitOfMeasurement.Tsp => isPlural ? "tsp" : "tsp",
+            UnitOfMeasurement.Piece => isPlural ? "pieces" : "piece",
+            UnitOfMeasurement.Stalk => isPlural ? "stalks" : "stalk",
+            UnitOfMeasurement.Clove => isPlural ? "cloves" : "clove",
+            UnitOfMeasurement.Can => isPlural ? "cans" : "can",
+            UnitOfMeasurement.Slice => isPlural ? "slices" : "slice",
+            UnitOfMeasurement.Pinch => isPlural ? "pinches" : "pinch",
+            UnitOfMeasurement.Handful => isPlural ? "handfuls" : "handful",
+            UnitOfMeasurement.Bunch => isPlural ? "bunches" : "bunch",
+            UnitOfMeasurement.Cup => isPlural ? "cups" : "cup",
+            _ => string.Empty
+        };
+    }
+
+    private string GetUnitDisplayName(UnitOfMeasurement unit)
+    {
+        return unit switch
+        {
+            UnitOfMeasurement.None => Localizer["DishDetails_UnitNone"],
+            UnitOfMeasurement.G => Localizer["DishDetails_UnitG"],
+            UnitOfMeasurement.Kg => Localizer["DishDetails_UnitKg"],
+            UnitOfMeasurement.Ml => Localizer["DishDetails_UnitMl"],
+            UnitOfMeasurement.L => Localizer["DishDetails_UnitL"],
+            UnitOfMeasurement.Tbsp => Localizer["DishDetails_UnitTbsp"],
+            UnitOfMeasurement.Tsp => Localizer["DishDetails_UnitTsp"],
+            UnitOfMeasurement.Piece => Localizer["DishDetails_UnitPiece"],
+            UnitOfMeasurement.Stalk => Localizer["DishDetails_UnitStalk"],
+            UnitOfMeasurement.Clove => Localizer["DishDetails_UnitClove"],
+            UnitOfMeasurement.Can => Localizer["DishDetails_UnitCan"],
+            UnitOfMeasurement.Slice => Localizer["DishDetails_UnitSlice"],
+            UnitOfMeasurement.Pinch => Localizer["DishDetails_UnitPinch"],
+            UnitOfMeasurement.Handful => Localizer["DishDetails_UnitHandful"],
+            UnitOfMeasurement.Bunch => Localizer["DishDetails_UnitBunch"],
+            UnitOfMeasurement.Cup => Localizer["DishDetails_UnitCup"],
+            _ => string.Empty
+        };
+    }
+
+    private async Task ToggleCheckAsync(Guid ingredientId, bool isChecked)
+    {
+        _showError = false;
+
+        // Optimistic UI: apply immediately.
+        var previousState = _checkedStates.ContainsKey(ingredientId) && _checkedStates[ingredientId];
+        _checkedStates[ingredientId] = isChecked;
+        StateHasChanged();
+
+        try
+        {
+            var request = new UpdateIngredientCheckRequest(isChecked);
+            var response = await Http.PutAsJsonAsync($"saved-dishes/{SavedDishId}/ingredients/{ingredientId}/check", request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                // Rollback on failure.
+                _checkedStates[ingredientId] = previousState;
+                _showError = true;
+            }
+        }
+        catch
+        {
+            // Rollback on failure.
+            _checkedStates[ingredientId] = previousState;
+            _showError = true;
+        }
+    }
+
+    private async Task ToggleAllAsync()
+    {
+        _showError = false;
+
+        // Determine target state based on current threshold.
+        var targetChecked = !CheckedPercentageAboveHalf;
+
+        // Find ingredients that need to change.
+        var toToggle = _ingredients
+            .Where(x => (_checkedStates.ContainsKey(x.Id) && _checkedStates[x.Id]) != targetChecked)
+            .ToList();
+
+        // Optimistic UI: apply all changes immediately.
+        var previousStates = toToggle.ToDictionary(x => x.Id, x => _checkedStates.ContainsKey(x.Id) && _checkedStates[x.Id]);
+        foreach (var ingredient in toToggle)
+            _checkedStates[ingredient.Id] = targetChecked;
+        StateHasChanged();
+
+        // Fire individual PUTs per toggled ingredient.
+        foreach (var ingredient in toToggle)
+        {
+            try
+            {
+                var request = new UpdateIngredientCheckRequest(targetChecked);
+                var response = await Http.PutAsJsonAsync($"saved-dishes/{SavedDishId}/ingredients/{ingredient.Id}/check", request);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    // Rollback only this ingredient on failure.
+                    _checkedStates[ingredient.Id] = previousStates[ingredient.Id];
+                    _showError = true;
+                }
+            }
+            catch
+            {
+                // Rollback only this ingredient on failure.
+                _checkedStates[ingredient.Id] = previousStates[ingredient.Id];
+                _showError = true;
+            }
+        }
+    }
+
+    // Edit mode methods.
+
+    private void StartEdit()
+    {
+        _isEditing = true;
+        _showError = false;
+        _deletedIngredientIds = new HashSet<Guid>();
+        _editIngredients = _ingredients
+            .Select(x => new EditableIngredient
+            {
+                Id = x.Id,
+                Amount = x.Amount,
+                Unit = x.Unit,
+                Name = x.Name
+            })
+            .ToList();
+    }
+
+    private void Discard()
+    {
+        _isEditing = false;
+        _showError = false;
+        _editIngredients.Clear();
+        _deletedIngredientIds.Clear();
+    }
+
+    private async Task ConfirmAsync()
+    {
+        _showError = false;
+
+        // Auto-delete ingredients with whitespace-only names.
+        var validIngredients = _editIngredients
+            .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+            .ToList();
+
+        // Build the request with updated sort orders.
+        var ingredientDtos = validIngredients
+            .Select((x, index) => new IngredientDto(x.Id, x.Amount, x.Unit, x.Name.Trim(), index))
+            .ToList();
+
+        var request = new UpdateIngredientsRequest(ingredientDtos);
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"saved-dishes/{SavedDishId}/ingredients", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Remove check states for deleted ingredients.
+                foreach (var deletedId in _deletedIngredientIds)
+                    _checkedStates.Remove(deletedId);
+
+                // Also remove check states for auto-deleted whitespace-only ingredients.
+                var autoDeletedIds = _editIngredients
+                    .Where(x => string.IsNullOrWhiteSpace(x.Name))
+                    .Select(x => x.Id)
+                    .ToHashSet();
+                foreach (var autoDeletedId in autoDeletedIds)
+                    _checkedStates.Remove(autoDeletedId);
+
+                _isEditing = false;
+
+                // Reload data from backend to get fresh state.
+                await LoadDataAsync();
+            }
+            else
+            {
+                _showError = true;
+            }
+        }
+        catch
+        {
+            _showError = true;
+        }
+    }
+
+    private void AddIngredient()
+    {
+        if (_editIngredients.Count >= RecipeConstants.MaxIngredients)
+            return;
+
+        _editIngredients.Add(new EditableIngredient
+        {
+            Id = Guid.NewGuid(),
+            Amount = 1,
+            Unit = UnitOfMeasurement.None,
+            Name = string.Empty
+        });
+    }
+
+    private void DeleteIngredient(int index)
+    {
+        var item = _editIngredients[index];
+        _deletedIngredientIds.Add(item.Id);
+        _editIngredients.RemoveAt(index);
+    }
+
+    private void MoveUp(int index)
+    {
+        if (index <= 0)
+            return;
+
+        (_editIngredients[index], _editIngredients[index - 1]) = (_editIngredients[index - 1], _editIngredients[index]);
+    }
+
+    private void MoveDown(int index)
+    {
+        if (index >= _editIngredients.Count - 1)
+            return;
+
+        (_editIngredients[index], _editIngredients[index + 1]) = (_editIngredients[index + 1], _editIngredients[index]);
+    }
+
+    private void OnAmountChange(int index, ChangeEventArgs args)
+    {
+        var rawValue = args.Value?.ToString() ?? string.Empty;
+        // Parse with invariant culture so both '.' and input from type="number" work correctly.
+        if (double.TryParse(rawValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var amount))
+        {
+            // Clamp to valid range.
+            amount = Math.Clamp(amount, RecipeConstants.MinIngredientAmount, RecipeConstants.MaxIngredientAmount);
+            _editIngredients[index].Amount = amount;
+        }
+    }
+
+    private void OnUnitChange(int index, ChangeEventArgs args)
+    {
+        if (int.TryParse(args.Value?.ToString(), out var unitValue) && Enum.IsDefined(typeof(UnitOfMeasurement), unitValue))
+            _editIngredients[index].Unit = (UnitOfMeasurement)unitValue;
+    }
+
+    private void OnNameChange(int index, ChangeEventArgs args)
+    {
+        var name = args.Value?.ToString() ?? string.Empty;
+
+        // Enforce max length.
+        if (name.Length > RecipeConstants.MaxIngredientNameLength)
+            name = name[..RecipeConstants.MaxIngredientNameLength];
+
+        _editIngredients[index].Name = name;
+    }
+
+    // Mutable model for editing an ingredient.
+    private sealed class EditableIngredient
+    {
+        public Guid Id { get; set; }
+        public double Amount { get; set; }
+        public UnitOfMeasurement Unit { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+}

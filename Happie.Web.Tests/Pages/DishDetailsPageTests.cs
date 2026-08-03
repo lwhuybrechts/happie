@@ -1,7 +1,7 @@
+using System.Net;
 using Bunit;
 using Bunit.TestDoubles;
 using Happie.Shared.Contracts;
-using Happie.Web.Http;
 using Happie.Web.Pages;
 using Happie.Web.Resources;
 using Happie.Web.Services;
@@ -16,13 +16,12 @@ namespace Happie.Web.Tests.Pages;
 
 public class DishDetailsPageTests : BunitContext
 {
-    private readonly Mock<IStatisticsApiClient> _statisticsApiMock = new();
     private readonly Mock<ICachedApiClient> _cachedApiMock = new();
     private readonly Mock<IStringLocalizer<AppStrings>> _localizerMock = new();
     private readonly FakeDelayService _fakeDelayService = new();
     private readonly LoadingIndicatorState _loadingIndicatorState;
 
-    private static readonly Guid ValidDishId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly Guid ValidDishId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
     public DishDetailsPageTests()
     {
@@ -32,25 +31,54 @@ public class DishDetailsPageTests : BunitContext
 
         SetupLocalizer();
 
-        Services.AddSingleton(_statisticsApiMock.Object);
         Services.AddSingleton(_cachedApiMock.Object);
         Services.AddSingleton(_localizerMock.Object);
         Services.AddSingleton(_loadingIndicatorState);
 
-        // Register HttpClient needed by the page for housemate list fetches.
-        this.RegisterHttpClient(System.Net.HttpStatusCode.OK, new List<HousemateDto>());
-
-        // Default timeline mock — returns empty timeline for any dish.
-        _statisticsApiMock
-            .Setup(x => x.GetDishTimelineAsync(
-                It.IsAny<Guid>(),
-                It.IsAny<DateOnly>(),
-                It.IsAny<DateOnly>()))
-            .ReturnsAsync(new DishTimelineResponse(new List<DishTimelineDto>(), null));
+        // Register HttpClient needed by DishDetailsPage and child panels.
+        this.RegisterHttpClient(HttpStatusCode.OK, new RecipeSummaryResponse(null, null, null));
     }
 
     [Fact]
-    public void Render_InvalidGuidId_RedirectsToSavedDishesPage()
+    public void Render_WithValidDish_DisplaysDishNameAsHeading()
+    {
+        // Arrange.
+        SetupSavedDishesCache(ValidDishId, "Spaghetti Bolognese");
+
+        // Act.
+        var cut = Render<DishDetailsPage>(parameters => parameters
+            .Add(x => x.Id, ValidDishId.ToString()));
+
+        cut.WaitForState(() => cut.FindAll(".dish-details-page__title").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Assert.
+        var title = cut.Find(".dish-details-page__title");
+        Assert.Equal("Spaghetti Bolognese", title.TextContent);
+    }
+
+    [Fact]
+    public void Render_WhileLoading_DoesNotDisplayPageContent()
+    {
+        // Arrange — set up a cached API that never completes so we stay in loading state.
+        var tcs = new TaskCompletionSource<SavedDishesFetchResult>();
+        _cachedApiMock
+            .Setup(x => x.GetSavedDishesAsync())
+            .Returns(tcs.Task);
+
+        // Act.
+        var cut = Render<DishDetailsPage>(parameters => parameters
+            .Add(x => x.Id, ValidDishId.ToString()));
+
+        // Assert — the page header and title should not be rendered while loading.
+        Assert.Empty(cut.FindAll(".dish-details-page__title"));
+        Assert.Empty(cut.FindAll(".dish-details-page__header"));
+
+        // Clean up.
+        tcs.SetResult(new SavedDishesFetchResult(new List<SavedDishDto>(), false, false));
+    }
+
+    [Fact]
+    public void Render_InvalidGuidId_NavigatesToSavedDishesPage()
     {
         // Act.
         var cut = Render<DishDetailsPage>(parameters => parameters
@@ -64,23 +92,19 @@ public class DishDetailsPageTests : BunitContext
     }
 
     [Fact]
-    public void Render_ApiReturns404_RedirectsToSavedDishesPage()
+    public void Render_DishNotFound_NavigatesToSavedDishesPage()
     {
-        // Arrange.
-        SetupSavedDishesCache(ValidDishId, "Test Dish");
-
-        _statisticsApiMock
-            .Setup(x => x.GetDishStatisticsAsync(
-                ValidDishId,
-                It.IsAny<DateOnly>(),
-                It.IsAny<DateOnly>()))
-            .ReturnsAsync((DishStatisticsResponse?)null);
+        // Arrange — return dishes that do not include the requested ID.
+        var otherDishId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
+        var dishes = new List<SavedDishDto> { new(otherDishId, "Other Dish") };
+        _cachedApiMock
+            .Setup(x => x.GetSavedDishesAsync())
+            .ReturnsAsync(new SavedDishesFetchResult(dishes, false, false));
 
         // Act.
         var cut = Render<DishDetailsPage>(parameters => parameters
             .Add(x => x.Id, ValidDishId.ToString()));
 
-        // Wait for async load to complete.
         cut.WaitForState(() =>
         {
             var navigationManager = Services.GetRequiredService<NavigationManager>();
@@ -96,97 +120,98 @@ public class DishDetailsPageTests : BunitContext
     }
 
     [Fact]
-    public void Render_ZeroCookingDaysInRange_DisplaysEmptyStateMessage()
+    public void Render_WithValidDish_StatsButtonNavigatesToStats()
     {
         // Arrange.
         SetupSavedDishesCache(ValidDishId, "Pasta Carbonara");
-
-        var emptyStatistics = new DishStatisticsResponse(
-            TimesCooked: 0,
-            AllTimeTimesCooked: 0,
-            LastCookedDate: null,
-            FirstCookedDate: null,
-            CookingShares: new List<CookingShareDto>());
-
-        _statisticsApiMock
-            .Setup(x => x.GetDishStatisticsAsync(
-                ValidDishId,
-                It.IsAny<DateOnly>(),
-                It.IsAny<DateOnly>()))
-            .ReturnsAsync(emptyStatistics);
 
         // Act.
         var cut = Render<DishDetailsPage>(parameters => parameters
             .Add(x => x.Id, ValidDishId.ToString()));
 
-        cut.WaitForState(() => cut.FindAll(".dish-details-page__empty-state").Count > 0, TimeSpan.FromSeconds(5));
+        cut.WaitForState(() => cut.FindAll(".dish-details-page__stats-btn").Count > 0, TimeSpan.FromSeconds(5));
+
+        var statsButton = cut.Find(".dish-details-page__stats-btn");
+        statsButton.Click();
 
         // Assert.
-        var emptyState = cut.Find(".dish-details-page__empty-message");
-        Assert.NotNull(emptyState);
-        Assert.Equal("Stats_EmptyState", emptyState.TextContent);
+        var navigationManager = Services.GetRequiredService<NavigationManager>();
+        var bunitNav = (BunitNavigationManager)navigationManager;
+        var lastNav = bunitNav.History.Last();
+        Assert.Contains($"/saved-dishes/{ValidDishId}/stats", lastNav.Uri);
     }
 
     [Fact]
-    public void Render_WithCookingData_DisplaysSummaryStatistics()
+    public void ClickEditIcon_ShowsNameInputField()
     {
         // Arrange.
-        SetupSavedDishesCache(ValidDishId, "Pasta Carbonara");
+        SetupSavedDishesCache(ValidDishId, "Risotto");
 
-        var statistics = new DishStatisticsResponse(
-            TimesCooked: 5,
-            AllTimeTimesCooked: 12,
-            LastCookedDate: DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd"),
-            FirstCookedDate: null,
-            CookingShares: new List<CookingShareDto>());
-
-        _statisticsApiMock
-            .Setup(x => x.GetDishStatisticsAsync(
-                ValidDishId,
-                It.IsAny<DateOnly>(),
-                It.IsAny<DateOnly>()))
-            .ReturnsAsync(statistics);
-
-        // Act.
-        var cut = Render<DishDetailsPage>(parameters => parameters
-            .Add(x => x.Id, ValidDishId.ToString()));
-
-        cut.WaitForState(() => cut.FindAll(".dish-details-page__primary-count").Count > 0, TimeSpan.FromSeconds(5));
-
-        // Assert.
-        var primaryCount = cut.Find(".dish-details-page__primary-count");
-        Assert.Equal("5", primaryCount.TextContent);
-    }
-
-    [Fact]
-    public void Render_WithValidDish_DisplaysDishDescriptionAsHeading()
-    {
-        // Arrange.
-        SetupSavedDishesCache(ValidDishId, "Pasta Carbonara");
-
-        var statistics = new DishStatisticsResponse(
-            TimesCooked: 3,
-            AllTimeTimesCooked: 10,
-            LastCookedDate: null,
-            FirstCookedDate: null,
-            CookingShares: new List<CookingShareDto>());
-
-        _statisticsApiMock
-            .Setup(x => x.GetDishStatisticsAsync(
-                ValidDishId,
-                It.IsAny<DateOnly>(),
-                It.IsAny<DateOnly>()))
-            .ReturnsAsync(statistics);
-
-        // Act.
         var cut = Render<DishDetailsPage>(parameters => parameters
             .Add(x => x.Id, ValidDishId.ToString()));
 
         cut.WaitForState(() => cut.FindAll(".dish-details-page__title").Count > 0, TimeSpan.FromSeconds(5));
 
-        // Assert.
+        // Act — click the edit icon.
+        var editButton = cut.FindAll(".dish-details-page__icon-btn")
+            .First(x => x.GetAttribute("aria-label") == "DishDetails_EditName");
+        editButton.Click();
+
+        // Assert — input field should appear.
+        var nameInput = cut.Find(".dish-details-page__name-input");
+        Assert.NotNull(nameInput);
+        Assert.Equal("Risotto", nameInput.GetAttribute("value"));
+    }
+
+    [Fact]
+    public void ClickDiscardButton_RevertsToReadMode()
+    {
+        // Arrange.
+        SetupSavedDishesCache(ValidDishId, "Risotto");
+
+        var cut = Render<DishDetailsPage>(parameters => parameters
+            .Add(x => x.Id, ValidDishId.ToString()));
+
+        cut.WaitForState(() => cut.FindAll(".dish-details-page__title").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Enter edit mode.
+        var editButton = cut.FindAll(".dish-details-page__icon-btn")
+            .First(x => x.GetAttribute("aria-label") == "DishDetails_EditName");
+        editButton.Click();
+
+        // Act — click discard.
+        var discardButton = cut.Find(".dish-details-page__icon-btn--discard");
+        discardButton.Click();
+
+        // Assert — title should be visible again, input should not be present.
         var title = cut.Find(".dish-details-page__title");
-        Assert.Equal("Stats_DishTitle", title.TextContent);
+        Assert.Equal("Risotto", title.TextContent);
+        Assert.Empty(cut.FindAll(".dish-details-page__name-input"));
+    }
+
+    [Fact]
+    public void NameInput_BlocksAmpersandCharacter()
+    {
+        // Arrange.
+        SetupSavedDishesCache(ValidDishId, "Risotto");
+
+        var cut = Render<DishDetailsPage>(parameters => parameters
+            .Add(x => x.Id, ValidDishId.ToString()));
+
+        cut.WaitForState(() => cut.FindAll(".dish-details-page__title").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Enter edit mode.
+        var editButton = cut.FindAll(".dish-details-page__icon-btn")
+            .First(x => x.GetAttribute("aria-label") == "DishDetails_EditName");
+        editButton.Click();
+
+        // Act — type text containing '&'.
+        var nameInput = cut.Find(".dish-details-page__name-input");
+        nameInput.Input("Rice & Beans");
+
+        // Assert — the '&' should be stripped from the input value.
+        var updatedInput = cut.Find(".dish-details-page__name-input");
+        Assert.Equal("Rice  Beans", updatedInput.GetAttribute("value"));
     }
 
     private void SetupSavedDishesCache(Guid dishId, string description)

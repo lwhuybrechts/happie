@@ -1,0 +1,248 @@
+/* Summary panel card matching the page header style. */
+.summary-panel {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Header with title and action buttons. */
+.summary-panel__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.summary-panel__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Icon buttons matching the DishDetailsPage pattern. */
+.summary-panel__icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #374151;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background-color 0.15s ease;
+}
+
+.summary-panel__icon-btn:hover {
+    background-color: #f3f4f6;
+}
+
+.summary-panel__icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.summary-panel__icon-btn--confirm {
+    color: #16a34a;
+}
+
+.summary-panel__icon-btn--confirm:hover {
+    background-color: #f0fdf4;
+}
+
+.summary-panel__icon-btn--discard {
+    color: #dc2626;
+}
+
+.summary-panel__icon-btn--discard:hover {
+    background-color: #fef2f2;
+}
+
+/* Body content area. */
+.summary-panel__body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Empty placeholder text. */
+.summary-panel__empty {
+    color: #9ca3af;
+    font-size: 0.875rem;
+    font-style: italic;
+    margin: 0;
+}
+
+/* Read-mode text display. */
+.summary-panel__text {
+    color: #111827;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Metadata rows in read mode. */
+.summary-panel__meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Inline row for side-by-side fields. */
+.summary-panel__inline-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+@media (min-width: 400px) {
+    .summary-panel__inline-row {
+        flex-direction: row;
+        gap: 16px;
+    }
+}
+
+/* Inline field within inline row. */
+.summary-panel__field--inline {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Meta block for read mode (vertical: label above value). */
+.summary-panel__meta-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Value row with icon and text. */
+.summary-panel__meta-value-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Icon in meta value row. */
+.summary-panel__meta-icon {
+    color: #6b7280;
+    flex-shrink: 0;
+}
+
+/* Label row with label and clear button. */
+.summary-panel__label-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Clear button matching DishPanel style. */
+.summary-panel__clear-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #718096;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.summary-panel__clear-btn:hover {
+    opacity: 0.7;
+}
+
+.summary-panel__meta-label {
+    color: #6b7280;
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.summary-panel__meta-value {
+    color: #111827;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* Edit mode fields. */
+.summary-panel__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.summary-panel__label {
+    color: #6b7280;
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.summary-panel__textarea {
+    width: 100%;
+    min-height: 80px;
+    font-size: 0.9375rem;
+    color: #111827;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    padding: 8px 10px;
+    resize: vertical;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.15s ease;
+    box-sizing: border-box;
+}
+
+.summary-panel__textarea:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.summary-panel__input {
+    font-size: 0.9375rem;
+    color: #111827;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    padding: 6px 10px;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.summary-panel__input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.summary-panel__time-input {
+    width: fit-content;
+}
+
+.summary-panel__time-input::-webkit-calendar-picker-indicator {
+    display: none;
+}
+
+.summary-panel__servings-input {
+    width: 80px;
+}
+
+/* Error message. */
+.summary-panel__error {
+    color: #dc2626;
+    font-size: 0.8125rem;
+    margin-top: 4px;
+}
+
+/* Character count indicator. */
+.summary-panel__char-count {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-align: right;
+    margin-top: 2px;
+}

@@ -1,0 +1,253 @@
+/* Instructions panel card matching the other panel styles. */
+.instructions-panel {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Header with title and edit button. */
+.instructions-panel__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.instructions-panel__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
+    min-width: 0;
+}
+
+/* Pushes the confirm/discard buttons to the right. */
+.instructions-panel__header-spacer {
+    flex: 1;
+}
+
+/* Icon buttons matching the established pattern. */
+.instructions-panel__icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #374151;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background-color 0.15s ease;
+}
+
+.instructions-panel__icon-btn:hover {
+    background-color: #f3f4f6;
+}
+
+.instructions-panel__icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Confirm button color. */
+.instructions-panel__icon-btn--confirm {
+    color: #16a34a;
+}
+
+/* Discard button color. */
+.instructions-panel__icon-btn--discard {
+    color: #dc2626;
+}
+
+/* Delete button color. */
+.instructions-panel__icon-btn--delete {
+    color: #dc2626;
+}
+
+/* Body content area. */
+.instructions-panel__body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Empty placeholder text. */
+.instructions-panel__empty {
+    color: #9ca3af;
+    font-size: 0.875rem;
+    font-style: italic;
+    margin: 0;
+}
+
+/* Numbered list of instructions in read mode. */
+.instructions-panel__list {
+    list-style: none;
+    counter-reset: instruction-counter;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.instructions-panel__item {
+    counter-increment: instruction-counter;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.instructions-panel__item::before {
+    content: counter(instruction-counter);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #6366f1;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* Instruction text preserving line breaks. */
+.instructions-panel__text {
+    color: #111827;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Edit mode list container. */
+.instructions-panel__edit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Edit mode row containing number, textarea, and action buttons. */
+.instructions-panel__edit-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+/* Numbered label in edit mode. */
+.instructions-panel__number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #6366f1;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-top: 6px;
+}
+
+/* Multiline textarea for instruction text in edit mode. */
+.instructions-panel__textarea-wrapper {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.instructions-panel__textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    line-height: 1.5;
+    background-color: #ffffff;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.instructions-panel__textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* Character count indicator. */
+.instructions-panel__char-count {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-align: right;
+    margin-top: 2px;
+}
+
+/* Action buttons column in edit mode. */
+.instructions-panel__edit-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+/* Add instruction button. */
+.instructions-panel__add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6366f1;
+    background: transparent;
+    border: 1.5px dashed #6366f1;
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    align-self: flex-start;
+}
+
+.instructions-panel__add-btn:hover {
+    background-color: #eef2ff;
+}
+
+/* Error message. */
+.instructions-panel__error {
+    color: #dc2626;
+    font-size: 0.8125rem;
+    margin-top: 4px;
+}
+
+/* Inline action buttons (order/delete) — shown at ≥500px. */
+.instructions-panel__inline-actions {
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+/* Overflow menu wrapper — shown below 500px. */
+.instructions-panel__overflow-actions {
+    display: flex;
+    flex-shrink: 0;
+    margin-top: 6px;
+}
+
+@media (min-width: 500px) {
+    .instructions-panel__inline-actions {
+        display: flex;
+    }
+
+    .instructions-panel__overflow-actions {
+        display: none;
+    }
+}
