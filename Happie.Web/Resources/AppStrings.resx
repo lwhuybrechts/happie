@@ -969,6 +969,22 @@ Dit kan afwijken van het totaal aantal keer gekookt, omdat je ook kok kunt zijn 
     <value>tl</value>
     <comment>Plural display name for UnitOfMeasurement.Tsp.</comment>
   </data>
+  <data name="DishDetails_UnitPacket" xml:space="preserve">
+    <value>pakje</value>
+    <comment>Display name for UnitOfMeasurement.Packet in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitPacket_Plural" xml:space="preserve">
+    <value>pakjes</value>
+    <comment>Plural display name for UnitOfMeasurement.Packet.</comment>
+  </data>
+  <data name="DishDetails_UnitSachet" xml:space="preserve">
+    <value>zakje</value>
+    <comment>Display name for UnitOfMeasurement.Sachet in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitSachet_Plural" xml:space="preserve">
+    <value>zakjes</value>
+    <comment>Plural display name for UnitOfMeasurement.Sachet.</comment>
+  </data>
   <data name="DishDetails_IngredientsSaveError" xml:space="preserve">
     <value>Opslaan ingrediënten mislukt. Probeer het opnieuw.</value>
     <comment>Error message when batch saving ingredients fails.</comment>

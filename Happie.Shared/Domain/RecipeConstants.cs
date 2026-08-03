@@ -8,7 +8,7 @@ public static class RecipeConstants
     {
         UnitOfMeasurement.Piece, UnitOfMeasurement.Stalk, UnitOfMeasurement.Clove,
         UnitOfMeasurement.Can, UnitOfMeasurement.Slice, UnitOfMeasurement.Bunch,
-        UnitOfMeasurement.Handful
+        UnitOfMeasurement.Handful, UnitOfMeasurement.Packet, UnitOfMeasurement.Sachet
     };
 
     /// <summary>Units that represent weight or volume and display with decimal places.</summary>

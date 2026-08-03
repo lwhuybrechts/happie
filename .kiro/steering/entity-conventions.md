@@ -1,6 +1,6 @@
 ---
 inclusion: fileMatch
-fileMatchPattern: "**/Infrastructure/**"
+fileMatchPattern: "**/Infrastructure/**,**/Happie.Shared/Domain/**"
 ---
 
 # Happie — Entity, Repository & Mapper Conventions
@@ -18,7 +18,7 @@ All Table Storage entity classes MUST adhere to the following rules:
 - Use nullable reference types (`?`) for optional properties
 - Use `= string.Empty` as default for required string properties
 - **NEVER use `DateTimeOffset?` (nullable) for entity properties** — the Azure.Data.Tables SDK does not serialize nullable `DateTimeOffset?` on strongly-typed `ITableEntity` classes. Use non-nullable `DateTimeOffset` instead, with `default` (`DateTimeOffset.MinValue`) as the sentinel for "not set". The mapper converts `default` back to `null` in the domain type.
-- **Enum properties are stored as their integer value** — Use the enum type directly on entity properties (e.g., `public AttendanceStatus Status { get; set; }`). Azure Table Storage serializes them as the underlying `int` value. NEVER store enums as strings. When defining new enums, only append new members at the end — never reorder or remove existing members — to preserve compatibility with stored integer values.
+- **Enum properties SHOULD be stored as their integer value** — The preferred approach is to store enums as `int` so that enum member names can be freely renamed later without breaking stored data. To achieve this, the entity property should be `int` and the mapper converts between the enum and its integer backing value. When defining new enums, only append new members at the end — never reorder or remove existing members — to preserve compatibility with stored integer values. **Note:** some existing entities (e.g., `IngredientEntity.Unit`) currently store enums as their string name (using the enum type directly on the entity property). New entity properties MUST use the `int` approach; existing string-stored enums may be migrated when convenient.
 - Entity classes are internal to the repository layer — NEVER reference them outside `Happie.Api/Infrastructure/`
 
 ```csharp

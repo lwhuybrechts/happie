@@ -969,6 +969,22 @@ This may differ from the total times cooked, since you can be chef on days you'r
     <value>tsp</value>
     <comment>Plural display name for UnitOfMeasurement.Tsp.</comment>
   </data>
+  <data name="DishDetails_UnitPacket" xml:space="preserve">
+    <value>packet</value>
+    <comment>Display name for UnitOfMeasurement.Packet in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitPacket_Plural" xml:space="preserve">
+    <value>packets</value>
+    <comment>Plural display name for UnitOfMeasurement.Packet.</comment>
+  </data>
+  <data name="DishDetails_UnitSachet" xml:space="preserve">
+    <value>sachet</value>
+    <comment>Display name for UnitOfMeasurement.Sachet in the unit dropdown.</comment>
+  </data>
+  <data name="DishDetails_UnitSachet_Plural" xml:space="preserve">
+    <value>sachets</value>
+    <comment>Plural display name for UnitOfMeasurement.Sachet.</comment>
+  </data>
   <data name="DishDetails_IngredientsSaveError" xml:space="preserve">
     <value>Failed to save ingredients. Please try again.</value>
     <comment>Error message when batch saving ingredients fails.</comment>

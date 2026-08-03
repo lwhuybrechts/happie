@@ -223,8 +223,31 @@
     private List<EditableIngredient> _editIngredients = new();
     private HashSet<Guid> _deletedIngredientIds = new();
 
-    // All unit options for the dropdown.
-    private static readonly UnitOfMeasurement[] _unitOptions = Enum.GetValues<UnitOfMeasurement>();
+    // All unit options for the dropdown, ordered by category: default, weight, volume, count/packaging.
+    private static readonly UnitOfMeasurement[] _unitOptions =
+    [
+        UnitOfMeasurement.None,
+        // Weight.
+        UnitOfMeasurement.G,
+        UnitOfMeasurement.Kg,
+        // Volume.
+        UnitOfMeasurement.Ml,
+        UnitOfMeasurement.L,
+        UnitOfMeasurement.Tsp,
+        UnitOfMeasurement.Tbsp,
+        UnitOfMeasurement.Cup,
+        // Count/packaging.
+        UnitOfMeasurement.Piece,
+        UnitOfMeasurement.Slice,
+        UnitOfMeasurement.Can,
+        UnitOfMeasurement.Packet,
+        UnitOfMeasurement.Sachet,
+        UnitOfMeasurement.Stalk,
+        UnitOfMeasurement.Clove,
+        UnitOfMeasurement.Bunch,
+        UnitOfMeasurement.Handful,
+        UnitOfMeasurement.Pinch,
+    ];
 
     // More than 50% of ingredients are checked.
     private bool CheckedPercentageAboveHalf =>
@@ -335,12 +358,17 @@
             UnitOfMeasurement.Handful => isPlural ? "handfuls" : "handful",
             UnitOfMeasurement.Bunch => isPlural ? "bunches" : "bunch",
             UnitOfMeasurement.Cup => isPlural ? "cups" : "cup",
+            UnitOfMeasurement.Packet => isPlural ? "packets" : "packet",
+            UnitOfMeasurement.Sachet => isPlural ? "sachets" : "sachet",
             _ => string.Empty
         };
     }
 
     private string GetUnitDisplayName(UnitOfMeasurement unit, double amount)
     {
+        if (unit == UnitOfMeasurement.None)
+            return string.Empty;
+
         var isPlural = amount > 1.0;
         var baseKey = $"DishDetails_Unit{unit}";
 

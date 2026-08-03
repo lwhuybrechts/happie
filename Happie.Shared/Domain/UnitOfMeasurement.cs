@@ -18,5 +18,7 @@ public enum UnitOfMeasurement
     Pinch,
     Handful,
     Bunch,
-    Cup
+    Cup,
+    Packet,
+    Sachet
 }

@@ -116,7 +116,7 @@ Additional conventions are loaded automatically when working on relevant files. 
 | File | Topic | Loaded when |
 |---|---|---|
 | `api-conventions.md` | Functions, request validation, options pattern | Editing `Happie.Api/` or `Happie.Shared/` |
-| `entity-conventions.md` | Entities, repositories, mappers | Editing `Infrastructure/` |
+| `entity-conventions.md` | Entities, repositories, mappers, enum storage | Editing `Infrastructure/` or `Happie.Shared/Domain/` |
 | `testing-conventions.md` | xUnit, FsCheck, test naming, assertions | Editing `*Tests*/` |
 | `bunit-testing.md` | bUnit component test patterns | Editing `Happie.Web.Tests/` |
 | `ui-conventions.md` | Blazor patterns, modals, CSS | Editing `.razor` / `Happie.Web/` |

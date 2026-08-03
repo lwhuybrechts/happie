@@ -522,7 +522,7 @@
 
     private void NavigateToStatistics(HousemateDto housemate)
     {
-        NavigationManager.NavigateTo($"/housemates/{housemate.Id}");
+        NavigationManager.NavigateTo($"/housemates/{housemate.Id}/stats");
     }
 
     private async Task MoveHousemateAsync(int currentIndex, int direction)
