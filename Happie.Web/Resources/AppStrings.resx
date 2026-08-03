@@ -866,7 +866,7 @@ Dit kan afwijken van het totaal aantal keer gekookt, omdat je ook kok kunt zijn 
     <comment>Display name for UnitOfMeasurement.None in the unit dropdown.</comment>
   </data>
   <data name="DishDetails_UnitG" xml:space="preserve">
-    <value>g</value>
+    <value>gr</value>
     <comment>Display name for UnitOfMeasurement.G in the unit dropdown.</comment>
   </data>
   <data name="DishDetails_UnitKg" xml:space="preserve">
@@ -910,7 +910,7 @@ Dit kan afwijken van het totaal aantal keer gekookt, omdat je ook kok kunt zijn 
     <comment>Display name for UnitOfMeasurement.Slice in the unit dropdown.</comment>
   </data>
   <data name="DishDetails_UnitPinch" xml:space="preserve">
-    <value>snuf</value>
+    <value>snufje</value>
     <comment>Display name for UnitOfMeasurement.Pinch in the unit dropdown.</comment>
   </data>
   <data name="DishDetails_UnitHandful" xml:space="preserve">
