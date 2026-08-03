@@ -49,7 +49,8 @@ public class DishPanelAutocompleteTests : BunitContext
         var input = cut.Find("input.dish-panel__input");
         input.Input("Piz");
 
-        // Assert.
+        // Assert — wait for ghost text since autocomplete depends on async saved dishes load.
+        cut.WaitForElement("span.dish-panel__ghost-text-suggestion", TimeSpan.FromSeconds(5));
         var ghostText = cut.Find("span.dish-panel__ghost-text-suggestion");
         Assert.Equal("za Margherita", ghostText.TextContent);
     }
@@ -62,8 +63,8 @@ public class DishPanelAutocompleteTests : BunitContext
         var input = cut.Find("input.dish-panel__input");
         input.Input("Piz");
 
-        // Verify ghost text is visible first.
-        Assert.NotEmpty(cut.FindAll("span.dish-panel__ghost-text-suggestion"));
+        // Wait for ghost text to appear (async autocomplete).
+        cut.WaitForElement("span.dish-panel__ghost-text-suggestion", TimeSpan.FromSeconds(5));
 
         // Act.
         input.Blur();
@@ -95,8 +96,8 @@ public class DishPanelAutocompleteTests : BunitContext
         var input = cut.Find("input.dish-panel__input");
         input.Input("Piz");
 
-        // Verify ghost text is present.
-        Assert.NotEmpty(cut.FindAll("span.dish-panel__ghost-text-suggestion"));
+        // Wait for ghost text to appear (async autocomplete).
+        cut.WaitForElement("span.dish-panel__ghost-text-suggestion", TimeSpan.FromSeconds(5));
 
         // Act.
         input.KeyDown(new KeyboardEventArgs { Key = "Tab" });
@@ -116,8 +117,8 @@ public class DishPanelAutocompleteTests : BunitContext
         var input = cut.Find("input.dish-panel__input");
         input.Input("Piz");
 
-        // Verify ghost text is present.
-        Assert.NotEmpty(cut.FindAll("span.dish-panel__ghost-text-suggestion"));
+        // Wait for ghost text to appear (async autocomplete).
+        cut.WaitForElement("span.dish-panel__ghost-text-suggestion", TimeSpan.FromSeconds(5));
 
         // Act.
         input.KeyDown(new KeyboardEventArgs { Key = "ArrowRight" });
@@ -157,8 +158,8 @@ public class DishPanelAutocompleteTests : BunitContext
         var input = cut.Find("input.dish-panel__input");
         input.Input("Piz");
 
-        // Verify ghost text is present.
-        Assert.NotEmpty(cut.FindAll("span.dish-panel__ghost-text-suggestion"));
+        // Wait for ghost text to appear (async autocomplete may need a render cycle).
+        cut.WaitForElement("span.dish-panel__ghost-text-suggestion", TimeSpan.FromSeconds(5));
 
         // Act.
         var tapTarget = cut.Find("span.dish-panel__ghost-text-suggestion");

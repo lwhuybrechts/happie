@@ -108,11 +108,10 @@ public class IngredientsPanelTests : BunitContext
         plusButton.Click();
 
         // Assert — amount should be scaled from 200g (4 servings) to 250g (5 servings).
-        // The decimal separator is locale-dependent so check for both dot and comma formats.
+        // FormatDisplayAmount returns "250" (no decimals for whole numbers).
+        // FormatUnitDisplay appends the localized unit key via the mock localizer.
         var amount = cut.Find(".ingredients-panel__amount");
-        Assert.True(
-            amount.TextContent.Contains("250.00") || amount.TextContent.Contains("250,00"),
-            $"Expected amount to contain '250.00' or '250,00' but was '{amount.TextContent}'");
+        Assert.Contains("250", amount.TextContent);
     }
 
     [Fact]

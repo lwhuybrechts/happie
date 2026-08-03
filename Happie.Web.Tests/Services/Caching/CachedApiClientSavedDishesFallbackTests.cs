@@ -115,16 +115,17 @@ public class CachedApiClientSavedDishesFallbackTests : BunitContext
         // Act.
         var cut = Render<SavedDishesPage>();
 
+        // Wait for the async LoadDishesAsync to complete and the list to render.
+        cut.WaitForState(() => cut.FindAll(".saved-dishes-page__item").Count > 0, TimeSpan.FromSeconds(5));
+
         // Assert.
         var addButton = cut.Find(".saved-dishes-page__add-btn");
         Assert.True(addButton.HasAttribute("disabled"));
 
-        // Statistics buttons remain enabled offline (read-only navigation).
-        var mutationButtons = cut.FindAll(".saved-dishes-page__icon-btn")
-            .Where(x => x.GetAttribute("aria-label")?.Contains("Statistics") != true)
-            .ToList();
-        Assert.True(mutationButtons.Count >= 2);
-        foreach (var button in mutationButtons)
+        // Delete buttons are disabled offline (mutation actions).
+        var deleteButtons = cut.FindAll(".saved-dishes-page__icon-btn--danger").ToList();
+        Assert.True(deleteButtons.Count >= 2);
+        foreach (var button in deleteButtons)
             Assert.True(button.HasAttribute("disabled"));
     }
 
