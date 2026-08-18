@@ -64,7 +64,7 @@
                     <span class="donut-chart__label-swatch" style="background-color: @segment.Color;"></span>
                     @if (segment.HousemateId != HighlightedHousemateId)
                     {
-                        <a class="donut-chart__label-link" href="@($"housemates/{segment.HousemateId}")">@segment.Name</a>
+                        <a class="donut-chart__label-link" href="@($"/housemates/{segment.HousemateId}/stats")">@segment.Name</a>
                     }
                     else
                     {
