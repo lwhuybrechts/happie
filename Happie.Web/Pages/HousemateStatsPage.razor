@@ -358,8 +358,16 @@
             x => x.Label,
             x => new HashSet<DateOnly>(x.Dates));
 
+        // Track which labels represent the "Other" row.
+        var otherLabels = _timelineRows
+            .Where(x => x.NavigationUri is null)
+            .Select(x => x.Label)
+            .ToHashSet();
+
         // Track which dishes are newly added in this merge.
         var newDishDescriptions = new List<string>();
+
+        var otherLabel = Localizer["Timeline_Other"].Value;
 
         foreach (var entry in newTimeline)
         {
@@ -367,20 +375,25 @@
             if (entry.CookingDays.Count == 0)
                 continue;
 
+            var label = entry.IsOther ? otherLabel : entry.DishDescription;
+
             var dates = entry.CookingDays
                 .Select(x => DateOnly.Parse(x))
                 .ToList();
 
-            if (rowsByDescription.TryGetValue(entry.DishDescription, out var existingDates))
+            if (rowsByDescription.TryGetValue(label, out var existingDates))
             {
                 foreach (var date in dates)
                     existingDates.Add(date);
             }
             else
             {
-                rowsByDescription[entry.DishDescription] = new HashSet<DateOnly>(dates);
-                newDishDescriptions.Add(entry.DishDescription);
+                rowsByDescription[label] = new HashSet<DateOnly>(dates);
+                newDishDescriptions.Add(label);
             }
+
+            if (entry.IsOther)
+                otherLabels.Add(label);
         }
 
         // Build a lookup for SavedDishId by description from existing and new data.
@@ -395,7 +408,10 @@
             }
         }
         foreach (var entry in newTimeline)
-            dishIdByDescription.TryAdd(entry.DishDescription, entry.SavedDishId);
+        {
+            if (!entry.IsOther)
+                dishIdByDescription.TryAdd(entry.DishDescription, entry.SavedDishId);
+        }
 
         // Preserve existing row order, then append new dishes sorted by total cooking days descending.
         var orderedDescriptions = _timelineRows
@@ -415,7 +431,7 @@
                 x,
                 _housemateColor,
                 rowsByDescription[x],
-                dishIdByDescription.TryGetValue(x, out var dishId) ? $"/saved-dishes/{dishId}/stats" : null))
+                otherLabels.Contains(x) ? null : (dishIdByDescription.TryGetValue(x, out var dishId) ? $"/saved-dishes/{dishId}/stats" : null)))
             .ToList();
     }
 
@@ -428,10 +444,10 @@
             .OrderByDescending(x => x.CookingDays.Count)
             .ThenBy(x => x.DishDescription, StringComparer.OrdinalIgnoreCase)
             .Select(x => new TimelineChart.TimelineChartRow(
-                x.DishDescription,
+                x.IsOther ? Localizer["Timeline_Other"] : x.DishDescription,
                 _housemateColor,
                 x.CookingDays.Select(d => DateOnly.Parse(d)).ToHashSet(),
-                $"/saved-dishes/{x.SavedDishId}/stats"))
+                x.IsOther ? null : $"/saved-dishes/{x.SavedDishId}/stats"))
             .ToList();
     }
 

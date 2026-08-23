@@ -236,6 +236,11 @@ public class StatisticsIntegrationTests
             new DateOnly(2025, 7, 1), new DateOnly(2025, 7, 31));
         Assert.DoesNotContain(timeline.Entries, x => x.SavedDishId == deletedDishId);
         Assert.Contains(timeline.Entries, x => x.SavedDishId == activeDishId);
+
+        // The day with the deleted dish should appear as an "Other" entry.
+        var otherEntry = timeline.Entries.FirstOrDefault(x => x.IsOther);
+        Assert.NotNull(otherEntry);
+        Assert.Contains(new DateOnly(2025, 7, 2), otherEntry.CookingDays);
     }
 
     [Fact]
@@ -261,6 +266,113 @@ public class StatisticsIntegrationTests
         // Assert.
         Assert.Equal(2, result.TimesCooked);
         Assert.Equal(3, result.AllTimeTimesCooked);
+    }
+
+    [Fact]
+    public async Task GetHousemateTimeline_ChefDaysWithoutSavedDish_ReturnsOtherEntry()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var savedDishId = Guid.NewGuid();
+
+        await _housemateRepository.UpsertAsync(new Housemate(housemateId, householdId, "Alice", HousemateColors.Palette[0], false, 0));
+        await _savedDishRepository.UpsertAsync(new SavedDish(savedDishId, householdId, "Pasta", false));
+
+        // Chef on 4 days: 2 with saved dish links, 2 without.
+        await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemateId, new DateOnly(2025, 8, 1), AttendanceStatus.EatingIn, true, DateTimeOffset.UtcNow));
+        await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemateId, new DateOnly(2025, 8, 2), AttendanceStatus.EatingIn, true, DateTimeOffset.UtcNow));
+        await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemateId, new DateOnly(2025, 8, 3), AttendanceStatus.EatingIn, true, DateTimeOffset.UtcNow));
+        await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemateId, new DateOnly(2025, 8, 4), AttendanceStatus.EatingIn, true, DateTimeOffset.UtcNow));
+
+        // Only link saved dish on 2 of the 4 days.
+        await _dayPlanDishLinkRepository.CreateAsync(new DayPlanDishLink(householdId, new DateOnly(2025, 8, 1), savedDishId, 0));
+        await _dayPlanDishLinkRepository.CreateAsync(new DayPlanDishLink(householdId, new DateOnly(2025, 8, 2), savedDishId, 0));
+
+        // Act.
+        var timeline = await _housemateStatisticsHandler.GetTimelineAsync(
+            householdId, housemateId,
+            new DateOnly(2025, 8, 1), new DateOnly(2025, 8, 31));
+
+        // Assert — should have Pasta entry and an "Other" entry.
+        Assert.Equal(2, timeline.Entries.Count);
+
+        var pastaEntry = timeline.Entries.FirstOrDefault(x => x.SavedDishId == savedDishId);
+        Assert.NotNull(pastaEntry);
+        Assert.False(pastaEntry.IsOther);
+        Assert.Equal(2, pastaEntry.AllTimeFrequency);
+        Assert.Equal(2, pastaEntry.CookingDays.Count);
+
+        var otherEntry = timeline.Entries.FirstOrDefault(x => x.IsOther);
+        Assert.NotNull(otherEntry);
+        Assert.True(otherEntry.IsOther);
+        Assert.Equal(Guid.Empty, otherEntry.SavedDishId);
+        Assert.Equal(2, otherEntry.AllTimeFrequency);
+        Assert.Equal(2, otherEntry.CookingDays.Count);
+        Assert.Contains(new DateOnly(2025, 8, 3), otherEntry.CookingDays);
+        Assert.Contains(new DateOnly(2025, 8, 4), otherEntry.CookingDays);
+    }
+
+    [Fact]
+    public async Task GetHousemateTimeline_AllChefDaysHaveSavedDish_NoOtherEntry()
+    {
+        // Arrange.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var savedDishId = Guid.NewGuid();
+
+        await _housemateRepository.UpsertAsync(new Housemate(housemateId, householdId, "Alice", HousemateColors.Palette[0], false, 0));
+        await _savedDishRepository.UpsertAsync(new SavedDish(savedDishId, householdId, "Pasta", false));
+
+        // Chef on 2 days, both with saved dish links.
+        await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemateId, new DateOnly(2025, 8, 10), AttendanceStatus.EatingIn, true, DateTimeOffset.UtcNow));
+        await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemateId, new DateOnly(2025, 8, 11), AttendanceStatus.EatingIn, true, DateTimeOffset.UtcNow));
+
+        await _dayPlanDishLinkRepository.CreateAsync(new DayPlanDishLink(householdId, new DateOnly(2025, 8, 10), savedDishId, 0));
+        await _dayPlanDishLinkRepository.CreateAsync(new DayPlanDishLink(householdId, new DateOnly(2025, 8, 11), savedDishId, 0));
+
+        // Act.
+        var timeline = await _housemateStatisticsHandler.GetTimelineAsync(
+            householdId, housemateId,
+            new DateOnly(2025, 8, 1), new DateOnly(2025, 8, 31));
+
+        // Assert — no "Other" entry when all chef days have a dish link.
+        Assert.Single(timeline.Entries);
+        Assert.DoesNotContain(timeline.Entries, x => x.IsOther);
+    }
+
+    [Fact]
+    public async Task GetHousemateTimeline_OtherEntryOrderedByFrequency()
+    {
+        // Arrange — "Other" has more occurrences than the saved dish.
+        var householdId = Guid.NewGuid();
+        var housemateId = Guid.NewGuid();
+        var savedDishId = Guid.NewGuid();
+
+        await _housemateRepository.UpsertAsync(new Housemate(housemateId, householdId, "Alice", HousemateColors.Palette[0], false, 0));
+        await _savedDishRepository.UpsertAsync(new SavedDish(savedDishId, householdId, "Pizza", false));
+
+        // Chef on 5 days: 1 with saved dish, 4 without.
+        await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemateId, new DateOnly(2025, 9, 1), AttendanceStatus.EatingIn, true, DateTimeOffset.UtcNow));
+        await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemateId, new DateOnly(2025, 9, 2), AttendanceStatus.EatingIn, true, DateTimeOffset.UtcNow));
+        await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemateId, new DateOnly(2025, 9, 3), AttendanceStatus.EatingIn, true, DateTimeOffset.UtcNow));
+        await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemateId, new DateOnly(2025, 9, 4), AttendanceStatus.EatingIn, true, DateTimeOffset.UtcNow));
+        await _attendanceRepository.UpsertAsync(new AttendanceRecord(householdId, housemateId, new DateOnly(2025, 9, 5), AttendanceStatus.EatingIn, true, DateTimeOffset.UtcNow));
+
+        // Only link saved dish on 1 day.
+        await _dayPlanDishLinkRepository.CreateAsync(new DayPlanDishLink(householdId, new DateOnly(2025, 9, 1), savedDishId, 0));
+
+        // Act.
+        var timeline = await _housemateStatisticsHandler.GetTimelineAsync(
+            householdId, housemateId,
+            new DateOnly(2025, 9, 1), new DateOnly(2025, 9, 30));
+
+        // Assert — "Other" (4 occurrences) should be sorted before Pizza (1 occurrence).
+        Assert.Equal(2, timeline.Entries.Count);
+        Assert.True(timeline.Entries[0].IsOther);
+        Assert.Equal(4, timeline.Entries[0].AllTimeFrequency);
+        Assert.False(timeline.Entries[1].IsOther);
+        Assert.Equal("Pizza", timeline.Entries[1].DishDescription);
     }
 
     [Fact]

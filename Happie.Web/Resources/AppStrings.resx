@@ -636,6 +636,9 @@
   <data name="Timeline_Empty" xml:space="preserve">
     <value>Geen kookgeschiedenis beschikbaar.</value>
   </data>
+  <data name="Timeline_Other" xml:space="preserve">
+    <value>Overig</value>
+  </data>
   <data name="Stats_TimesCooked" xml:space="preserve">
     <value>keer gekookt</value>
   </data>

@@ -282,6 +282,18 @@ public class HousemateStatisticsHandler : IHousemateStatisticsHandler
             .Where(x => allChefDaysSet.Contains(x.Date) && savedDishById.ContainsKey(x.SavedDishId))
             .ToList();
 
+        // Determine chef days that have at least one saved dish link.
+        var daysWithSavedDish = chefDishLinks
+            .Select(x => x.Date)
+            .Distinct()
+            .ToHashSet();
+
+        // "Other" days: chef days without any saved dish link.
+        var otherDays = allChefDays
+            .Where(x => !daysWithSavedDish.Contains(x))
+            .Distinct()
+            .ToList();
+
         // Group by saved dish and compute all-time frequency (distinct dates).
         var dishGroups = chefDishLinks
             .GroupBy(x => x.SavedDishId)
@@ -294,7 +306,7 @@ public class HousemateStatisticsHandler : IHousemateStatisticsHandler
             .ToList();
 
         // Build timeline entries with cooking days filtered to [timelineFrom, timelineTo].
-        return dishGroups
+        var entries = dishGroups
             .Select(x => new HousemateTimelineEntry(
                 x.SavedDishId,
                 savedDishById[x.SavedDishId].Description,
@@ -304,6 +316,27 @@ public class HousemateStatisticsHandler : IHousemateStatisticsHandler
                     .OrderBy(d => d)
                     .ToList()
                     .AsReadOnly()))
+            .ToList();
+
+        // Add the "Other" entry if there are chef days without saved dish links.
+        if (otherDays.Count > 0)
+        {
+            var otherCookingDays = otherDays
+                .Where(x => x >= timelineFrom && x <= timelineTo)
+                .OrderBy(x => x)
+                .ToList()
+                .AsReadOnly();
+
+            entries.Add(new HousemateTimelineEntry(
+                Guid.Empty,
+                "Other",
+                otherDays.Count,
+                otherCookingDays,
+                IsOther: true));
+        }
+
+        // Sort by all-time frequency descending, then alphabetically.
+        return entries
             .OrderByDescending(x => x.AllTimeFrequency)
             .ThenBy(x => x.DishDescription, StringComparer.OrdinalIgnoreCase)
             .ToList();

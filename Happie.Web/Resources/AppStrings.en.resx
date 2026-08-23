@@ -636,6 +636,9 @@
   <data name="Timeline_Empty" xml:space="preserve">
     <value>No cooking history available.</value>
   </data>
+  <data name="Timeline_Other" xml:space="preserve">
+    <value>Other dishes</value>
+  </data>
   <data name="Stats_TimesCooked" xml:space="preserve">
     <value>times cooked</value>
   </data>

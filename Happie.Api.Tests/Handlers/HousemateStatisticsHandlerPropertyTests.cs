@@ -556,13 +556,16 @@ public class HousemateStatisticsHandlerPropertyTests
                 // Verify only dishes with all-time dates appear.
                 var expectedDishIds = dishesWithAllTimeDates.Keys.ToHashSet();
                 var actualDishIds = result.Entries
+                    .Where(x => !x.IsOther)
                     .Select(x => x.SavedDishId)
                     .ToHashSet();
 
                 var dishIdsMatch = expectedDishIds.SetEquals(actualDishIds);
 
-                // Verify each dish's cooking days within the timeline window.
-                var allDotsCorrect = result.Entries.All(entry =>
+                // Verify each saved dish's cooking days within the timeline window.
+                var allDotsCorrect = result.Entries
+                    .Where(x => !x.IsOther)
+                    .All(entry =>
                 {
                     var expectedDays = expectedTimelineByDish.TryGetValue(entry.SavedDishId, out var days)
                         ? days
@@ -572,8 +575,30 @@ public class HousemateStatisticsHandlerPropertyTests
                     return actualDays.SequenceEqual(expectedDays);
                 });
 
-                return (dishIdsMatch && allDotsCorrect)
-                    .Label($"DishIds match: {dishIdsMatch}, All dots correct: {allDotsCorrect}. " +
+                // Verify the "Other" entry contains chef days without any saved dish link.
+                var daysWithSavedDish = chefDishLinks
+                    .Select(x => x.Date)
+                    .Distinct()
+                    .ToHashSet();
+
+                var expectedOtherDaysAllTime = allChefDays
+                    .Where(x => !daysWithSavedDish.Contains(x))
+                    .ToList();
+
+                var expectedOtherDays = expectedOtherDaysAllTime
+                    .Where(x => x >= scenario.TimelineFrom && x <= scenario.TimelineTo)
+                    .OrderBy(x => x)
+                    .ToList();
+
+                var otherEntry = result.Entries.FirstOrDefault(x => x.IsOther);
+
+                // The "Other" entry is present if there are any "other" days all-time.
+                var otherDotsCorrect = expectedOtherDaysAllTime.Count == 0
+                    ? otherEntry is null
+                    : otherEntry is not null && otherEntry.CookingDays.OrderBy(x => x).ToList().SequenceEqual(expectedOtherDays);
+
+                return (dishIdsMatch && allDotsCorrect && otherDotsCorrect)
+                    .Label($"DishIds match: {dishIdsMatch}, All dots correct: {allDotsCorrect}, Other dots correct: {otherDotsCorrect}. " +
                            $"Expected dishes: [{string.Join(", ", expectedDishIds)}], " +
                            $"Actual dishes: [{string.Join(", ", actualDishIds)}]");
             });

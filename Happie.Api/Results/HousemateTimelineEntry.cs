@@ -4,4 +4,5 @@ public record HousemateTimelineEntry(
     Guid SavedDishId,
     string DishDescription,
     int AllTimeFrequency,
-    IReadOnlyList<DateOnly> CookingDays);
+    IReadOnlyList<DateOnly> CookingDays,
+    bool IsOther = false);

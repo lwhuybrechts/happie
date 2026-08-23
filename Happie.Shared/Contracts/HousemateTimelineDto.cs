@@ -7,4 +7,5 @@ public record HousemateTimelineDto(
     [property: JsonPropertyName("savedDishId")] Guid SavedDishId,
     [property: JsonPropertyName("dishDescription")] string DishDescription,
     [property: JsonPropertyName("allTimeFrequency")] int AllTimeFrequency,
-    [property: JsonPropertyName("cookingDays")] IReadOnlyList<string> CookingDays);
+    [property: JsonPropertyName("cookingDays")] IReadOnlyList<string> CookingDays,
+    [property: JsonPropertyName("isOther")] bool IsOther = false);

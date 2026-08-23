@@ -170,7 +170,8 @@ public class StatisticsFunction
                 x.SavedDishId,
                 x.DishDescription,
                 x.AllTimeFrequency,
-                x.CookingDays.Select(d => d.ToString("yyyy-MM-dd")).ToList())).ToList(),
+                x.CookingDays.Select(d => d.ToString("yyyy-MM-dd")).ToList(),
+                x.IsOther)).ToList(),
             entries.FirstCookedDate?.ToString("yyyy-MM-dd"));
 
         return new OkObjectResult(response);
