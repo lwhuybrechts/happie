@@ -777,6 +777,10 @@ Dit kan afwijken van het totaal aantal keer gekookt, omdat je ook kok kunt zijn 
     <value>Opslaan mislukt. Probeer het opnieuw.</value>
     <comment>Generic save error message for DishDetailsPage.</comment>
   </data>
+  <data name="DishDetails_UnsavedChangesWarning" xml:space="preserve">
+    <value>Je hebt onopgeslagen wijzigingen. Weet je zeker dat je wilt navigeren?</value>
+    <comment>Confirm dialog shown when navigating away with unsaved changes.</comment>
+  </data>
   <data name="DishDetails_NameInputAriaLabel" xml:space="preserve">
     <value>Nieuwe naam voor gerecht</value>
     <comment>Aria label for the dish name inline edit input.</comment>
@@ -802,7 +806,7 @@ Dit kan afwijken van het totaal aantal keer gekookt, omdat je ook kok kunt zijn 
     <comment>Header text showing adjusted serving count.</comment>
   </data>
   <data name="DishDetails_IngredientsEmpty" xml:space="preserve">
-    <value>Nog geen ingrediënten.</value>
+    <value>Nog geen ingrediënten toegevoegd.</value>
     <comment>Placeholder shown when no ingredients exist.</comment>
   </data>
   <data name="DishDetails_CheckAll" xml:space="preserve">
@@ -818,7 +822,7 @@ Dit kan afwijken van het totaal aantal keer gekookt, omdat je ook kok kunt zijn 
     <comment>Header for the instructions panel.</comment>
   </data>
   <data name="DishDetails_InstructionsEmpty" xml:space="preserve">
-    <value>Nog geen bereidingswijze.</value>
+    <value>Nog geen bereidingswijze toegevoegd.</value>
     <comment>Placeholder shown when no instructions exist.</comment>
   </data>
   <data name="DishDetails_Edit" xml:space="preserve">

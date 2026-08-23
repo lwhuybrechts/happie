@@ -18,25 +18,25 @@ Write-Host "  [OK] Firewall rules removed"
 # 2. Restore launchSettings.json to localhost only.
 $launchSettings = Get-Content "Happie.Web\Properties\launchSettings.json" -Raw
 $launchSettings = $launchSettings -replace '"applicationUrl": "http://0\.0\.0\.0:5195"', '"applicationUrl": "http://localhost:5195"'
-Set-Content "Happie.Web\Properties\launchSettings.json" $launchSettings
+Set-Content "Happie.Web\Properties\launchSettings.json" $launchSettings -NoNewline
 Write-Host "  [OK] launchSettings.json -> localhost:5195"
 
 # 3. Restore appsettings.json to production URL (replace any LAN IP pattern).
 $appSettings = Get-Content "Happie.Web\wwwroot\appsettings.json" -Raw
 $appSettings = $appSettings -replace '"ApiBaseUrl": "http://[\d\.]+:7071/api/"', '"ApiBaseUrl": "https://happie-func.azurewebsites.net/api/"'
-Set-Content "Happie.Web\wwwroot\appsettings.json" $appSettings
+Set-Content "Happie.Web\wwwroot\appsettings.json" $appSettings -NoNewline
 Write-Host "  [OK] appsettings.json -> production URL"
 
 # 4. Restore appsettings.Development.json (replace any LAN IP pattern).
 $appSettingsDev = Get-Content "Happie.Web\wwwroot\appsettings.Development.json" -Raw
 $appSettingsDev = $appSettingsDev -replace '"ApiBaseUrl": "http://[\d\.]+:7071/api/"', '"ApiBaseUrl": "http://localhost:7071/api/"'
-Set-Content "Happie.Web\wwwroot\appsettings.Development.json" $appSettingsDev
+Set-Content "Happie.Web\wwwroot\appsettings.Development.json" $appSettingsDev -NoNewline
 Write-Host "  [OK] appsettings.Development.json -> localhost:7071"
 
 # 5. Restore CORS in local.settings.json (remove any LAN IP entry).
 $localSettings = Get-Content "Happie.Api\local.settings.json" -Raw
 $localSettings = $localSettings -replace '"CORS": "http://localhost:5195,http://[\d\.]+:5195"', '"CORS": "http://localhost:5195"'
-Set-Content "Happie.Api\local.settings.json" $localSettings
+Set-Content "Happie.Api\local.settings.json" $localSettings -NoNewline
 Write-Host "  [OK] local.settings.json CORS -> localhost only"
 
 Write-Host ""

@@ -1,9 +1,8 @@
-/* Summary panel card matching the page header style. */
+/* Summary panel card matching the DishPanel dark theme. */
 .summary-panel {
-    background-color: #ffffff;
+    background-color: #1a2332;
     border-radius: 16px;
     padding: 16px 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 /* Header with title and action buttons. */
@@ -14,16 +13,39 @@
     margin-bottom: 12px;
 }
 
-.summary-panel__title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #374151;
-    margin: 0;
+.summary-panel__header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     flex: 1;
     min-width: 0;
 }
 
-/* Icon buttons matching the DishDetailsPage pattern. */
+.summary-panel__recipe-icon-bg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: rgba(76, 175, 80, 0.15);
+    flex-shrink: 0;
+}
+
+.summary-panel__recipe-icon {
+    color: #4CAF50;
+}
+
+.summary-panel__title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #4CAF50;
+    margin: 0;
+}
+
+/* Icon buttons for edit/confirm/discard. */
 .summary-panel__icon-btn {
     display: flex;
     align-items: center;
@@ -34,14 +56,15 @@
     background: transparent;
     border-radius: 50%;
     cursor: pointer;
-    color: #374151;
+    color: #a0aec0;
     flex-shrink: 0;
     padding: 0;
-    transition: background-color 0.15s ease;
+    transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .summary-panel__icon-btn:hover {
-    background-color: #f3f4f6;
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .summary-panel__icon-btn:disabled {
@@ -50,19 +73,19 @@
 }
 
 .summary-panel__icon-btn--confirm {
-    color: #16a34a;
+    color: #4CAF50;
 }
 
-.summary-panel__icon-btn--confirm:hover {
-    background-color: #f0fdf4;
+.summary-panel__icon-btn--confirm:hover:not(:disabled) {
+    background-color: rgba(76, 175, 80, 0.15);
 }
 
 .summary-panel__icon-btn--discard {
-    color: #dc2626;
+    color: #F44336;
 }
 
-.summary-panel__icon-btn--discard:hover {
-    background-color: #fef2f2;
+.summary-panel__icon-btn--discard:hover:not(:disabled) {
+    background-color: rgba(244, 67, 54, 0.15);
 }
 
 /* Body content area. */
@@ -74,7 +97,7 @@
 
 /* Empty placeholder text. */
 .summary-panel__empty {
-    color: #9ca3af;
+    color: #718096;
     font-size: 0.875rem;
     font-style: italic;
     margin: 0;
@@ -82,7 +105,7 @@
 
 /* Read-mode text display. */
 .summary-panel__text {
-    color: #111827;
+    color: #ffffff;
     font-size: 0.9375rem;
     line-height: 1.5;
     margin: 0;
@@ -133,7 +156,7 @@
 
 /* Icon in meta value row. */
 .summary-panel__meta-icon {
-    color: #6b7280;
+    color: #4CAF50;
     flex-shrink: 0;
 }
 
@@ -144,7 +167,7 @@
     gap: 8px;
 }
 
-/* Clear button matching DishPanel style. */
+/* Clear button next to the duration input on desktop, hidden on touch/iOS. */
 .summary-panel__clear-btn {
     background: none;
     border: none;
@@ -160,14 +183,21 @@
     opacity: 0.7;
 }
 
+/* Hide on touch devices (iOS already has native clear). */
+@media (pointer: coarse) {
+    .summary-panel__clear-btn {
+        display: none;
+    }
+}
+
 .summary-panel__meta-label {
-    color: #6b7280;
+    color: #718096;
     font-size: 0.8125rem;
     font-weight: 500;
 }
 
 .summary-panel__meta-value {
-    color: #111827;
+    color: #ffffff;
     font-size: 0.875rem;
     font-weight: 600;
 }
@@ -180,7 +210,7 @@
 }
 
 .summary-panel__label {
-    color: #6b7280;
+    color: #4CAF50;
     font-size: 0.8125rem;
     font-weight: 500;
 }
@@ -189,8 +219,9 @@
     width: 100%;
     min-height: 80px;
     font-size: 0.9375rem;
-    color: #111827;
-    border: 1.5px solid #d1d5db;
+    color: #ffffff;
+    background-color: #2d3748;
+    border: 1.5px solid #4a5568;
     border-radius: 8px;
     padding: 8px 10px;
     resize: vertical;
@@ -201,40 +232,60 @@
 }
 
 .summary-panel__textarea:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.summary-panel__textarea::placeholder {
+    color: #718096;
 }
 
 .summary-panel__input {
     font-size: 0.9375rem;
-    color: #111827;
-    border: 1.5px solid #d1d5db;
+    color: #ffffff;
+    background-color: #2d3748;
+    border: 1.5px solid #4a5568;
     border-radius: 8px;
     padding: 6px 10px;
+    height: 36px;
+    box-sizing: border-box;
     outline: none;
     transition: border-color 0.15s ease;
 }
 
 .summary-panel__input:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
 
 .summary-panel__time-input {
-    width: fit-content;
+    width: 62px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Row that holds the time input and clear button side by side. */
+.summary-panel__duration-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .summary-panel__time-input::-webkit-calendar-picker-indicator {
     display: none;
 }
 
+.summary-panel__time-input::-webkit-date-and-time-value {
+    text-align: left;
+}
+
 .summary-panel__servings-input {
-    width: 80px;
+    width: 62px;
 }
 
 /* Error message. */
 .summary-panel__error {
-    color: #dc2626;
+    color: #F44336;
     font-size: 0.8125rem;
     margin-top: 4px;
 }
@@ -242,7 +293,7 @@
 /* Character count indicator. */
 .summary-panel__char-count {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: #718096;
     text-align: right;
     margin-top: 2px;
 }

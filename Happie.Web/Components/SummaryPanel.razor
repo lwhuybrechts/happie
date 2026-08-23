@@ -5,7 +5,16 @@
 
 <div class="summary-panel">
     <div class="summary-panel__header">
-        <h2 class="summary-panel__title">@Localizer["DishDetails_SummaryHeader"]</h2>
+        <div class="summary-panel__header-left">
+            <span class="summary-panel__recipe-icon-bg">
+                <svg class="summary-panel__recipe-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+            </span>
+            <h2 class="summary-panel__title">@Localizer["DishDetails_SummaryHeader"]</h2>
+        </div>
         @if (_isEditing)
         {
             <button class="summary-panel__icon-btn summary-panel__icon-btn--confirm"
@@ -54,8 +63,14 @@
             </div>
             <div class="summary-panel__inline-row">
                 <div class="summary-panel__field summary-panel__field--inline">
-                    <div class="summary-panel__label-row">
-                        <label class="summary-panel__label">@Localizer["DishDetails_CookingDuration"]</label>
+                    <label class="summary-panel__label">@Localizer["DishDetails_CookingDuration"]</label>
+                    <div class="summary-panel__duration-row">
+                        <input class="summary-panel__input summary-panel__time-input"
+                               type="time"
+                               step="60"
+                               value="@DurationInputValue"
+                               @oninput="OnDurationInput"
+                               @onfocus="OnDurationFocus" />
                         @if (!string.IsNullOrEmpty(_editDuration))
                         {
                             <button class="summary-panel__clear-btn"
@@ -65,11 +80,6 @@
                             </button>
                         }
                     </div>
-                    <input class="summary-panel__input summary-panel__time-input"
-                           type="time"
-                           step="60"
-                           value="@_editDuration"
-                           @oninput="OnDurationInput" />
                 </div>
                 <div class="summary-panel__field summary-panel__field--inline">
                     <label class="summary-panel__label">@Localizer["DishDetails_Servings"]</label>
@@ -150,6 +160,9 @@
 
     // Edit state.
     private bool _isEditing;
+
+    /// <summary>True when the panel is in edit mode and has unsaved changes.</summary>
+    public bool HasUnsavedChanges => _isEditing && IsConfirmEnabled;
     private string _editSummary = string.Empty;
     private string _editDuration = string.Empty;
     private string _editServings = string.Empty;
@@ -212,6 +225,16 @@
     {
         _editDuration = args.Value?.ToString() ?? string.Empty;
     }
+
+    private void OnDurationFocus()
+    {
+        // Default to 00:00 when empty so iOS doesn't fill in the current time.
+        if (string.IsNullOrEmpty(_editDuration))
+            _editDuration = "00:00";
+    }
+
+    // Shows the actual edit value — only set to 00:00 on focus, not on render.
+    private string DurationInputValue => _editDuration;
 
     private void ClearDuration()
     {
@@ -294,7 +317,7 @@
         return servings.Value.ToString();
     }
 
-    // Parse HH:MM string to total minutes.
+    // Parse HH:MM string to total minutes. Returns null for empty or 00:00 (zero duration is invalid).
     private static int? ParseDurationToMinutes(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -307,7 +330,13 @@
         if (!int.TryParse(parts[0], out var hours) || !int.TryParse(parts[1], out var minutes))
             return null;
 
-        return (hours * 60) + minutes;
+        var totalMinutes = (hours * 60) + minutes;
+
+        // Treat 00:00 as no duration.
+        if (totalMinutes == 0)
+            return null;
+
+        return totalMinutes;
     }
 
     // Parse servings string to int.

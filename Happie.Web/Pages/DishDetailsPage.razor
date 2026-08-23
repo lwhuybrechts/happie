@@ -8,6 +8,7 @@
 @inject IJSRuntime JS
 
 <PageTitle>Happie</PageTitle>
+<NavigationLock OnBeforeInternalNavigation="OnBeforeInternalNavigation" ConfirmExternalNavigation="@HasAnyUnsavedChanges" />
 
 <div class="dish-details-page">
     @if (_isLoading)
@@ -87,9 +88,9 @@
             </div>
         }
 
-        <SummaryPanel SavedDishId="@_dishId" OnServingsChanged="HandleServingsChanged" />
-        <IngredientsPanel SavedDishId="@_dishId" BaseServings="@_baseServings" />
-        <InstructionsPanel SavedDishId="@_dishId" />
+        <SummaryPanel @ref="_summaryPanel" SavedDishId="@_dishId" OnServingsChanged="HandleServingsChanged" />
+        <IngredientsPanel @ref="_ingredientsPanel" SavedDishId="@_dishId" BaseServings="@_baseServings" />
+        <InstructionsPanel @ref="_instructionsPanel" SavedDishId="@_dishId" />
     }
 </div>
 
@@ -101,6 +102,17 @@
     private bool _isLoading = true;
     private Guid _dishId;
     private int? _baseServings;
+
+    // Panel references for unsaved changes detection.
+    private SummaryPanel? _summaryPanel;
+    private IngredientsPanel? _ingredientsPanel;
+    private InstructionsPanel? _instructionsPanel;
+
+    private bool HasAnyUnsavedChanges =>
+        (_summaryPanel?.HasUnsavedChanges ?? false)
+        || (_ingredientsPanel?.HasUnsavedChanges ?? false)
+        || (_instructionsPanel?.HasUnsavedChanges ?? false)
+        || (_isEditingName && IsNameConfirmEnabled);
 
     // Name editing state.
     private bool _isEditingName;
@@ -271,6 +283,16 @@
     }
 
     // --- Navigation ---
+
+    private async Task OnBeforeInternalNavigation(LocationChangingContext context)
+    {
+        if (HasAnyUnsavedChanges)
+        {
+            var confirmed = await JS.InvokeAsync<bool>("confirm", Localizer["DishDetails_UnsavedChangesWarning"].Value);
+            if (!confirmed)
+                context.PreventNavigation();
+        }
+    }
 
     private void HandleServingsChanged(int? servings)
     {

@@ -16,6 +16,7 @@
             <div class="ingredients-panel__header-spacer"></div>
             <button class="ingredients-panel__icon-btn ingredients-panel__icon-btn--confirm"
                     @onclick="ConfirmAsync"
+                    disabled="@(!HasChanges)"
                     aria-label="@Localizer["DishDetails_Confirm"]">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -92,7 +93,7 @@
                                    max="@RecipeConstants.MaxIngredientAmount"
                                    step="1"
                                    value="@FormatEditAmount(item.Amount)"
-                                   @onchange="@(args => OnAmountChange(currentIndex, args))" />
+                                   @oninput="@(args => OnAmountChange(currentIndex, args))" />
                             <select class="ingredients-panel__unit-select"
                                     value="@((int)item.Unit)"
                                     @onchange="@(args => OnUnitChange(currentIndex, args))">
@@ -105,7 +106,7 @@
                                    class="ingredients-panel__name-input"
                                    maxlength="@RecipeConstants.MaxIngredientNameLength"
                                    value="@item.Name"
-                                   @onchange="@(args => OnNameChange(currentIndex, args))" />
+                                   @oninput="@(args => OnNameChange(currentIndex, args))" />
                             <div class="ingredients-panel__inline-actions">
                                 <button class="ingredients-panel__icon-btn"
                                         @onclick="@(() => MoveUp(currentIndex))"
@@ -220,6 +221,9 @@
 
     // Edit mode state.
     private bool _isEditing;
+
+    /// <summary>True when the panel is in edit mode and has unsaved changes.</summary>
+    public bool HasUnsavedChanges => _isEditing && HasChanges;
     private List<EditableIngredient> _editIngredients = new();
     private HashSet<Guid> _deletedIngredientIds = new();
 
@@ -252,6 +256,31 @@
     // More than 50% of ingredients are checked.
     private bool CheckedPercentageAboveHalf =>
         _ingredients.Count > 0 && _checkedStates.Count(x => x.Value) > _ingredients.Count / 2.0;
+
+    // True when the edit state differs from the saved state.
+    private bool HasChanges
+    {
+        get
+        {
+            // Filter out empty-name entries (they will be auto-deleted on save).
+            var validEdits = _editIngredients
+                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                .ToList();
+
+            if (validEdits.Count != _ingredients.Count)
+                return true;
+
+            for (var i = 0; i < validEdits.Count; i++)
+            {
+                var edit = validEdits[i];
+                var saved = _ingredients[i];
+                if (edit.Id != saved.Id || edit.Amount != saved.Amount || edit.Unit != saved.Unit || edit.Name.Trim() != saved.Name)
+                    return true;
+            }
+
+            return false;
+        }
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -470,6 +499,10 @@
                 Name = x.Name
             })
             .ToList();
+
+        // Auto-add a first empty ingredient so the user can start typing immediately.
+        if (_editIngredients.Count == 0)
+            AddIngredient();
     }
 
     private void Discard()

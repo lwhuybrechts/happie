@@ -777,6 +777,10 @@ This may differ from the total times cooked, since you can be chef on days you'r
     <value>Failed to save. Please try again.</value>
     <comment>Generic save error message for DishDetailsPage.</comment>
   </data>
+  <data name="DishDetails_UnsavedChangesWarning" xml:space="preserve">
+    <value>You have unsaved changes. Are you sure you want to navigate away?</value>
+    <comment>Confirm dialog shown when navigating away with unsaved changes.</comment>
+  </data>
   <data name="DishDetails_NameInputAriaLabel" xml:space="preserve">
     <value>New name for dish</value>
     <comment>Aria label for the dish name inline edit input.</comment>
@@ -802,7 +806,7 @@ This may differ from the total times cooked, since you can be chef on days you'r
     <comment>Header text showing adjusted serving count.</comment>
   </data>
   <data name="DishDetails_IngredientsEmpty" xml:space="preserve">
-    <value>No ingredients yet.</value>
+    <value>No ingredients added yet.</value>
     <comment>Placeholder shown when no ingredients exist.</comment>
   </data>
   <data name="DishDetails_CheckAll" xml:space="preserve">
@@ -818,7 +822,7 @@ This may differ from the total times cooked, since you can be chef on days you'r
     <comment>Header for the instructions panel.</comment>
   </data>
   <data name="DishDetails_InstructionsEmpty" xml:space="preserve">
-    <value>No instructions yet.</value>
+    <value>No instructions added yet.</value>
     <comment>Placeholder shown when no instructions exist.</comment>
   </data>
   <data name="DishDetails_Edit" xml:space="preserve">

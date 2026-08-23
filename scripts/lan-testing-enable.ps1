@@ -31,25 +31,25 @@ Write-Host "  [OK] Firewall rules added (ports 5195, 7071)"
 # 2. Update launchSettings.json to bind on all interfaces.
 $launchSettings = Get-Content "Happie.Web\Properties\launchSettings.json" -Raw
 $launchSettings = $launchSettings -replace '"applicationUrl": "http://localhost:5195"', '"applicationUrl": "http://0.0.0.0:5195"'
-Set-Content "Happie.Web\Properties\launchSettings.json" $launchSettings
+Set-Content "Happie.Web\Properties\launchSettings.json" $launchSettings -NoNewline
 Write-Host "  [OK] launchSettings.json -> 0.0.0.0:5195"
 
 # 3. Update appsettings.json (production fallback, used when env is not Development).
 $appSettings = Get-Content "Happie.Web\wwwroot\appsettings.json" -Raw
 $appSettings = $appSettings -replace '"ApiBaseUrl": "https://happie-func\.azurewebsites\.net/api/"', "`"ApiBaseUrl`": `"http://${LanIp}:7071/api/`""
-Set-Content "Happie.Web\wwwroot\appsettings.json" $appSettings
+Set-Content "Happie.Web\wwwroot\appsettings.json" $appSettings -NoNewline
 Write-Host "  [OK] appsettings.json -> http://${LanIp}:7071/api/"
 
 # 4. Update appsettings.Development.json.
 $appSettingsDev = Get-Content "Happie.Web\wwwroot\appsettings.Development.json" -Raw
 $appSettingsDev = $appSettingsDev -replace '"ApiBaseUrl": "http://localhost:7071/api/"', "`"ApiBaseUrl`": `"http://${LanIp}:7071/api/`""
-Set-Content "Happie.Web\wwwroot\appsettings.Development.json" $appSettingsDev
+Set-Content "Happie.Web\wwwroot\appsettings.Development.json" $appSettingsDev -NoNewline
 Write-Host "  [OK] appsettings.Development.json -> http://${LanIp}:7071/api/"
 
 # 5. Update CORS in local.settings.json.
 $localSettings = Get-Content "Happie.Api\local.settings.json" -Raw
 $localSettings = $localSettings -replace '"CORS": "http://localhost:5195"', "`"CORS`": `"http://localhost:5195,http://${LanIp}:5195`""
-Set-Content "Happie.Api\local.settings.json" $localSettings
+Set-Content "Happie.Api\local.settings.json" $localSettings -NoNewline
 Write-Host "  [OK] local.settings.json CORS -> added http://${LanIp}:5195"
 
 Write-Host ""
