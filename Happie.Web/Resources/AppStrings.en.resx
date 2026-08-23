@@ -79,6 +79,9 @@
   <data name="Login_ErrorMessage" xml:space="preserve">
     <value>Incorrect password. Please try again.</value>
   </data>
+  <data name="Login_NetworkError" xml:space="preserve">
+    <value>Something went wrong. Please try again.</value>
+  </data>
   <data name="Login_SelectHousemate" xml:space="preserve">
     <value>Select your name</value>
   </data>

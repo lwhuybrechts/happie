@@ -62,6 +62,10 @@
             {
                 <p role="alert">@Localizer["Error_RequiresInternet"]</p>
             }
+            else if (_showNetworkError)
+            {
+                <p role="alert">@Localizer["Login_NetworkError"]</p>
+            }
 
             <button type="submit" class="login-btn" disabled="@_isSubmitting">@Localizer["Login_SubmitButton"]</button>
         </EditForm>
@@ -99,6 +103,7 @@
     private List<HousemateDto>? _housemates;
     private bool _showError;
     private bool _showOfflineError;
+    private bool _showNetworkError;
     private bool _isSubmitting;
 
     protected override async Task OnInitializedAsync()
@@ -170,6 +175,7 @@
         _isSubmitting = true;
         _showError = false;
         _showOfflineError = false;
+        _showNetworkError = false;
 
         if (!ConnectivityService.IsOnline)
         {
@@ -227,7 +233,7 @@
         }
         catch
         {
-            _showOfflineError = true;
+            _showNetworkError = true;
         }
 
         _isSubmitting = false;

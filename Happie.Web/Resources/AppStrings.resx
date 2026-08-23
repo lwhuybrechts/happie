@@ -79,6 +79,9 @@
   <data name="Login_ErrorMessage" xml:space="preserve">
     <value>Onjuist wachtwoord. Probeer het opnieuw.</value>
   </data>
+  <data name="Login_NetworkError" xml:space="preserve">
+    <value>Er ging iets mis. Probeer het opnieuw.</value>
+  </data>
   <data name="Login_SelectHousemate" xml:space="preserve">
     <value>Selecteer je naam</value>
   </data>
