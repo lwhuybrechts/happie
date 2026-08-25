@@ -14,11 +14,15 @@ The app can be tested on a physical iPhone by exposing the local dev servers on 
 
 ## Enable LAN Testing
 
+Run in an **Administrator PowerShell** window:
+
 ```powershell
-.\scripts\lan-testing-enable.ps1
+cd C:\Users\Laurens\Documents\Git\Happie; .\scripts\lan-testing-enable.ps1
 ```
 
 The script auto-detects your LAN IP address. It prints the URL to visit on your iPhone at the end.
+
+**Always provide the full command (including `cd`) as a single copy-paste line when the user asks for LAN testing.**
 
 Then restart the servers:
 - API: `func start --host 0.0.0.0` (from `Happie.Api/`)
@@ -28,8 +32,10 @@ On iPhone, visit: `http://<LAN_IP>:5195`
 
 ## Disable LAN Testing
 
+Run in an **Administrator PowerShell** window:
+
 ```powershell
-.\scripts\lan-testing-disable.ps1
+cd C:\Users\Laurens\Documents\Git\Happie; .\scripts\lan-testing-disable.ps1
 ```
 
 Then restart the servers normally (without `--host 0.0.0.0`).
@@ -47,5 +53,5 @@ Then restart the servers normally (without `--host 0.0.0.0`).
 Run the disable script — it removes the firewall rules and reverts all config files:
 
 ```powershell
-.\scripts\lan-testing-disable.ps1
+cd C:\Users\Laurens\Documents\Git\Happie; .\scripts\lan-testing-disable.ps1
 ```

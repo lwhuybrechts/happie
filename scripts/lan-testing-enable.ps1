@@ -58,4 +58,5 @@ Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
 Write-Host "  1. Restart the API:      cd Happie.Api; func start --host 0.0.0.0"
 Write-Host "  2. Restart the frontend: dotnet run --project Happie.Web --launch-profile http"
-Write-Host "  3. On iPhone, visit:     http://${LanIp}:5195" -ForegroundColor Cyan
+Write-Host "  3. Make sure Wi-Fi is enabled on your iPhone (same network as this PC)"
+Write-Host "  4. On iPhone, visit:     http://${LanIp}:5195" -ForegroundColor Cyan
