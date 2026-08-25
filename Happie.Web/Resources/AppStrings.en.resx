@@ -639,6 +639,14 @@
   <data name="Timeline_Other" xml:space="preserve">
     <value>Other dishes</value>
   </data>
+  <data name="Timeline_Expand" xml:space="preserve">
+    <value>Expand chart</value>
+    <comment>Aria label for the expand button on the timeline chart.</comment>
+  </data>
+  <data name="Timeline_Collapse" xml:space="preserve">
+    <value>Collapse chart</value>
+    <comment>Aria label for the collapse button on the timeline chart.</comment>
+  </data>
   <data name="Stats_TimesCooked" xml:space="preserve">
     <value>times cooked</value>
   </data>

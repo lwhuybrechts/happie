@@ -202,13 +202,68 @@
 /* Constrained scroll: both horizontal and vertical scrolling with max-height. */
 .timeline-chart__scroll--constrained {
     overflow-y: auto;
-    /* Remove top padding so sticky header flush-sticks to top. */
+    /* Remove top and bottom padding so sticky header flush-sticks to top and rows aren't clipped. */
     padding-top: 0;
+    padding-bottom: 0;
+    transition: max-height 0.35s ease;
 }
 
 .timeline-chart__scroll--constrained .timeline-chart__header-row {
     /* Add top padding that was removed from the scroll container. */
     padding-top: 4px;
+}
+
+/* Expanded state: show all rows with animated transition. */
+.timeline-chart__scroll--expanded {
+    overflow-y: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+    transition: max-height 0.35s ease;
+}
+
+.timeline-chart__scroll--expanded .timeline-chart__header-row {
+    padding-top: 4px;
+}
+
+/* Expand/collapse button in top-right corner. */
+.timeline-chart__expand-btn {
+    position: absolute;
+    top: 2px;
+    right: 12px;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background-color: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* When expanded (no vertical scrollbar), tuck the button closer to the edge. */
+.timeline-chart__expand-btn--no-scrollbar {
+    right: 2px;
+}
+
+.timeline-chart__expand-btn:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.timeline-chart__expand-btn:active {
+    background-color: #e5e7eb;
+}
+
+/* On mobile (iOS), scrollbars are overlay and don't take space. */
+@media (max-width: 640.98px) {
+    .timeline-chart__expand-btn {
+        right: 2px;
+    }
 }
 
 /* Long-press overlay for full label text. */

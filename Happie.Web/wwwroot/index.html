@@ -639,6 +639,12 @@
             scrollElement.scrollLeft += pixelsToAdd;
         };
 
+        // Resets vertical scroll position to the top with smooth animation.
+        happie.timelineChart.resetVerticalScroll = function (scrollElement) {
+            if (!scrollElement) return;
+            scrollElement.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
         // Checks whether a label with the given text is visually truncated (ellipsis).
         happie.timelineChart.isLabelTruncated = function (containerElement, labelText) {
             if (!containerElement) return false;

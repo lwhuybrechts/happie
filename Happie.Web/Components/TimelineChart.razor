@@ -13,9 +13,37 @@
 else
 {
     <div class="timeline-chart" @ref="_containerRef" @onclick="OnChartClicked">
-        <div class="timeline-chart__scroll @(MaxVisibleRows.HasValue ? "timeline-chart__scroll--constrained" : "")"
+        @if (_showExpandButton)
+        {
+            <button class="timeline-chart__expand-btn @(_isExpanded ? "timeline-chart__expand-btn--no-scrollbar" : "")"
+                    @onclick="ToggleExpanded"
+                    @onclick:stopPropagation="true"
+                    aria-label="@(_isExpanded ? Localizer["Timeline_Collapse"] : Localizer["Timeline_Expand"])">
+                @if (_isExpanded)
+                {
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="4 14 10 14 10 20" />
+                        <polyline points="20 10 14 10 14 4" />
+                        <line x1="14" y1="10" x2="21" y2="3" />
+                        <line x1="3" y1="21" x2="10" y2="14" />
+                    </svg>
+                }
+                else
+                {
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="15 3 21 3 21 9" />
+                        <polyline points="9 21 3 21 3 15" />
+                        <line x1="21" y1="3" x2="14" y2="10" />
+                        <line x1="3" y1="21" x2="10" y2="14" />
+                    </svg>
+                }
+            </button>
+        }
+        <div class="timeline-chart__scroll @(MaxVisibleRows.HasValue && !_isExpanded ? "timeline-chart__scroll--constrained" : "") @(_isExpanded ? "timeline-chart__scroll--expanded" : "")"
              @ref="_scrollRef"
-             style="@(MaxVisibleRows.HasValue ? $"max-height: {(MaxVisibleRows.Value * 26) + 50}px;" : "")">
+             style="@GetScrollStyle()">
             <div class="timeline-chart__grid">
                 @* Column headers: month labels (sticky top) and day numbers. *@
                 <div class="timeline-chart__header-row">
@@ -140,6 +168,10 @@ else
     private HashSet<DateOnly> _activeDates = [];
     private bool _isLoadingMore;
 
+    // Expand/collapse state.
+    private bool _isExpanded;
+    private bool _showExpandButton;
+
     // Long-press state.
     private TimelineChartRow? _longPressRow;
     private System.Threading.Timer? _longPressTimer;
@@ -147,6 +179,12 @@ else
 
     // Cell width in pixels for each day column.
     private const int CellWidth = 18;
+
+    // Row height in pixels (min-height of each row).
+    private const int RowHeight = 26;
+
+    // Header height in pixels (month labels + day numbers + border).
+    private const int HeaderHeight = 50;
 
     // Scroll position preservation on data prepend.
     private int _previousDateCount;
@@ -161,6 +199,9 @@ else
         _activeDates = Rows
             .SelectMany(x => x.Dates)
             .ToHashSet();
+
+        // Show the expand button only when constrained and there are more rows than the limit.
+        _showExpandButton = MaxVisibleRows.HasValue && Rows.Count > MaxVisibleRows.Value;
 
         // If dates were prepended (count increased while loading more), flag for scroll adjustment.
         if (oldCount > 0 && _visibleDates.Count > oldCount && _isLoadingMore)
@@ -199,6 +240,34 @@ else
         _isLoadingMore = true;
         await OnLoadMore.InvokeAsync();
         _isLoadingMore = false;
+    }
+
+    private async Task ToggleExpanded()
+    {
+        _isExpanded = !_isExpanded;
+
+        // Reset vertical scroll position when expanding/collapsing to avoid partial row clipping.
+        if (_isExpanded)
+            await JS.InvokeVoidAsync("happie.timelineChart.resetVerticalScroll", _scrollRef);
+    }
+
+    private string GetScrollStyle()
+    {
+        if (!MaxVisibleRows.HasValue)
+            return "";
+
+        if (_isExpanded)
+        {
+            // When expanded, use a generous max-height that will never clip content.
+            // This value is large enough to fit any realistic number of rows while
+            // still enabling the CSS transition animation from the constrained height.
+            var expandedHeight = (Rows.Count * RowHeight) + HeaderHeight + 50;
+            return $"max-height: {expandedHeight}px;";
+        }
+
+        // Constrained: cap at the configured number of visible rows.
+        var constrainedHeight = (MaxVisibleRows.Value * RowHeight) + HeaderHeight;
+        return $"max-height: {constrainedHeight}px;";
     }
 
     private void OnLabelTouchStart(TimelineChartRow row)
