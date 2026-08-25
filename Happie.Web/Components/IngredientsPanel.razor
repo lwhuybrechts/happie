@@ -38,17 +38,20 @@
         else
         {
             <div class="ingredients-panel__header-spacer"></div>
-            <button class="ingredients-panel__icon-btn" @onclick="StartEdit" aria-label="@Localizer["DishDetails_Edit"]">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                    <path d="m15 5 4 4" />
-                </svg>
-            </button>
+            @if (!_isLoading)
+            {
+                <button class="ingredients-panel__icon-btn" @onclick="StartEdit" aria-label="@Localizer["DishDetails_Edit"]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                        <path d="m15 5 4 4" />
+                    </svg>
+                </button>
+            }
         }
     </div>
 
-    @if (!_isEditing && BaseServings is not null)
+    @if (!_isLoading && !_isEditing && BaseServings is not null)
     {
         <div class="ingredients-panel__servings-row">
             <button class="ingredients-panel__icon-btn"
@@ -76,8 +79,14 @@
         </div>
     }
 
-    <div class="ingredients-panel__body">
-        @if (_isEditing)
+    <div class="ingredients-panel__body @(_isSaving ? "ingredients-panel__body--saving" : "")">
+        @if (_isLoading)
+        {
+            <div class="loading-delayed">
+                <LoadingDots />
+            </div>
+        }
+        else if (_isEditing)
         {
             @if (_editIngredients.Count > 0)
             {
@@ -214,6 +223,7 @@
     public int? BaseServings { get; set; }
 
     // Read mode state.
+    private bool _isLoading = true;
     private List<IngredientDto> _ingredients = new();
     private Dictionary<Guid, bool> _checkedStates = new();
     private int _adjustedServings = 1;
@@ -221,6 +231,7 @@
 
     // Edit mode state.
     private bool _isEditing;
+    private bool _isSaving;
 
     /// <summary>True when the panel is in edit mode and has unsaved changes.</summary>
     public bool HasUnsavedChanges => _isEditing && HasChanges;
@@ -282,15 +293,24 @@
         }
     }
 
+    private Guid _previousSavedDishId;
+
     protected override async Task OnParametersSetAsync()
     {
         // Reset adjusted servings to base on every parameter change (page visit).
         _adjustedServings = BaseServings ?? 1;
-        await LoadDataAsync();
+
+        // Only reload data when the dish changes, not on every parameter update.
+        if (SavedDishId != _previousSavedDishId)
+        {
+            _previousSavedDishId = SavedDishId;
+            await LoadDataAsync();
+        }
     }
 
     private async Task LoadDataAsync()
     {
+        _isLoading = true;
         try
         {
             var response = await Http.GetFromJsonAsync<IngredientsResponse>($"saved-dishes/{SavedDishId}/ingredients");
@@ -302,7 +322,11 @@
         }
         catch
         {
-            // If we can't load, leave defaults (empty).
+            // If we can't load, leave defaults (empty state).
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 
@@ -529,6 +553,9 @@
 
         var request = new UpdateIngredientsRequest(ingredientDtos);
 
+        // Dim the panel while saving.
+        _isSaving = true;
+
         try
         {
             var response = await Http.PutAsJsonAsync($"saved-dishes/{SavedDishId}/ingredients", request);
@@ -548,17 +575,20 @@
                     _checkedStates.Remove(autoDeletedId);
 
                 _isEditing = false;
+                _isSaving = false;
 
                 // Reload data from backend to get fresh state.
                 await LoadDataAsync();
             }
             else
             {
+                _isSaving = false;
                 _showError = true;
             }
         }
         catch
         {
+            _isSaving = false;
             _showError = true;
         }
     }

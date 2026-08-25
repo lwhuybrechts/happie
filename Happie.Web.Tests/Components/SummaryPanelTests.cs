@@ -112,6 +112,112 @@ public class SummaryPanelTests : BunitContext
         Assert.Empty(cut.FindAll(".summary-panel__textarea"));
     }
 
+    [Fact]
+    public void WhileFetching_RendersLoadingDots_DoesNotRenderEmptyOrEditButton()
+    {
+        // Arrange — hold the request pending so the component stays in loading state.
+        var taskCompletionSource = new TaskCompletionSource<HttpResponseMessage>();
+        _mockHttp
+            .When(HttpMethod.Get, "http://localhost/api/saved-dishes/*/summary")
+            .Respond(_ => taskCompletionSource.Task);
+
+        // Act.
+        var cut = Render<SummaryPanel>(parameters => parameters
+            .Add(x => x.SavedDishId, TestDishId));
+
+        // Assert — loading dots are rendered.
+        Assert.NotEmpty(cut.FindAll(".loading-dots"));
+
+        // Assert — empty state is not rendered.
+        Assert.Empty(cut.FindAll(".summary-panel__empty"));
+
+        // Assert — edit button is not rendered.
+        Assert.Empty(cut.FindAll("[aria-label='DishDetails_Edit']"));
+
+        // Clean up.
+        taskCompletionSource.SetResult(new HttpResponseMessage(HttpStatusCode.OK));
+    }
+
+    [Fact]
+    public void AfterFetchSuccess_WithData_RendersContent_NoLoadingDots()
+    {
+        // Arrange.
+        SetupSummaryEndpoint("Test summary content", 120, 6);
+
+        // Act.
+        var cut = Render<SummaryPanel>(parameters => parameters
+            .Add(x => x.SavedDishId, TestDishId));
+
+        cut.WaitForState(() => cut.FindAll(".summary-panel__text").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Assert — content is rendered.
+        Assert.NotEmpty(cut.FindAll(".summary-panel__text"));
+
+        // Assert — loading dots are not rendered.
+        Assert.Empty(cut.FindAll(".loading-dots"));
+    }
+
+    [Fact]
+    public void AfterFetchSuccess_Empty_RendersEmptyState_NoLoadingDots()
+    {
+        // Arrange.
+        SetupSummaryEndpoint(null, null, null);
+
+        // Act.
+        var cut = Render<SummaryPanel>(parameters => parameters
+            .Add(x => x.SavedDishId, TestDishId));
+
+        cut.WaitForState(() => cut.FindAll(".summary-panel__empty").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Assert — empty state message is rendered.
+        Assert.NotEmpty(cut.FindAll(".summary-panel__empty"));
+
+        // Assert — loading dots are not rendered.
+        Assert.Empty(cut.FindAll(".loading-dots"));
+    }
+
+    [Fact]
+    public void AfterFetchFailure_RendersEmptyState_NoLoadingDots()
+    {
+        // Arrange — return a server error to simulate fetch failure.
+        _mockHttp
+            .When(HttpMethod.Get, "http://localhost/api/saved-dishes/*/summary")
+            .Respond(HttpStatusCode.InternalServerError);
+
+        // Act.
+        var cut = Render<SummaryPanel>(parameters => parameters
+            .Add(x => x.SavedDishId, TestDishId));
+
+        cut.WaitForState(() => cut.FindAll(".summary-panel__empty").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Assert — empty state message is rendered.
+        Assert.NotEmpty(cut.FindAll(".summary-panel__empty"));
+
+        // Assert — loading dots are not rendered.
+        Assert.Empty(cut.FindAll(".loading-dots"));
+    }
+
+    [Fact]
+    public void WhileFetching_LoadingContainer_HasLoadingDelayedCssClass()
+    {
+        // Arrange — hold the request pending so the component stays in loading state.
+        var taskCompletionSource = new TaskCompletionSource<HttpResponseMessage>();
+        _mockHttp
+            .When(HttpMethod.Get, "http://localhost/api/saved-dishes/*/summary")
+            .Respond(_ => taskCompletionSource.Task);
+
+        // Act.
+        var cut = Render<SummaryPanel>(parameters => parameters
+            .Add(x => x.SavedDishId, TestDishId));
+
+        // Assert — the loading container has the .loading-delayed CSS class.
+        var loadingContainer = cut.Find(".summary-panel__loading");
+        Assert.Contains("loading-delayed", loadingContainer.ClassList);
+
+        // Clean up.
+        taskCompletionSource.SetResult(new HttpResponseMessage(HttpStatusCode.OK));
+    }
+
     private void SetupSummaryEndpoint(string? summary, int? durationMinutes, int? servings)
     {
         var response = new RecipeSummaryResponse(summary, durationMinutes, servings);

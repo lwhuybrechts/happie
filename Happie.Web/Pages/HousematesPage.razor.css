@@ -133,6 +133,11 @@
     gap: 10px;
 }
 
+.housemates-page__list--saving {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
 /* Individual housemate item. */
 .housemates-page__item {
     background-color: #ffffff;

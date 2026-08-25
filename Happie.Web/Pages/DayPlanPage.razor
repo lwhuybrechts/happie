@@ -62,7 +62,7 @@
             else
             {
                 <div class="swipe-carousel__panel-content swipe-carousel__panel-content--loading">
-                    <p>@Localizer["DayPlan_Loading"]</p>
+                    <LoadingDots />
                 </div>
             }
         </div>
@@ -71,7 +71,9 @@
             <div class="swipe-carousel__panel-content" @key="@($"active-{_parsedDate}")">
                 @if (_isLoading)
                 {
-                    <p class="loading-delayed">@Localizer["DayPlan_Loading"]</p>
+                    <div class="loading-delayed">
+                        <LoadingDots />
+                    </div>
                 }
                 else if (_loadError)
                 {
@@ -139,7 +141,7 @@
             else
             {
                 <div class="swipe-carousel__panel-content swipe-carousel__panel-content--loading">
-                    <p>@Localizer["DayPlan_Loading"]</p>
+                    <LoadingDots />
                 </div>
             }
         </div>

@@ -132,6 +132,11 @@
     min-width: 0;
 }
 
+.dish-details-page__edit-name--saving {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
 .dish-details-page__name-input {
     flex: 1;
     min-width: 0;

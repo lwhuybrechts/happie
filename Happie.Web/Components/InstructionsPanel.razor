@@ -30,7 +30,7 @@
                 </svg>
             </button>
         }
-        else
+        else if (!_isLoading)
         {
             <div class="instructions-panel__header-spacer"></div>
             <button class="instructions-panel__icon-btn" @onclick="StartEdit" aria-label="@Localizer["DishDetails_Edit"]">
@@ -43,8 +43,14 @@
         }
     </div>
 
-    <div class="instructions-panel__body">
-        @if (_isEditing)
+    <div class="instructions-panel__body @(_isSaving ? "instructions-panel__body--saving" : "")">
+        @if (_isLoading)
+        {
+            <div class="loading-delayed instructions-panel__loading">
+                <LoadingDots />
+            </div>
+        }
+        else if (_isEditing)
         {
             @if (_editInstructions.Count > 0)
             {
@@ -150,8 +156,12 @@
     private List<CookingInstructionDto> _instructions = new();
     private bool _showError;
 
+    // Loading state.
+    private bool _isLoading = true;
+
     // Edit mode state.
     private bool _isEditing;
+    private bool _isSaving;
 
     /// <summary>True when the panel is in edit mode and has unsaved changes.</summary>
     public bool HasUnsavedChanges => _isEditing && HasChanges;
@@ -180,13 +190,21 @@
         }
     }
 
+    private Guid _previousSavedDishId;
+
     protected override async Task OnParametersSetAsync()
     {
-        await LoadDataAsync();
+        // Only reload data when the dish changes, not on every parameter update.
+        if (SavedDishId != _previousSavedDishId)
+        {
+            _previousSavedDishId = SavedDishId;
+            await LoadDataAsync();
+        }
     }
 
     private async Task LoadDataAsync()
     {
+        _isLoading = true;
         try
         {
             var response = await Http.GetFromJsonAsync<InstructionsResponse>($"saved-dishes/{SavedDishId}/instructions");
@@ -195,7 +213,11 @@
         }
         catch
         {
-            // If we can't load, leave defaults (empty).
+            // If we can't load, leave defaults (empty state) — requirement 2.7.
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 
@@ -241,6 +263,9 @@
 
         var request = new UpdateInstructionsRequest(instructionDtos);
 
+        // Dim the panel while saving.
+        _isSaving = true;
+
         try
         {
             var response = await Http.PutAsJsonAsync($"saved-dishes/{SavedDishId}/instructions", request);
@@ -248,17 +273,20 @@
             if (response.IsSuccessStatusCode)
             {
                 _isEditing = false;
+                _isSaving = false;
 
                 // Reload data from backend to get fresh state.
                 await LoadDataAsync();
             }
             else
             {
+                _isSaving = false;
                 _showError = true;
             }
         }
         catch
         {
+            _isSaving = false;
             _showError = true;
         }
     }

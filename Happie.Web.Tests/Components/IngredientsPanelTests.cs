@@ -194,6 +194,121 @@ public class IngredientsPanelTests : BunitContext
         Assert.Equal("DishDetails_UncheckAll", toggleButton.TextContent);
     }
 
+    [Fact]
+    public void WhileFetching_RendersLoadingDots_DoesNotRenderEmptyOrEditButton()
+    {
+        // Arrange — hold the request pending so the component stays in loading state.
+        var taskCompletionSource = new TaskCompletionSource<HttpResponseMessage>();
+        _mockHttp
+            .When(HttpMethod.Get, "http://localhost/api/saved-dishes/*/ingredients")
+            .Respond(_ => taskCompletionSource.Task);
+
+        // Act.
+        var cut = Render<IngredientsPanel>(parameters => parameters
+            .Add(x => x.SavedDishId, TestDishId)
+            .Add(x => x.BaseServings, 4));
+
+        // Assert — loading dots are rendered.
+        Assert.NotEmpty(cut.FindAll(".loading-dots"));
+
+        // Assert — empty state is not rendered.
+        Assert.Empty(cut.FindAll(".ingredients-panel__empty"));
+
+        // Assert — edit button is not rendered.
+        Assert.Empty(cut.FindAll("[aria-label='DishDetails_Edit']"));
+
+        // Clean up.
+        taskCompletionSource.SetResult(new HttpResponseMessage(HttpStatusCode.OK));
+    }
+
+    [Fact]
+    public void AfterFetchSuccess_WithData_RendersContent_NoLoadingDots()
+    {
+        // Arrange.
+        var ingredients = new List<IngredientDto>
+        {
+            new(Ingredient1Id, 100, UnitOfMeasurement.G, "Flour", 0),
+        };
+        SetupIngredientsEndpoint(ingredients, new List<IngredientCheckDto>());
+
+        // Act.
+        var cut = Render<IngredientsPanel>(parameters => parameters
+            .Add(x => x.SavedDishId, TestDishId)
+            .Add(x => x.BaseServings, 4));
+
+        cut.WaitForState(() => cut.FindAll(".ingredients-panel__row").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Assert — content is rendered.
+        Assert.NotEmpty(cut.FindAll(".ingredients-panel__row"));
+
+        // Assert — loading dots are not rendered.
+        Assert.Empty(cut.FindAll(".loading-dots"));
+    }
+
+    [Fact]
+    public void AfterFetchSuccess_Empty_RendersEmptyState_NoLoadingDots()
+    {
+        // Arrange.
+        SetupIngredientsEndpoint(new List<IngredientDto>(), new List<IngredientCheckDto>());
+
+        // Act.
+        var cut = Render<IngredientsPanel>(parameters => parameters
+            .Add(x => x.SavedDishId, TestDishId)
+            .Add(x => x.BaseServings, 4));
+
+        cut.WaitForState(() => cut.FindAll(".ingredients-panel__empty").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Assert — empty state message is rendered.
+        Assert.NotEmpty(cut.FindAll(".ingredients-panel__empty"));
+
+        // Assert — loading dots are not rendered.
+        Assert.Empty(cut.FindAll(".loading-dots"));
+    }
+
+    [Fact]
+    public void AfterFetchFailure_RendersEmptyState_NoLoadingDots()
+    {
+        // Arrange — return a server error to simulate fetch failure.
+        _mockHttp
+            .When(HttpMethod.Get, "http://localhost/api/saved-dishes/*/ingredients")
+            .Respond(HttpStatusCode.InternalServerError);
+
+        // Act.
+        var cut = Render<IngredientsPanel>(parameters => parameters
+            .Add(x => x.SavedDishId, TestDishId)
+            .Add(x => x.BaseServings, 4));
+
+        cut.WaitForState(() => cut.FindAll(".ingredients-panel__empty").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Assert — empty state message is rendered.
+        Assert.NotEmpty(cut.FindAll(".ingredients-panel__empty"));
+
+        // Assert — loading dots are not rendered.
+        Assert.Empty(cut.FindAll(".loading-dots"));
+    }
+
+    [Fact]
+    public void WhileFetching_LoadingContainer_HasLoadingDelayedCssClass()
+    {
+        // Arrange — hold the request pending so the component stays in loading state.
+        var taskCompletionSource = new TaskCompletionSource<HttpResponseMessage>();
+        _mockHttp
+            .When(HttpMethod.Get, "http://localhost/api/saved-dishes/*/ingredients")
+            .Respond(_ => taskCompletionSource.Task);
+
+        // Act.
+        var cut = Render<IngredientsPanel>(parameters => parameters
+            .Add(x => x.SavedDishId, TestDishId)
+            .Add(x => x.BaseServings, 4));
+
+        // Assert — the loading container has the .loading-delayed CSS class.
+        var loadingContainer = cut.Find(".loading-delayed");
+        Assert.Contains("loading-delayed", loadingContainer.ClassList);
+
+        // Clean up.
+        taskCompletionSource.SetResult(new HttpResponseMessage(HttpStatusCode.OK));
+    }
+
     private void SetupIngredientsEndpoint(List<IngredientDto> ingredients, List<IngredientCheckDto> checks)
     {
         var response = new IngredientsResponse(ingredients, checks);

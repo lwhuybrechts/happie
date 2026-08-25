@@ -67,7 +67,9 @@
     @* Housemate list. *@
     @if (_isLoading)
     {
-        <p>@Localizer["DayPlan_Loading"]</p>
+        <div class="loading-delayed">
+            <LoadingDots />
+        </div>
     }
     else if (_loadError)
     {
@@ -75,7 +77,7 @@
     }
     else
     {
-        <ul class="housemates-page__list" aria-label="@Localizer["Housemates_Title"]">
+        <ul class="housemates-page__list @(_isSaving ? "housemates-page__list--saving" : "")" aria-label="@Localizer["Housemates_Title"]">
             @for (var i = 0; i < _housemates.Count; i++)
             {
                 var housemate = _housemates[i];
@@ -238,6 +240,7 @@
 @code {
     private List<HousemateDto> _housemates = new();
     private bool _isLoading = true;
+    private bool _isSaving;
     private bool _loadError;
     private bool _showError;
     private bool _showOfflineError;
@@ -361,6 +364,7 @@
         var trimmedName = _newHousemateName.Trim();
         _newHousemateName = string.Empty;
         _showAddForm = false;
+        _isSaving = true;
 
         try
         {
@@ -374,6 +378,10 @@
         catch
         {
             ShowError();
+        }
+        finally
+        {
+            _isSaving = false;
         }
     }
 
@@ -448,6 +456,7 @@
         }
 
         _editingHousemateId = null;
+        _isSaving = true;
 
         try
         {
@@ -468,6 +477,10 @@
         catch
         {
             ShowError();
+        }
+        finally
+        {
+            _isSaving = false;
         }
     }
 
@@ -495,6 +508,7 @@
 
         var housemate = _colorPickerHousemate;
         _colorPickerHousemate = null;
+        _isSaving = true;
 
         try
         {
@@ -515,6 +529,10 @@
         catch
         {
             ShowError();
+        }
+        finally
+        {
+            _isSaving = false;
         }
     }
 
