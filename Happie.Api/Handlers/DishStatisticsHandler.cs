@@ -57,13 +57,17 @@ public class DishStatisticsHandler : IDishStatisticsHandler
             .Where(x => x.SavedDishId == savedDishId && nonDeletedDishIds.Contains(x.SavedDishId))
             .ToList();
 
-        // All cooking days for this dish (distinct dates).
+        // Only consider days up to today (exclude future-planned dates).
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // All cooking days for this dish (distinct dates, up to today).
         var allCookingDays = dishLinks
             .Select(x => x.Date)
             .Distinct()
+            .Where(x => x <= today)
             .ToList();
 
-        // Cooking days within the selected range.
+        // Cooking days within the selected range (also capped at today).
         var cookingDaysInRange = allCookingDays
             .Where(x => x >= from && x <= to)
             .ToList();
