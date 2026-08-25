@@ -60,8 +60,9 @@ else
                             {
                                 var date = _visibleDates[i];
                                 var isFirstOfMonth = date.Day == 1;
+                                var isActive = _activeDates.Contains(date);
                                 <div class="timeline-chart__header-cell @(isFirstOfMonth ? "timeline-chart__header-cell--month-start" : "")">
-                                    <span class="timeline-chart__day-number">@date.Day</span>
+                                    <span class="timeline-chart__day-number @(isActive ? "timeline-chart__day-number--active" : "")">@date.Day</span>
                                 </div>
                             }
                         </div>
@@ -136,6 +137,7 @@ else
     private ElementReference _scrollRef;
     private DotNetObjectReference<TimelineChart>? _dotNetRef;
     private IReadOnlyList<DateOnly> _visibleDates = [];
+    private HashSet<DateOnly> _activeDates = [];
     private bool _isLoadingMore;
 
     // Long-press state.
@@ -154,6 +156,11 @@ else
     {
         var oldCount = _visibleDates.Count;
         _visibleDates = BuildDateRange(StartDate, EndDate);
+
+        // Build set of dates that have at least one dot across all rows.
+        _activeDates = Rows
+            .SelectMany(x => x.Dates)
+            .ToHashSet();
 
         // If dates were prepended (count increased while loading more), flag for scroll adjustment.
         if (oldCount > 0 && _visibleDates.Count > oldCount && _isLoadingMore)

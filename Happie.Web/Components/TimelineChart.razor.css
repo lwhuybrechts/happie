@@ -103,6 +103,11 @@
     font-variant-numeric: tabular-nums;
 }
 
+.timeline-chart__day-number--active {
+    color: #444444;
+    font-weight: 700;
+}
+
 /* Data rows. */
 .timeline-chart__row {
     display: flex;
