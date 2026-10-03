@@ -8,6 +8,9 @@ public interface ICookingInstructionRepository
     /// <summary>Gets all cooking instructions for a saved dish.</summary>
     Task<IReadOnlyList<CookingInstruction>> GetAllAsync(Guid householdId, Guid savedDishId, CancellationToken cancellationToken = default);
 
+    /// <summary>Gets all cooking instructions for a household.</summary>
+    Task<IReadOnlyList<CookingInstruction>> GetAllByHouseholdAsync(Guid householdId, CancellationToken cancellationToken = default);
+
     /// <summary>Upserts multiple cooking instructions.</summary>
     Task BatchUpsertAsync(IReadOnlyList<CookingInstruction> instructions, CancellationToken cancellationToken = default);
 

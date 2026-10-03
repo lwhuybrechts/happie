@@ -22,14 +22,31 @@ public class SavedDishHandlerActiveListPropertyTests
     private readonly Mock<ISavedDishRepository> _savedDishRepositoryMock = new();
     private readonly Mock<IDishRepository> _dishRepositoryMock = new();
     private readonly Mock<IDayPlanDishLinkRepository> _dayPlanDishLinkRepositoryMock = new();
+    private readonly Mock<IRecipeSummaryRepository> _recipeSummaryRepositoryMock = new();
+    private readonly Mock<IIngredientRepository> _ingredientRepositoryMock = new();
+    private readonly Mock<ICookingInstructionRepository> _cookingInstructionRepositoryMock = new();
     private readonly SavedDishHandler _sut;
 
     public SavedDishHandlerActiveListPropertyTests()
     {
+        // Default: no recipe content for any household.
+        _recipeSummaryRepositoryMock
+            .Setup(x => x.GetAllByHouseholdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<RecipeSummary>());
+        _ingredientRepositoryMock
+            .Setup(x => x.GetAllByHouseholdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Ingredient>());
+        _cookingInstructionRepositoryMock
+            .Setup(x => x.GetAllByHouseholdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<CookingInstruction>());
+
         _sut = new SavedDishHandler(
             _savedDishRepositoryMock.Object,
             _dishRepositoryMock.Object,
             _dayPlanDishLinkRepositoryMock.Object,
+            _recipeSummaryRepositoryMock.Object,
+            _ingredientRepositoryMock.Object,
+            _cookingInstructionRepositoryMock.Object,
             NullLogger<SavedDishHandler>.Instance);
     }
 

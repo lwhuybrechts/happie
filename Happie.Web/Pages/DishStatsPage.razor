@@ -33,6 +33,12 @@
                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    @if (_hasContent)
+                    {
+                        <line x1="9" y1="6" x2="16" y2="6" />
+                        <line x1="9" y1="9.5" x2="16" y2="9.5" />
+                        <line x1="9" y1="13" x2="16" y2="13" />
+                    }
                 </svg>
             </button>
         </div>
@@ -142,6 +148,7 @@
     private TimeRange _selectedRange = TimeRange.ThirtyDays;
     private DishStatisticsResponse? _statistics;
     private string _dishDescription = string.Empty;
+    private bool _hasContent;
     private bool _isLoading = true;
     private bool _isChangingRange;
 
@@ -231,7 +238,10 @@
         {
             var dish = result.Dishes.FirstOrDefault(x => x.Id == dishId);
             if (dish is not null)
+            {
                 _dishDescription = dish.Description;
+                _hasContent = dish.HasContent;
+            }
         }
     }
 

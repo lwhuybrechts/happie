@@ -16,6 +16,9 @@ public class SavedDishHandlerSuggestionsPropertyTests
     private readonly Mock<ISavedDishRepository> _savedDishRepositoryMock = new();
     private readonly Mock<IDishRepository> _dishRepositoryMock = new();
     private readonly Mock<IDayPlanDishLinkRepository> _dayPlanDishLinkRepositoryMock = new();
+    private readonly Mock<IRecipeSummaryRepository> _recipeSummaryRepositoryMock = new();
+    private readonly Mock<IIngredientRepository> _ingredientRepositoryMock = new();
+    private readonly Mock<ICookingInstructionRepository> _cookingInstructionRepositoryMock = new();
     private readonly SavedDishHandler _sut;
 
     /// <summary>Initializes a new instance of <see cref="SavedDishHandlerSuggestionsPropertyTests"/>.</summary>
@@ -30,6 +33,9 @@ public class SavedDishHandlerSuggestionsPropertyTests
             _savedDishRepositoryMock.Object,
             _dishRepositoryMock.Object,
             _dayPlanDishLinkRepositoryMock.Object,
+            _recipeSummaryRepositoryMock.Object,
+            _ingredientRepositoryMock.Object,
+            _cookingInstructionRepositoryMock.Object,
             NullLogger<SavedDishHandler>.Instance);
     }
 

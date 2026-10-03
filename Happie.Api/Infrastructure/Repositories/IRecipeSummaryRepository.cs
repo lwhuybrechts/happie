@@ -8,6 +8,9 @@ public interface IRecipeSummaryRepository
     /// <summary>Gets the recipe summary for a saved dish, or null if not found.</summary>
     Task<RecipeSummary?> GetAsync(Guid householdId, Guid savedDishId, CancellationToken cancellationToken = default);
 
+    /// <summary>Gets all recipe summaries for a household.</summary>
+    Task<IReadOnlyList<RecipeSummary>> GetAllByHouseholdAsync(Guid householdId, CancellationToken cancellationToken = default);
+
     /// <summary>Upserts a recipe summary.</summary>
     Task UpsertAsync(RecipeSummary summary, CancellationToken cancellationToken = default);
 

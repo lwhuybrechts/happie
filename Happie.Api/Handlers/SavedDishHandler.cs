@@ -11,6 +11,9 @@ public class SavedDishHandler : ISavedDishHandler
     private readonly ISavedDishRepository _savedDishRepository;
     private readonly IDishRepository _dishRepository;
     private readonly IDayPlanDishLinkRepository _dayPlanDishLinkRepository;
+    private readonly IRecipeSummaryRepository _recipeSummaryRepository;
+    private readonly IIngredientRepository _ingredientRepository;
+    private readonly ICookingInstructionRepository _cookingInstructionRepository;
     private readonly ILogger<SavedDishHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="SavedDishHandler"/>.</summary>
@@ -18,11 +21,17 @@ public class SavedDishHandler : ISavedDishHandler
         ISavedDishRepository savedDishRepository,
         IDishRepository dishRepository,
         IDayPlanDishLinkRepository dayPlanDishLinkRepository,
+        IRecipeSummaryRepository recipeSummaryRepository,
+        IIngredientRepository ingredientRepository,
+        ICookingInstructionRepository cookingInstructionRepository,
         ILogger<SavedDishHandler> logger)
     {
         _savedDishRepository = savedDishRepository;
         _dishRepository = dishRepository;
         _dayPlanDishLinkRepository = dayPlanDishLinkRepository;
+        _recipeSummaryRepository = recipeSummaryRepository;
+        _ingredientRepository = ingredientRepository;
+        _cookingInstructionRepository = cookingInstructionRepository;
         _logger = logger;
     }
 
@@ -31,9 +40,37 @@ public class SavedDishHandler : ISavedDishHandler
     {
         var allDishes = await _savedDishRepository.GetAllAsync(householdId, cancellationToken);
 
-        return allDishes
+        var activeDishes = allDishes
             .Where(x => !x.IsDeleted)
             .OrderBy(x => x.Description, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (activeDishes.Count == 0)
+            return activeDishes;
+
+        // Query all recipe content for the household in three partition queries.
+        var summaries = await _recipeSummaryRepository.GetAllByHouseholdAsync(householdId, cancellationToken);
+        var ingredients = await _ingredientRepository.GetAllByHouseholdAsync(householdId, cancellationToken);
+        var instructions = await _cookingInstructionRepository.GetAllByHouseholdAsync(householdId, cancellationToken);
+
+        // Build a set of saved dish IDs that have any recipe content.
+        var dishesWithContent = new HashSet<Guid>();
+
+        // A summary row may persist with all-null fields, so check for at least one non-null value.
+        foreach (var summary in summaries)
+        {
+            if (!string.IsNullOrWhiteSpace(summary.Summary) || summary.CookingDurationMinutes is not null || summary.Servings is not null)
+                dishesWithContent.Add(summary.SavedDishId);
+        }
+
+        foreach (var ingredient in ingredients)
+            dishesWithContent.Add(ingredient.SavedDishId);
+
+        foreach (var instruction in instructions)
+            dishesWithContent.Add(instruction.SavedDishId);
+
+        return activeDishes
+            .Select(x => x with { HasContent = dishesWithContent.Contains(x.Id) })
             .ToList();
     }
 

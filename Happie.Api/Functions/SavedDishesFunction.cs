@@ -30,7 +30,7 @@ public class SavedDishesFunction
         var householdId = (Guid)context.Items[FunctionContextKeys.HouseholdId];
 
         var dishes = await _savedDishHandler.GetAllActiveAsync(householdId, cancellationToken);
-        var dtos = dishes.Select(x => new SavedDishDto(x.Id, x.Description)).ToList();
+        var dtos = dishes.Select(x => new SavedDishDto(x.Id, x.Description, x.HasContent)).ToList();
 
         return new OkObjectResult(dtos);
     }

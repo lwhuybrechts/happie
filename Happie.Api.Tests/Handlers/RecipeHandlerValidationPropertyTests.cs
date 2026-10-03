@@ -43,6 +43,9 @@ public class RecipeHandlerValidationPropertyTests
             _savedDishRepositoryMock.Object,
             _dishRepositoryMock.Object,
             _dayPlanDishLinkRepositoryMock.Object,
+            _recipeSummaryRepositoryMock.Object,
+            _ingredientRepositoryMock.Object,
+            _cookingInstructionRepositoryMock.Object,
             NullLogger<SavedDishHandler>.Instance);
     }
 

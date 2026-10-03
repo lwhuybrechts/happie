@@ -24,6 +24,13 @@ public class CookingInstructionRepository : BaseRepository<CookingInstructionEnt
     }
 
     /// <inheritdoc/>
+    public async Task<IReadOnlyList<CookingInstruction>> GetAllByHouseholdAsync(Guid householdId, CancellationToken cancellationToken = default)
+    {
+        var entities = await QueryByPartitionAsync(householdId.ToString(), cancellationToken);
+        return entities.Select(x => _mapper.ToModel(householdId, x)).ToList();
+    }
+
+    /// <inheritdoc/>
     public async Task BatchUpsertAsync(IReadOnlyList<CookingInstruction> instructions, CancellationToken cancellationToken = default)
     {
         foreach (var instruction in instructions)

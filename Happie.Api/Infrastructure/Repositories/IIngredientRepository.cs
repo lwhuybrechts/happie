@@ -8,6 +8,9 @@ public interface IIngredientRepository
     /// <summary>Gets all ingredients for a saved dish.</summary>
     Task<IReadOnlyList<Ingredient>> GetAllAsync(Guid householdId, Guid savedDishId, CancellationToken cancellationToken = default);
 
+    /// <summary>Gets all ingredients for a household.</summary>
+    Task<IReadOnlyList<Ingredient>> GetAllByHouseholdAsync(Guid householdId, CancellationToken cancellationToken = default);
+
     /// <summary>Upserts a single ingredient.</summary>
     Task UpsertAsync(Ingredient ingredient, CancellationToken cancellationToken = default);
 

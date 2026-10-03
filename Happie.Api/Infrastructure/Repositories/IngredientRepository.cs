@@ -24,6 +24,13 @@ public class IngredientRepository : BaseRepository<IngredientEntity>, IIngredien
     }
 
     /// <inheritdoc/>
+    public async Task<IReadOnlyList<Ingredient>> GetAllByHouseholdAsync(Guid householdId, CancellationToken cancellationToken = default)
+    {
+        var entities = await QueryByPartitionAsync(householdId.ToString(), cancellationToken);
+        return entities.Select(x => _mapper.ToModel(householdId, x)).ToList();
+    }
+
+    /// <inheritdoc/>
     public Task UpsertAsync(Ingredient ingredient, CancellationToken cancellationToken = default)
         => UpsertAsync(_mapper.ToEntity(ingredient), cancellationToken);
 

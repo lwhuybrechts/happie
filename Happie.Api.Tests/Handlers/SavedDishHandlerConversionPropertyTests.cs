@@ -31,10 +31,16 @@ public class SavedDishHandlerConversionPropertyTests
                 var savedDishRepositoryMock = new Mock<ISavedDishRepository>();
                 var dishRepositoryMock = new Mock<IDishRepository>();
                 var dayPlanDishLinkRepositoryMock = new Mock<IDayPlanDishLinkRepository>();
+                var recipeSummaryRepositoryMock = new Mock<IRecipeSummaryRepository>();
+                var ingredientRepositoryMock = new Mock<IIngredientRepository>();
+                var cookingInstructionRepositoryMock = new Mock<ICookingInstructionRepository>();
                 var sut = new SavedDishHandler(
                     savedDishRepositoryMock.Object,
                     dishRepositoryMock.Object,
                     dayPlanDishLinkRepositoryMock.Object,
+                    recipeSummaryRepositoryMock.Object,
+                    ingredientRepositoryMock.Object,
+                    cookingInstructionRepositoryMock.Object,
                     NullLogger<SavedDishHandler>.Instance);
 
                 savedDishRepositoryMock
@@ -226,10 +232,16 @@ public class SavedDishHandlerConversionPropertyTests
                 var savedDishRepositoryMock = new Mock<ISavedDishRepository>();
                 var dishRepositoryMock = new Mock<IDishRepository>();
                 var dayPlanDishLinkRepositoryMock = new Mock<IDayPlanDishLinkRepository>();
+                var recipeSummaryRepositoryMock = new Mock<IRecipeSummaryRepository>();
+                var ingredientRepositoryMock = new Mock<IIngredientRepository>();
+                var cookingInstructionRepositoryMock = new Mock<ICookingInstructionRepository>();
                 var sut = new SavedDishHandler(
                     savedDishRepositoryMock.Object,
                     dishRepositoryMock.Object,
                     dayPlanDishLinkRepositoryMock.Object,
+                    recipeSummaryRepositoryMock.Object,
+                    ingredientRepositoryMock.Object,
+                    cookingInstructionRepositoryMock.Object,
                     NullLogger<SavedDishHandler>.Instance);
 
                 savedDishRepositoryMock

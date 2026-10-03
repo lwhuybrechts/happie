@@ -54,6 +54,9 @@ public class SavedDishIntegrationTests
             _savedDishRepository,
             _dishRepository,
             _dayPlanDishLinkRepository,
+            new RecipeSummaryRepository(storageClient, new RecipeSummaryMapper()),
+            new IngredientRepository(storageClient, new IngredientMapper()),
+            new CookingInstructionRepository(storageClient, new CookingInstructionMapper()),
             NullLogger<SavedDishHandler>.Instance);
 
         _dayHandler = new DayHandler(

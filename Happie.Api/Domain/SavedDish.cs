@@ -5,4 +5,5 @@ public record SavedDish(
     Guid Id,
     Guid HouseholdId,
     string Description,
-    bool IsDeleted);
+    bool IsDeleted,
+    bool HasContent = false);
