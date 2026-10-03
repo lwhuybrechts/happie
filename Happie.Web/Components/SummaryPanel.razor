@@ -38,7 +38,7 @@
                 </svg>
             </button>
         }
-        else
+        else if (!_isLoading)
         {
             <button class="summary-panel__icon-btn" @onclick="StartEdit" aria-label="@Localizer["DishDetails_Edit"]">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -50,8 +50,14 @@
         }
     </div>
 
-    <div class="summary-panel__body">
-        @if (_isEditing)
+    <div class="summary-panel__body @(_isSaving ? "summary-panel__body--saving" : "")">
+        @if (_isLoading)
+        {
+            <div class="loading-delayed summary-panel__loading">
+                <LoadingDots />
+            </div>
+        }
+        else if (_isEditing)
         {
             <div class="summary-panel__field">
                 <textarea class="summary-panel__textarea"
@@ -158,8 +164,12 @@
     private int? _savedDurationMinutes;
     private int? _savedServings;
 
+    // Loading state.
+    private bool _isLoading = true;
+
     // Edit state.
     private bool _isEditing;
+    private bool _isSaving;
 
     /// <summary>True when the panel is in edit mode and has unsaved changes.</summary>
     public bool HasUnsavedChanges => _isEditing && IsConfirmEnabled;
@@ -184,13 +194,21 @@
         }
     }
 
+    private Guid _previousSavedDishId;
+
     protected override async Task OnParametersSetAsync()
     {
-        await LoadDataAsync();
+        // Only reload data when the dish changes, not on every parameter update.
+        if (SavedDishId != _previousSavedDishId)
+        {
+            _previousSavedDishId = SavedDishId;
+            await LoadDataAsync();
+        }
     }
 
     private async Task LoadDataAsync()
     {
+        _isLoading = true;
         try
         {
             var response = await Http.GetFromJsonAsync<RecipeSummaryResponse>($"saved-dishes/{SavedDishId}/summary");
@@ -203,7 +221,11 @@
         }
         catch
         {
-            // If we can't load, leave defaults (all empty).
+            // Leave defaults (empty state) — requirement 2.7.
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 
@@ -257,6 +279,9 @@
 
         var request = new UpdateSummaryRequest(summaryValue, durationValue, servingsValue);
 
+        // Dim the panel while saving.
+        _isSaving = true;
+
         try
         {
             var response = await Http.PutAsJsonAsync($"saved-dishes/{SavedDishId}/summary", request);
@@ -267,15 +292,18 @@
                 _savedDurationMinutes = durationValue;
                 _savedServings = servingsValue;
                 _isEditing = false;
+                _isSaving = false;
                 await OnServingsChanged.InvokeAsync(servingsValue);
             }
             else
             {
+                _isSaving = false;
                 _showError = true;
             }
         }
         catch
         {
+            _isSaving = false;
             _showError = true;
         }
     }

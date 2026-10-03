@@ -67,6 +67,9 @@ builder.Services.AddScoped<PushNotificationService>();
 // Register the connectivity service as scoped for online/offline detection.
 builder.Services.AddScoped<IConnectivityService, ConnectivityService>();
 
+// Register the app focus service as scoped for visibility/focus detection.
+builder.Services.AddScoped<IAppFocusService, AppFocusService>();
+
 // Register the version tracker as scoped for one-time version reporting per session.
 builder.Services.AddScoped<VersionTracker>();
 
@@ -114,6 +117,9 @@ await mutationQueue.InitializeAsync();
 
 var connectivityService = host.Services.GetRequiredService<IConnectivityService>();
 await connectivityService.InitializeAsync();
+
+var appFocusService = host.Services.GetRequiredService<IAppFocusService>();
+await appFocusService.InitializeAsync();
 
 var syncService = host.Services.GetRequiredService<ISyncService>();
 await syncService.InitializeAsync();

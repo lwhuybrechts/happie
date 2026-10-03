@@ -13,7 +13,9 @@
 <div class="housemate-stats-page">
     @if (_isLoading)
     {
-        <LoadingIndicator />
+        <div class="loading-delayed">
+            <LoadingDots />
+        </div>
     }
     else if (_statistics is not null)
     {
@@ -196,7 +198,6 @@
     private async Task LoadDataAsync(Guid housemateId)
     {
         _isLoading = true;
-        LoadingIndicator.IncrementAsync();
         StateHasChanged();
 
         try
@@ -253,7 +254,6 @@
         finally
         {
             _isLoading = false;
-            LoadingIndicator.DecrementAsync();
             StateHasChanged();
         }
     }

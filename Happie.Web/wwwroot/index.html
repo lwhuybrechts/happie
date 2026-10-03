@@ -574,6 +574,45 @@
             happie._connectivityDotNetRef = null;
         };
 
+        // App focus detection — fires when the page transitions from hidden to visible
+        // (e.g. iOS PWA brought back to the foreground after being backgrounded).
+        // Listens to both visibilitychange and focus to cover browser inconsistencies,
+        // and deduplicates so only one callback fires per foreground transition.
+        happie.registerFocusListener = function (dotNetRef) {
+            happie._focusDotNetRef = dotNetRef;
+            happie._lastVisible = document.visibilityState === 'visible';
+
+            happie._onVisibilityChange = function () {
+                var isVisible = document.visibilityState === 'visible';
+                if (isVisible && !happie._lastVisible) {
+                    happie._lastVisible = true;
+                    dotNetRef.invokeMethodAsync('OnFocusChangedCallback');
+                } else {
+                    happie._lastVisible = isVisible;
+                }
+            };
+
+            happie._onFocus = function () {
+                if (!happie._lastVisible) {
+                    happie._lastVisible = true;
+                    dotNetRef.invokeMethodAsync('OnFocusChangedCallback');
+                }
+            };
+
+            document.addEventListener('visibilitychange', happie._onVisibilityChange);
+            window.addEventListener('focus', happie._onFocus);
+        };
+
+        happie.unregisterFocusListener = function () {
+            if (happie._onVisibilityChange)
+                document.removeEventListener('visibilitychange', happie._onVisibilityChange);
+            if (happie._onFocus)
+                window.removeEventListener('focus', happie._onFocus);
+            happie._onVisibilityChange = null;
+            happie._onFocus = null;
+            happie._focusDotNetRef = null;
+        };
+
         // Scrolls the element with the given ID into view within its scroll container.
         happie.scrollIntoView = function (elementId) {
             var element = document.getElementById(elementId);

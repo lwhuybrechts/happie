@@ -126,3 +126,4 @@ Additional conventions are loaded automatically when working on relevant files. 
 | `local-dev.md` | Full local dev setup, seeding, prerequisites | Starting the app or running locally |
 | `infrastructure.md` | Azure resources, Bicep, deployment | Manual (`#infrastructure`) |
 | `lan-testing.md` | iPhone LAN testing setup | Manual (`#lan-testing`) |
+| `loading-strategy.md` | Loading indicators and loading state conventions | Editing `.razor` / `Happie.Web/` |

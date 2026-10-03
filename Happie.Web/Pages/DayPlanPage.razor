@@ -5,6 +5,7 @@
 @inject ICachedApiClient CachedApi
 @inject ISyncService SyncService
 @inject IConnectivityService ConnectivityService
+@inject IAppFocusService AppFocusService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject IStringLocalizer<AppStrings> Localizer
@@ -62,7 +63,7 @@
             else
             {
                 <div class="swipe-carousel__panel-content swipe-carousel__panel-content--loading">
-                    <p>@Localizer["DayPlan_Loading"]</p>
+                    <LoadingDots />
                 </div>
             }
         </div>
@@ -71,7 +72,9 @@
             <div class="swipe-carousel__panel-content" @key="@($"active-{_parsedDate}")">
                 @if (_isLoading)
                 {
-                    <p class="loading-delayed">@Localizer["DayPlan_Loading"]</p>
+                    <div class="loading-delayed">
+                        <LoadingDots />
+                    </div>
                 }
                 else if (_loadError)
                 {
@@ -139,7 +142,7 @@
             else
             {
                 <div class="swipe-carousel__panel-content swipe-carousel__panel-content--loading">
-                    <p>@Localizer["DayPlan_Loading"]</p>
+                    <LoadingDots />
                 </div>
             }
         </div>
@@ -195,6 +198,7 @@
         _activeHousemateId = ActiveHousemateService.Id ?? Guid.Empty;
         CachedApi.OnDayPlanUpdated += HandleDayPlanUpdated;
         SyncService.OnDayPlanRolledBack += HandleDayPlanRolledBack;
+        AppFocusService.OnAppFocus += RefreshOnFocusAsync;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -363,6 +367,43 @@
     private void NavigateToCalendar()
     {
         NavigationManager.NavigateTo($"/calendar/{_parsedDate:yyyy-MM-dd}");
+    }
+
+    // Triggered when the app regains visibility (e.g. iOS PWA foregrounded after being backgrounded).
+    // Re-invokes stale-while-revalidate so cached data stays visible while a background refresh
+    // checks for updates. The header spinner shows during the refresh via LoadingIndicatorState.
+    private async Task RefreshOnFocusAsync()
+    {
+        // Don't refresh during a swipe or while a cold fetch is in progress.
+        if (_isSwiping || _isLoading)
+            return;
+
+        // Stale-while-revalidate: returns cached data immediately and starts a background refresh.
+        var fetchResult = await CachedApi.GetDayPlanAsync(Date);
+
+        // If the page was in an error or offline state and data is now available, recover.
+        if (fetchResult.Data is not null && (_loadError || _noDataOffline))
+        {
+            _dayPlan = fetchResult.Data;
+            _loadError = false;
+            _noDataOffline = false;
+            _isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+        // Show the header spinner during the background refresh.
+        if (fetchResult.BackgroundRefreshTask is not null)
+        {
+            LoadingIndicator.IncrementAsync();
+            try
+            {
+                await fetchResult.BackgroundRefreshTask;
+            }
+            finally
+            {
+                LoadingIndicator.DecrementAsync();
+            }
+        }
     }
 
     private async Task LoadDayPlanAsync()
@@ -690,6 +731,7 @@
     {
         CachedApi.OnDayPlanUpdated -= HandleDayPlanUpdated;
         SyncService.OnDayPlanRolledBack -= HandleDayPlanRolledBack;
+        AppFocusService.OnAppFocus -= RefreshOnFocusAsync;
         _prefetchCts?.Cancel();
         _prefetchCts?.Dispose();
         await JsRuntime.InvokeVoidAsync("happie.disposeSwipeCarousel", _pageElement);

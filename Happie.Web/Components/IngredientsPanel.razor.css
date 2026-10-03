@@ -69,6 +69,11 @@
     gap: 12px;
 }
 
+.ingredients-panel__body--saving {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
 /* Empty placeholder text. */
 .ingredients-panel__empty {
     color: #9ca3af;

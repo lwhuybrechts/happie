@@ -79,7 +79,9 @@
     }
     else if (_showDishesLoading)
     {
-        <p class="loading-delayed">@Localizer["DayPlan_Loading"]</p>
+        <div class="loading-delayed">
+            <LoadingDots />
+        </div>
     }
     else
     {
@@ -135,7 +137,9 @@
     @* Suggestions section — only shown when suggestions are available. *@
     @if (_suggestionsLoading)
     {
-        <p class="loading-delayed">@Localizer["DayPlan_Loading"]</p>
+        <div class="loading-delayed">
+            <LoadingDots />
+        </div>
     }
     else if (_suggestions.Count > 0)
     {

@@ -1,6 +1,7 @@
 /* Summary panel card matching the DishPanel dark theme. */
 .summary-panel {
     background-color: #1a2332;
+    color: #ffffff;
     border-radius: 16px;
     padding: 16px 20px;
 }
@@ -93,6 +94,11 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+.summary-panel__body--saving {
+    opacity: 0.4;
+    pointer-events: none;
 }
 
 /* Empty placeholder text. */
