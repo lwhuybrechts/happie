@@ -6,6 +6,7 @@
 @using Happie.Web.Services.Caching
 @inject ICachedApiClient CachedApi
 @inject IConnectivityService ConnectivityService
+@inject IAppFocusService AppFocusService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject IStringLocalizer<AppStrings> Localizer
@@ -91,6 +92,7 @@
     protected override void OnInitialized()
     {
         CachedApi.OnCalendarUpdated += HandleCalendarUpdated;
+        AppFocusService.OnAppFocus += RefreshOnFocusAsync;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -441,6 +443,37 @@
         InvokeAsync(StateHasChanged);
     }
 
+    // Triggered when the app regains visibility (e.g. iOS PWA foregrounded after being backgrounded).
+    // Re-invokes stale-while-revalidate so cached data stays visible while a background refresh
+    // checks for updates. The header spinner shows during the refresh via LoadingIndicatorState.
+    private async Task RefreshOnFocusAsync()
+    {
+        var fetchResult = await CachedApi.GetCalendarAsync(_viewedMonth);
+
+        // If the page was in an error or offline state and data is now available, recover.
+        if (fetchResult.Data is not null && (_loadError || _noDataOffline))
+        {
+            _days = fetchResult.Data.Days;
+            _loadError = false;
+            _noDataOffline = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+        // Show the header spinner during the background refresh.
+        if (fetchResult.BackgroundRefreshTask is not null)
+        {
+            LoadingIndicator.IncrementAsync();
+            try
+            {
+                await fetchResult.BackgroundRefreshTask;
+            }
+            finally
+            {
+                LoadingIndicator.DecrementAsync();
+            }
+        }
+    }
+
     private static (DateOnly Start, DateOnly End) GetVisibleDateRange(DateOnly viewedMonth)
     {
         return CalendarGridService.GetVisibleDateRange(viewedMonth);
@@ -449,6 +482,7 @@
     public async ValueTask DisposeAsync()
     {
         CachedApi.OnCalendarUpdated -= HandleCalendarUpdated;
+        AppFocusService.OnAppFocus -= RefreshOnFocusAsync;
         _prefetchCts?.Cancel();
         _prefetchCts?.Dispose();
         if (_navPanel is not null)

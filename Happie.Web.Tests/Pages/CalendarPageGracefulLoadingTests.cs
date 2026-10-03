@@ -18,6 +18,7 @@ public class CalendarPageGracefulLoadingTests : BunitContext
 {
     private readonly Mock<ICachedApiClient> _cachedApiMock = new();
     private readonly Mock<IConnectivityService> _connectivityServiceMock = new();
+    private readonly Mock<IAppFocusService> _appFocusServiceMock = new();
     private readonly Mock<IStringLocalizer<AppStrings>> _localizerMock = new();
     private readonly FakeDelayService _fakeDelayService = new();
     private readonly LoadingIndicatorState _loadingIndicator;
@@ -33,6 +34,7 @@ public class CalendarPageGracefulLoadingTests : BunitContext
 
         Services.AddSingleton(_cachedApiMock.Object);
         Services.AddSingleton(_connectivityServiceMock.Object);
+        Services.AddSingleton(_appFocusServiceMock.Object);
         Services.AddSingleton(_localizerMock.Object);
         Services.AddSingleton(serviceProvider =>
             new LocaleService(serviceProvider.GetRequiredService<IJSRuntime>()));

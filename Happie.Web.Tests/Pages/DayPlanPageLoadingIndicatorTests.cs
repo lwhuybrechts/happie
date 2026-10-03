@@ -18,6 +18,7 @@ public class DayPlanPageLoadingIndicatorTests : BunitContext
     private readonly Mock<ICachedApiClient> _cachedApiMock = new();
     private readonly Mock<IConnectivityService> _connectivityServiceMock = new();
     private readonly Mock<ISyncService> _syncServiceMock = new();
+    private readonly Mock<IAppFocusService> _appFocusServiceMock = new();
     private readonly Mock<IStringLocalizer<AppStrings>> _localizerMock = new();
     private readonly LoadingIndicatorState _loadingIndicatorState;
     private readonly FakeDelayService _fakeDelayService;
@@ -35,6 +36,7 @@ public class DayPlanPageLoadingIndicatorTests : BunitContext
         Services.AddSingleton(_cachedApiMock.Object);
         Services.AddSingleton(_connectivityServiceMock.Object);
         Services.AddSingleton(_syncServiceMock.Object);
+        Services.AddSingleton(_appFocusServiceMock.Object);
         Services.AddSingleton(_localizerMock.Object);
         Services.AddSingleton(_loadingIndicatorState);
         Services.AddScoped(serviceProvider =>
